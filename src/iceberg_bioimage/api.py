@@ -59,7 +59,7 @@ def register_store(
         )
 
     return RegistrationResult(
-        source_uri=uri,
+        source_uri=scan_result.source_uri,
         image_assets_rows_published=image_assets_rows,
         chunk_rows_published=chunk_rows,
     )

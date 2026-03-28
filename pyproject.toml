@@ -1,17 +1,12 @@
 [build-system]
 build-backend = "setuptools.build_meta"
-requires = [ "setuptools>=64", "setuptools-scm>=8" ]
+requires = [ "setuptools>=64" ]
 
 [project]
 name = "iceberg-bioimage"
 version = "0.0.1"
 description = "A format-agnostic framework for cataloging and querying bioimaging data (Zarr, OME-TIFF) with Apache Iceberg"
 readme = "README.md"
-license = "BSD-3-Clause"
-authors = [
-  { name = "Dave Bunten" },
-]
-requires-python = ">=3.11"
 keywords = [
   "bioimage",
   "iceberg",
@@ -19,6 +14,11 @@ keywords = [
   "pyiceberg",
   "zarr",
 ]
+license = "BSD-3-Clause"
+authors = [
+  { name = "Dave Bunten" },
+]
+requires-python = ">=3.11"
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Science/Research",
@@ -26,41 +26,35 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 dependencies = [
-  "pyarrow>=18.0.0",
+  "pyarrow>=18",
   "pyiceberg>=0.7.1",
   "tifffile>=2025.1.10",
   "zarr>=2.18.4,<3",
 ]
+urls.Documentation = "https://d33bs.github.io/iceberg-bioimage/"
+urls.Homepage = "https://github.com/d33bs/iceberg-bioimage"
+urls.Issues = "https://github.com/d33bs/iceberg-bioimage/issues"
+urls.Repository = "https://github.com/d33bs/iceberg-bioimage"
 scripts.iceberg-bioimage = "iceberg_bioimage.cli:main"
-
-[project.urls]
-Homepage = "https://github.com/d33bs/iceberg-bioimage"
-Documentation = "https://d33bs.github.io/iceberg-bioimage/"
-Repository = "https://github.com/d33bs/iceberg-bioimage"
-Issues = "https://github.com/d33bs/iceberg-bioimage/issues"
-
-[tool.setuptools]
-package-dir = {"" = "src"}
-
-[tool.setuptools.packages.find]
-where = ["src"]
 
 [dependency-groups]
 dev = [
-  "pre-commit>=4.2.0",
   "poethepoet>=0.34",
+  "pre-commit>=4.2",
   "pytest>=8.3.5",
-]
-duckdb = [
-  "duckdb>=1.2.2",
+  "ruff>=0.11.11",
 ]
 docs = [
   "myst-nb>=1.2",
   "pydata-sphinx-theme>=0.16.1",
   "sphinx>=8.2.3",
+]
+duckdb = [
+  "duckdb>=1.2.2",
 ]
 notebooks = [
   "black>=25.1",
@@ -70,11 +64,9 @@ notebooks = [
   "jupytext>=1.17.1",
 ]
 
-[tool.setuptools_scm]
-root = "."
-version_scheme = "no-guess-dev"
-local_scheme = "no-local-version"
-version_file = "src/iceberg_bioimage/_version.py"
+[tool.setuptools]
+package-dir = { "" = "src" }
+packages.find.where = [ "src" ]
 
 [tool.ruff]
 target-version = "py311"
@@ -105,24 +97,13 @@ lint.select = [
 ]
 # Ignore `F401` (unused imports) for `__init__.py` file
 lint.per-file-ignores."__init__.py" = [ "F401" ]
+lint.per-file-ignores."src/iceberg_bioimage/integrations/catalog.py" = [ "PLR0913" ]
+lint.per-file-ignores."src/iceberg_bioimage/integrations/duckdb.py" = [ "PLC0415" ]
+lint.per-file-ignores."src/iceberg_bioimage/publishing/chunk_index.py" = [ "PLC0415" ]
+lint.per-file-ignores."src/iceberg_bioimage/publishing/image_assets.py" = [ "PLC0415" ]
 
-[tool.pytest.ini_options]
-pythonpath = [ ".", "src" ]
-
-[tool.poe.tasks]
-# tasks for development environments
-test.shell = """
-pytest
-"""
-lint.shell = """
-ruff check
-"""
-docs.shell = """
-sphinx-build -b html docs/src docs/_build/html
-"""
-jupyter.shell = """
-jupyter lab
-"""
+[tool.pytest]
+ini_options.pythonpath = [ ".", "src" ]
 
 [tool.jupytext]
 formats = "ipynb,py:light"
@@ -130,3 +111,18 @@ formats = "ipynb,py:light"
 [tool.vulture]
 min_confidence = 90
 paths = [ "src/iceberg_bioimage", "tests" ]
+
+[tool.poe]
+# tasks for development environments
+tasks.test.shell = """
+pytest
+"""
+tasks.lint.shell = """
+ruff check
+"""
+tasks.docs.shell = """
+sphinx-build -b html docs/src docs/_build/html
+"""
+tasks.jupyter.shell = """
+jupyter lab
+"""

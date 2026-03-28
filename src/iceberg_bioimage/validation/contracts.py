@@ -84,7 +84,19 @@ def validate_microscopy_profile_columns(
 def validate_microscopy_profile_table(path: str) -> ContractValidationResult:
     """Validate a local profile table file against the microscopy join contract."""
 
-    dataset = ds.dataset(path)
+    try:
+        dataset = ds.dataset(path)
+    except Exception as exc:
+        error = f"Invalid dataset path: {path}: {exc}"
+        return ContractValidationResult(
+            target=str(Path(path)),
+            present_columns=[],
+            required_columns=list(MICROSCOPY_REQUIRED_JOIN_KEYS),
+            recommended_columns=list(MICROSCOPY_RECOMMENDED_JOIN_KEYS),
+            missing_required_columns=list(MICROSCOPY_REQUIRED_JOIN_KEYS),
+            missing_recommended_columns=list(MICROSCOPY_RECOMMENDED_JOIN_KEYS),
+            warnings=[error],
+        )
     return validate_microscopy_profile_columns(
         list(dataset.schema.names),
         target=str(Path(path)),

@@ -30,14 +30,14 @@ def publish_chunk_index(
 
     raise_for_invalid_scan_result(scan_result)
     rows = scan_result_to_chunk_rows(scan_result)
+    if not rows:
+        return 0
     table = _load_or_create_table(
         catalog,
         namespace,
         table_name,
         schema_builder=_build_chunk_index_schema,
     )
-    if not rows:
-        return 0
 
     table.append(pa.Table.from_pylist(rows))
     return len(rows)
@@ -45,6 +45,15 @@ def publish_chunk_index(
 
 def scan_result_to_chunk_rows(scan_result: ScanResult) -> list[dict[str, object]]:
     """Convert a scan result into canonical chunk_index rows."""
+
+    if scan_result is None:
+        raise ValueError("scan_result is required.")
+    if not isinstance(scan_result, ScanResult):
+        raise TypeError("scan_result must be a ScanResult instance.")
+    if not scan_result.source_uri:
+        raise ValueError("scan_result.source_uri must be a non-empty string.")
+    if not isinstance(scan_result.image_assets, list):
+        raise TypeError("scan_result.image_assets must be a list of ImageAsset.")
 
     dataset_id = _dataset_id(scan_result.source_uri)
     rows: list[dict[str, object]] = []

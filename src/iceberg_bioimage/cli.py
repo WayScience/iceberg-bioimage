@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 
 from iceberg_bioimage.api import register_store, scan_store
 from iceberg_bioimage.models.scan_result import (
@@ -78,7 +79,11 @@ def main(argv: list[str] | None = None) -> int:
 
     parser = build_parser()
     args = parser.parse_args(argv)
-    return int(args.handler(args))
+    try:
+        return int(args.handler(args))
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 2
 
 
 def _handle_scan(args: argparse.Namespace) -> int:
@@ -98,9 +103,7 @@ def _handle_register(args: argparse.Namespace) -> int:
         args.catalog,
         args.namespace,
         image_assets_table=args.table_name,
-        chunk_index_table=(
-            args.chunk_table_name if args.publish_chunks else None
-        ),
+        chunk_index_table=(args.chunk_table_name if args.publish_chunks else None),
     )
     payload = {
         "catalog": args.catalog,
@@ -189,8 +192,7 @@ def _contract_summary(result: ContractValidationResult) -> str:
 
     if result.missing_required_columns:
         lines.append(
-            "missing_required_columns: "
-            + ", ".join(result.missing_required_columns)
+            "missing_required_columns: " + ", ".join(result.missing_required_columns)
         )
 
     if result.missing_recommended_columns:

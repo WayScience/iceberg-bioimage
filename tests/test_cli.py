@@ -10,10 +10,11 @@ import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 import zarr
-from _pytest.monkeypatch import MonkeyPatch
-from pytest import CaptureFixture
+from pytest import CaptureFixture, MonkeyPatch
 
 from iceberg_bioimage import cli as cli_module
+
+CLI_VALUE_ERROR_EXIT_CODE = 2
 
 
 def test_scan_cli(tmp_path: Path) -> None:
@@ -152,3 +153,20 @@ def test_publish_chunks_cli(
 
     assert exit_code == 0
     assert '"rows_published": 2' in output.out
+
+
+def test_main_returns_cli_error_for_value_error(
+    monkeypatch: MonkeyPatch,
+    capsys: CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(
+        cli_module,
+        "_handle_scan",
+        lambda args: (_ for _ in ()).throw(ValueError("bad dataset")),
+    )
+
+    exit_code = cli_module.main(["scan", "data/missing.zarr"])
+    output = capsys.readouterr()
+
+    assert exit_code == CLI_VALUE_ERROR_EXIT_CODE
+    assert "Error: bad dataset" in output.err

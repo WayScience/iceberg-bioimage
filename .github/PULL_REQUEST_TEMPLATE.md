@@ -11,7 +11,7 @@ Namely, consider addressing the following questions:
 
 - What motivated you to open this pull request?
 - Were there any special adjustments you had to make to complete the work?
-- Are there any issues which are related to this pull request (you may used a `#<digit>` to reference GitHub issues as links within this description)?
+- Are there any issues which are related to this pull request (you may use a `#<digit>` to reference GitHub issues as links within this description)?
 
 Also, if you haven't already, please use `pre-commit run --all-files` to help check your files using this project's pre-commit configuration.
 Pre-commit checks will automatically run as part of opening this pull request and we seek to ensure all checks pass before merging changes.

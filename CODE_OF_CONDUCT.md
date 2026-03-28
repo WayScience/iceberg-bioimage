@@ -60,8 +60,10 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to community leaders responsible for enforcement.
-Please reach out to the maintainers of this repository by using their GitHub profile email address contact information to privately notify us of any incidents of this nature.
-All complaints will be reviewed and investigated promptly and fairly.
+Please email `ekgto445@gmail.com` to contact the maintainers responsible for
+this repository's Code of Conduct. That inbox is monitored by the maintainers,
+reports will be handled privately, and we will acknowledge receipt within
+48 hours. All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the
 reporter of any incident.

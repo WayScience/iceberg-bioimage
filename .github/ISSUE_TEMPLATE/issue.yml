@@ -1,3 +1,4 @@
+---
 # GitHub Issue template for bug reports
 name: Open a GitHub issue
 description: >
@@ -15,7 +16,7 @@ body:
         on it or add a reaction to existing content!
       options:
         - label: >
-            I found no existing covering this topic.
+            I found no existing issue covering this topic.
           required: true
 
   - type: textarea

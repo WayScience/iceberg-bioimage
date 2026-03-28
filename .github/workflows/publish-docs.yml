@@ -2,7 +2,7 @@
 # used for publishing documentation on push to main or published release
 name: publish docs
 
-on:
+'on':
   push:
     branches:
       - main
@@ -31,7 +31,10 @@ jobs:
         run: |
           mkdir pages
           touch pages/.nojekyll
-          uv run --group docs --frozen sphinx-build -b html docs/src docs/_build/html
+          uv run --group docs --frozen sphinx-build \
+            -b html \
+            docs/src \
+            docs/_build/html
           find docs/_build/html -type d -name '.doctrees' -exec rm -rf {} +
           cp -r docs/_build/html/* pages/
       - name: Deploy documentation

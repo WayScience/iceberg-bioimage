@@ -44,7 +44,7 @@ class ScanResult:
             "warnings": list(self.warnings),
         }
 
-    def to_json(self, **json_kwargs: object) -> str:
+    def to_json(self, **json_kwargs: Any) -> str:  # noqa: ANN401
         """Serialize the scan result to JSON."""
 
         return json.dumps(self.to_dict(), **json_kwargs)
@@ -82,7 +82,7 @@ class ContractValidationResult:
             "is_valid": self.is_valid,
         }
 
-    def to_json(self, **json_kwargs: object) -> str:
+    def to_json(self, **json_kwargs: Any) -> str:  # noqa: ANN401
         """Serialize the validation result to JSON."""
 
         return json.dumps(self.to_dict(), **json_kwargs)
@@ -105,7 +105,7 @@ class RegistrationResult:
             "chunk_rows_published": self.chunk_rows_published,
         }
 
-    def to_json(self, **json_kwargs: object) -> str:
+    def to_json(self, **json_kwargs: Any) -> str:  # noqa: ANN401
         """Serialize the registration result to JSON."""
 
         return json.dumps(self.to_dict(), **json_kwargs)

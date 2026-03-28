@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Callable, Protocol
 
 import pyarrow as pa
+from pyiceberg.exceptions import NoSuchTableError
 
 from iceberg_bioimage.models.scan_result import ImageAsset, ScanResult
 from iceberg_bioimage.validation.contracts import raise_for_invalid_scan_result
@@ -97,9 +98,8 @@ def _load_or_create_table(
 
     try:
         return catalog.load_table(identifier)
-    except Exception as exc:  # pragma: no cover - depends on active catalog backend
-        if getattr(exc.__class__, "__name__", "") != "NoSuchTableError":
-            raise
+    except NoSuchTableError:  # pragma: no cover - depends on active catalog backend
+        pass
 
     build_schema = (
         _build_image_assets_schema if schema_builder is None else schema_builder
@@ -131,6 +131,9 @@ def _build_image_assets_schema() -> object:
             "PyIceberg is required for publishing. Install `pyiceberg` first."
         ) from exc
 
+    # Field IDs are intentionally non-sequential in _build_image_assets_schema.
+    # These stable NestedField identifiers keep compatibility with prior or
+    # future schema revisions without reusing removed field IDs.
     return Schema(
         NestedField(
             field_id=1,

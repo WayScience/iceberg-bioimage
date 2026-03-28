@@ -14,9 +14,6 @@ from iceberg_bioimage.integrations.duckdb import (
     join_image_assets_with_profiles,
 )
 from iceberg_bioimage.publishing.image_assets import (
-    SupportsCatalog as SupportsLoadTableCatalog,
-)
-from iceberg_bioimage.publishing.image_assets import (
     _normalize_namespace,
     _resolve_catalog,
 )
@@ -39,8 +36,15 @@ class SupportsIcebergTable(Protocol):
         case_sensitive: bool = True,
         snapshot_id: int | None = None,
         limit: int | None = None,
-        ) -> SupportsIcebergScan:
+    ) -> SupportsIcebergScan:
         """Return a scan object for the current table."""
+
+
+class SupportsScanCatalog(Protocol):
+    """Protocol for catalogs used by the read-only integration helpers."""
+
+    def load_table(self, identifier: tuple[str, ...]) -> SupportsIcebergTable:
+        """Load an existing Iceberg table."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,7 +58,7 @@ class CatalogScanOptions:
 
 
 def load_catalog_table(
-    catalog: str | SupportsLoadTableCatalog,
+    catalog: str | SupportsScanCatalog,
     namespace: str | Sequence[str],
     table_name: str,
 ) -> SupportsIcebergTable:
@@ -66,7 +70,7 @@ def load_catalog_table(
 
 
 def catalog_table_to_arrow(
-    catalog: str | SupportsLoadTableCatalog,
+    catalog: str | SupportsScanCatalog,
     namespace: str | Sequence[str],
     table_name: str,
     *,
@@ -78,9 +82,7 @@ def catalog_table_to_arrow(
     table = load_catalog_table(catalog, namespace, table_name)
     scan = table.scan(
         row_filter="True" if options.where is None else options.where,
-        selected_fields=(
-            ("*",) if options.columns is None else tuple(options.columns)
-        ),
+        selected_fields=(("*",) if options.columns is None else tuple(options.columns)),
         snapshot_id=options.snapshot_id,
         limit=options.limit,
     )
@@ -88,12 +90,14 @@ def catalog_table_to_arrow(
 
 
 def join_catalog_image_assets_with_profiles(
-    catalog: str | SupportsLoadTableCatalog,
+    catalog: str | SupportsScanCatalog,
     namespace: str | Sequence[str],
     profiles: MetadataSource,
     *,
     chunk_index_table: str | None = None,
     join_keys: Sequence[str] = DEFAULT_JOIN_KEYS,
+    image_assets_scan_options: CatalogScanOptions | None = None,
+    chunk_index_scan_options: CatalogScanOptions | None = None,
 ) -> pa.Table:
     """Join catalog-backed image metadata to a profile table."""
 
@@ -101,6 +105,7 @@ def join_catalog_image_assets_with_profiles(
         catalog,
         namespace,
         "image_assets",
+        scan_options=image_assets_scan_options,
     )
     chunk_index = None
     if chunk_index_table is not None:
@@ -108,6 +113,7 @@ def join_catalog_image_assets_with_profiles(
             catalog,
             namespace,
             chunk_index_table,
+            scan_options=chunk_index_scan_options,
         )
 
     return join_image_assets_with_profiles(

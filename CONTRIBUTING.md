@@ -10,8 +10,8 @@ keep the core package engine-neutral and preserve the separation between:
 ## Development setup
 
 1. Install Python 3.11 or newer.
-2. Install `uv`: https://docs.astral.sh/uv/getting-started/installation/
-3. Sync the default development environment:
+1. Install `uv`: https://docs.astral.sh/uv/getting-started/installation/
+1. Sync the default development environment:
 
 ```bash
 uv sync --group dev --group docs
@@ -54,9 +54,9 @@ faster than broad, mixed-scope updates.
 Before opening a pull request:
 
 1. Run the local checks above.
-2. Update docs and examples for any user-facing behavior changes.
-3. Add or update tests when behavior changes.
-4. Follow the pull request template in [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md).
+1. Update docs and examples for any user-facing behavior changes.
+1. Add or update tests when behavior changes.
+1. Follow the pull request template in [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md).
 
 ## Releases
 
@@ -66,10 +66,10 @@ Release notes are drafted automatically with Release Drafter.
 The expected release flow is:
 
 1. Merge reviewed changes to `main`.
-2. Confirm CI is green.
-3. Review the drafted GitHub release.
-4. Publish the release from GitHub.
-5. Let the PyPI publish workflow build and upload the package.
+1. Confirm CI is green.
+1. Review the drafted GitHub release.
+1. Publish the release from GitHub.
+1. Let the PyPI publish workflow build and upload the package.
 
 ## Code of conduct
 

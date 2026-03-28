@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
-from _pytest.monkeypatch import MonkeyPatch
+import pytest
+from pytest import MonkeyPatch
 
 from iceberg_bioimage.models.scan_result import ImageAsset, ScanResult
 from iceberg_bioimage.publishing import chunk_index as chunk_index_module
-from tests.test_publishing import FakeCatalog
+from tests.fakes import FakeCatalog
 
 EXPECTED_CHUNK_ROW_COUNT = 4
+
+
+def _stub_schema() -> object:
+    return object()
 
 
 def test_scan_result_to_chunk_rows() -> None:
@@ -101,7 +106,7 @@ def test_publish_chunk_index_creates_missing_table(
     monkeypatch.setattr(
         chunk_index_module,
         "_build_chunk_index_schema",
-        lambda: object(),
+        _stub_schema,
     )
 
     row_count = chunk_index_module.publish_chunk_index(
@@ -115,3 +120,33 @@ def test_publish_chunk_index_creates_missing_table(
     assert fake_catalog.created_identifiers == [("bioimage", "dev", "chunk_index")]
     assert fake_catalog.table is not None
     assert len(fake_catalog.table.appends) == 1
+
+
+def test_publish_chunk_index_skips_table_creation_without_chunk_rows() -> None:
+    scan_result = ScanResult(
+        source_uri="/tmp/experiment.zarr",
+        format_family="zarr",
+        image_assets=[
+            ImageAsset(
+                uri="/tmp/experiment.zarr",
+                shape=[4, 4],
+                dtype="uint16",
+            )
+        ],
+    )
+    fake_catalog = FakeCatalog()
+
+    row_count = chunk_index_module.publish_chunk_index(
+        catalog=fake_catalog,
+        namespace="bioimage.dev",
+        table_name="chunk_index",
+        scan_result=scan_result,
+    )
+
+    assert row_count == 0
+    assert fake_catalog.created_identifiers == []
+
+
+def test_scan_result_to_chunk_rows_rejects_invalid_input() -> None:
+    with pytest.raises(TypeError, match="scan_result must be a ScanResult instance"):
+        chunk_index_module.scan_result_to_chunk_rows(object())  # type: ignore[arg-type]

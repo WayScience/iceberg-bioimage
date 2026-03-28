@@ -3,6 +3,7 @@
 `iceberg-bioimage` is a format-agnostic Python package for cataloging bioimaging data with Apache Iceberg as the metadata layer.
 
 Core idea:
+
 - Iceberg is the control plane for cataloging, schemas, joins, and snapshots.
 - Zarr and OME-TIFF remain the data plane.
 - Adapters normalize each format into a pure-Python `ScanResult`.
@@ -56,9 +57,9 @@ iceberg-bioimage register --catalog default --namespace bioimage --publish-chunk
 iceberg-bioimage validate-contract data/cells.parquet
 ```
 
-See `examples/quickstart.py` for a minimal script.
-See `examples/catalog_duckdb.py` for a catalog-backed query example.
-See `examples/synthetic_workflow.py` for a self-contained local workflow.
+- `examples/quickstart.py` for a minimal scan, publish, and validation script
+- `examples/catalog_duckdb.py` for a catalog-backed query workflow
+- `examples/synthetic_workflow.py` for a self-contained local workflow
 
 ## DuckDB helpers
 
@@ -86,7 +87,10 @@ profiles = pa.table(
 )
 
 joined = join_image_assets_with_profiles(image_assets, profiles)
-filtered = query_metadata_table(joined, where="cell_count > 10")
+filtered = query_metadata_table(
+    joined,
+    filters=[("cell_count", ">", 10)],
+)
 ```
 
 Install the optional integration with `uv sync --group duckdb`.

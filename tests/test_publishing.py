@@ -4,40 +4,15 @@ from __future__ import annotations
 
 import json
 
-import pyarrow as pa
-from _pytest.monkeypatch import MonkeyPatch
+from pytest import MonkeyPatch
 
 from iceberg_bioimage.models.scan_result import ImageAsset, ScanResult
 from iceberg_bioimage.publishing import image_assets as image_assets_module
+from tests.fakes import FakeCatalog
 
 
-class FakeTable:
-    """Simple append-only table stub."""
-
-    def __init__(self) -> None:
-        self.appends: list[pa.Table] = []
-
-    def append(self, table: pa.Table) -> None:
-        self.appends.append(table)
-
-
-class FakeCatalog:
-    """Minimal catalog stub."""
-
-    def __init__(self, table: FakeTable | None = None) -> None:
-        self.table = table
-        self.created_identifiers: list[tuple[str, ...]] = []
-
-    def load_table(self, identifier: tuple[str, ...]) -> FakeTable:
-        if self.table is None:
-            no_such_table = type("NoSuchTableError", (Exception,), {})
-            raise no_such_table(identifier)
-        return self.table
-
-    def create_table(self, identifier: tuple[str, ...], schema: object) -> FakeTable:
-        self.created_identifiers.append(identifier)
-        self.table = FakeTable()
-        return self.table
+def _stub_schema() -> object:
+    return object()
 
 
 def test_scan_result_to_rows() -> None:
@@ -93,7 +68,7 @@ def test_publish_image_assets_creates_missing_table(
     monkeypatch.setattr(
         image_assets_module,
         "_build_image_assets_schema",
-        lambda: object(),
+        _stub_schema,
     )
 
     row_count = image_assets_module.publish_image_assets(

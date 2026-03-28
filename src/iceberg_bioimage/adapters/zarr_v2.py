@@ -64,7 +64,7 @@ class ZarrV2Adapter(BaseAdapter):
         array_path: str | None,
         array: object,
     ) -> ImageAsset:
-        path = array_path or None
+        path = None if array_path == "" else array_path
         metadata = {"store_name": Path(uri).name}
 
         return ImageAsset(
@@ -84,5 +84,6 @@ class ZarrV2Adapter(BaseAdapter):
         return [int(value) for value in chunks]
 
     def _image_id(self, uri: str, array_path: str | None) -> str:
-        stem = Path(uri.rstrip("/")).name.removesuffix(".zarr")
+        name = Path(uri.rstrip("/")).name
+        stem = name[:-5] if name.casefold().endswith(".zarr") else name
         return stem if array_path is None else f"{stem}:{array_path}"

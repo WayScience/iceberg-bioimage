@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pyarrow as pa
-from _pytest.monkeypatch import MonkeyPatch
+from pytest import MonkeyPatch
 
 from iceberg_bioimage.integrations import catalog as catalog_module
 from iceberg_bioimage.integrations.catalog import (
@@ -189,6 +189,8 @@ def test_join_catalog_image_assets_with_profiles(
         "bioimage",
         profiles,
         chunk_index_table="chunk_index",
+        image_assets_scan_options=CatalogScanOptions(limit=1),
+        chunk_index_scan_options=CatalogScanOptions(limit=1),
     )
 
     assert result.to_pydict() == {
@@ -201,3 +203,5 @@ def test_join_catalog_image_assets_with_profiles(
         "chunk_coords_json": ["[0, 0]"],
         "byte_length": [1024],
     }
+    assert image_assets_table.calls[0]["limit"] == 1
+    assert chunk_index_table.calls[0]["limit"] == 1

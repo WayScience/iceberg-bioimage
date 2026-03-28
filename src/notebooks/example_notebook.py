@@ -25,7 +25,7 @@
 # helps automatically format the notebook on-the-fly using black, isort, and
 # more so that our notebook has a consistent and readable format
 # (including as we develop it!). This extension is available through the
-# browser-based Juypyter interface
+# browser-based Jupyter interface
 # as a circular button near the top of each notebook.
 # Clicking it applies the formatting to the notebook.
 

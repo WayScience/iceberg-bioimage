@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeAlias
 
 import pyarrow as pa
 
@@ -13,6 +13,19 @@ if TYPE_CHECKING:
 
 MetadataSource = str | Path | pa.Table | list[dict[str, object]]
 DEFAULT_JOIN_KEYS = ("dataset_id", "image_id")
+CHUNK_INDEX_FIELDS = ("chunk_key", "chunk_coords_json", "byte_length")
+FilterValue: TypeAlias = str | int | float | bool
+FilterClause: TypeAlias = tuple[str, str, FilterValue | None]
+ALLOWED_FILTER_OPERATORS = {
+    "=",
+    "!=",
+    "<",
+    "<=",
+    ">",
+    ">=",
+    "IS",
+    "IS NOT",
+}
 
 
 def create_duckdb_connection(
@@ -34,7 +47,7 @@ def query_metadata_table(
     source: MetadataSource,
     *,
     columns: Sequence[str] | None = None,
-    where: str | None = None,
+    filters: Sequence[FilterClause] | None = None,
     connection: DuckDBPyConnection | None = None,
 ) -> pa.Table:
     """Query a metadata table from a Parquet path, Arrow table, or row list."""
@@ -42,8 +55,10 @@ def query_metadata_table(
     duckdb_connection, owns_connection = _get_connection(connection)
     relation = _relation_for_source(duckdb_connection, source)
 
-    if where:
-        relation = relation.filter(where)
+    if filters:
+        relation = relation.filter(
+            _build_filter_expression(tuple(relation.columns), filters)
+        )
 
     if columns:
         relation = relation.project(", ".join(columns))
@@ -78,7 +93,7 @@ def join_image_assets_with_profiles(
     if chunk_index is not None:
         _register_source(duckdb_connection, "chunk_index", chunk_index)
         query.append(
-            "     , ci.chunk_key, ci.chunk_coords_json, ci.byte_length"
+            "     , " + ", ".join(f"ci.{field}" for field in CHUNK_INDEX_FIELDS)
         )
 
     query.extend(
@@ -161,3 +176,49 @@ def _as_arrow_table(result: pa.Table | pa.RecordBatchReader) -> pa.Table:
         return result.read_all()
 
     return result
+
+
+def _build_filter_expression(
+    available_columns: Sequence[str],
+    filters: Sequence[FilterClause],
+) -> str:
+    column_names = set(available_columns)
+    expressions: list[str] = []
+
+    for column, operator, value in filters:
+        if column not in column_names:
+            raise ValueError(
+                f"Unknown filter column {column!r}. "
+                f"Available columns: {sorted(column_names)!r}."
+            )
+
+        normalized_operator = operator.strip().upper()
+        if normalized_operator not in ALLOWED_FILTER_OPERATORS:
+            raise ValueError(
+                f"Unsupported filter operator {operator!r}. "
+                f"Allowed operators: {sorted(ALLOWED_FILTER_OPERATORS)!r}."
+            )
+
+        if value is None and normalized_operator not in {"IS", "IS NOT"}:
+            raise ValueError("None filter values require 'IS' or 'IS NOT' operators.")
+
+        expressions.append(
+            f"{_quote_identifier(column)} {normalized_operator} {_quote_literal(value)}"
+        )
+
+    return " AND ".join(expressions)
+
+
+def _quote_identifier(identifier: str) -> str:
+    return '"' + identifier.replace('"', '""') + '"'
+
+
+def _quote_literal(value: FilterValue | None) -> str:
+    if value is None:
+        return "NULL"
+    if isinstance(value, bool):
+        return "TRUE" if value else "FALSE"
+    if isinstance(value, str):
+        return "'" + value.replace("'", "''") + "'"
+
+    return str(value)

@@ -1,10 +1,8 @@
-"""
-conftest.py for pytest configuration.
-"""
+"""Shared pytest fixtures and helpers."""
 
 import pytest
 
 
 @pytest.fixture
-def my_data() -> str:
-    return "Hello, differently!"
+def greeting_message() -> str:
+    return "Hello from iceberg-bioimage."

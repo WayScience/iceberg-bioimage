@@ -29,7 +29,7 @@ def test_query_metadata_table_from_arrow() -> None:
     result = query_metadata_table(
         table,
         columns=["dataset_id", "cell_count"],
-        where="cell_count > 10",
+        filters=[("cell_count", ">", 10)],
     )
 
     assert result.to_pydict() == {
@@ -54,6 +54,13 @@ def test_query_metadata_table_from_parquet(tmp_path: Path) -> None:
     result = query_metadata_table(table_path)
 
     assert result.to_pydict()["image_id"] == ["img-1"]
+
+
+def test_query_metadata_table_rejects_unknown_columns() -> None:
+    table = pa.table({"dataset_id": ["ds-1"]})
+
+    with pytest.raises(ValueError, match="Unknown filter column"):
+        query_metadata_table(table, filters=[("missing", "=", "value")])
 
 
 def test_join_image_assets_with_profiles_and_chunks() -> None:

@@ -57,6 +57,14 @@ class OMETiffAdapter(BaseAdapter):
         return int(shape[axes.index("C")])
 
     def _image_id(self, uri: str, index: int) -> str:
-        stem = Path(uri).name.removesuffix(".ome.tiff").removesuffix(".ome.tif")
-        stem = stem.removesuffix(".tiff").removesuffix(".tif")
+        name = Path(uri).name
+        normalized = name.casefold()
+
+        for suffix in (".ome.tiff", ".ome.tif", ".tiff", ".tif"):
+            if normalized.endswith(suffix):
+                stem = name[: -len(suffix)]
+                break
+        else:
+            stem = name
+
         return stem if index == 0 else f"{stem}:series-{index}"
