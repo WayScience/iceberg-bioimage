@@ -1,0 +1,899 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Python API &#8212; iceberg-bioimage  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=662f399a" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'python-api';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="DuckDB Integration" href="duckdb.html" />
+    <link rel="prev" title="iceberg-bioimage" href="index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">iceberg-bioimage</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Python API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="duckdb.html">
+    DuckDB Integration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="workflow.html">
+    Workflow
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/d33bs/iceberg-bioimage" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Python API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="duckdb.html">
+    DuckDB Integration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="workflow.html">
+    Workflow
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/d33bs/iceberg-bioimage" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Python API</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="python-api">
+<h1>Python API<a class="headerlink" href="#python-api" title="Link to this heading">#</a></h1>
+<section id="module-iceberg_bioimage">
+<span id="top-level-api"></span><h2>Top-level API<a class="headerlink" href="#module-iceberg_bioimage" title="Link to this heading">#</a></h2>
+<p>Public package interface for iceberg_bioimage.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="iceberg_bioimage.CatalogScanOptions">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.</span></span><span class="sig-name descname"><span class="pre">CatalogScanOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">where</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snapshot_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/catalog.html#CatalogScanOptions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.CatalogScanOptions" title="Link to this definition">#</a></dt>
+<dd><p>Options for scanning a catalog-backed metadata table.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iceberg_bioimage.ContractValidationResult">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.</span></span><span class="sig-name descname"><span class="pre">ContractValidationResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">target:</span> <span class="pre">str,</span> <span class="pre">present_columns:</span> <span class="pre">list[str],</span> <span class="pre">required_columns:</span> <span class="pre">list[str],</span> <span class="pre">recommended_columns:</span> <span class="pre">list[str],</span> <span class="pre">missing_required_columns:</span> <span class="pre">list[str],</span> <span class="pre">missing_recommended_columns:</span> <span class="pre">list[str],</span> <span class="pre">warnings:</span> <span class="pre">list[str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#ContractValidationResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.ContractValidationResult" title="Link to this definition">#</a></dt>
+<dd><p>Serializable result for schema-level contract validation.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="iceberg_bioimage.ContractValidationResult.is_valid">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_valid</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#iceberg_bioimage.ContractValidationResult.is_valid" title="Link to this definition">#</a></dt>
+<dd><p>Return whether all required columns are present.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.ContractValidationResult.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#ContractValidationResult.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.ContractValidationResult.to_dict" title="Link to this definition">#</a></dt>
+<dd><p>Return a JSON-serializable representation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.ContractValidationResult.to_json">
+<span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">json_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#ContractValidationResult.to_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.ContractValidationResult.to_json" title="Link to this definition">#</a></dt>
+<dd><p>Serialize the validation result to JSON.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iceberg_bioimage.ImageAsset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.</span></span><span class="sig-name descname"><span class="pre">ImageAsset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">uri:</span> <span class="pre">str,</span> <span class="pre">shape:</span> <span class="pre">list[int],</span> <span class="pre">dtype:</span> <span class="pre">str,</span> <span class="pre">array_path:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">chunk_shape:</span> <span class="pre">list[int]</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">metadata:</span> <span class="pre">dict[str,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">image_id:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#ImageAsset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.ImageAsset" title="Link to this definition">#</a></dt>
+<dd><p>Canonical representation of one discovered image asset.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.ImageAsset.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#ImageAsset.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.ImageAsset.to_dict" title="Link to this definition">#</a></dt>
+<dd><p>Return a JSON-serializable representation.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iceberg_bioimage.RegistrationResult">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.</span></span><span class="sig-name descname"><span class="pre">RegistrationResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_uri</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_assets_rows_published</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_rows_published</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#RegistrationResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.RegistrationResult" title="Link to this definition">#</a></dt>
+<dd><p>Serializable result for a metadata registration workflow.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.RegistrationResult.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#RegistrationResult.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.RegistrationResult.to_dict" title="Link to this definition">#</a></dt>
+<dd><p>Return a JSON-serializable representation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.RegistrationResult.to_json">
+<span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">json_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#RegistrationResult.to_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.RegistrationResult.to_json" title="Link to this definition">#</a></dt>
+<dd><p>Serialize the registration result to JSON.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iceberg_bioimage.ScanResult">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.</span></span><span class="sig-name descname"><span class="pre">ScanResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">source_uri:</span> <span class="pre">str,</span> <span class="pre">format_family:</span> <span class="pre">str,</span> <span class="pre">image_assets:</span> <span class="pre">list[~iceberg_bioimage.models.scan_result.ImageAsset],</span> <span class="pre">warnings:</span> <span class="pre">list[str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#ScanResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.ScanResult" title="Link to this definition">#</a></dt>
+<dd><p>Canonical scan output shared across adapters and publishers.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.ScanResult.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#ScanResult.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.ScanResult.to_dict" title="Link to this definition">#</a></dt>
+<dd><p>Return a JSON-serializable representation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.ScanResult.to_json">
+<span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">json_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#ScanResult.to_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.ScanResult.to_json" title="Link to this definition">#</a></dt>
+<dd><p>Serialize the scan result to JSON.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.catalog_table_to_arrow">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.</span></span><span class="sig-name descname"><span class="pre">catalog_table_to_arrow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#iceberg_bioimage.integrations.catalog.SupportsScanCatalog" title="iceberg_bioimage.integrations.catalog.SupportsScanCatalog"><span class="pre">SupportsScanCatalog</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">scan_options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#iceberg_bioimage.integrations.catalog.CatalogScanOptions" title="iceberg_bioimage.integrations.catalog.CatalogScanOptions"><span class="pre">CatalogScanOptions</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Table</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/catalog.html#catalog_table_to_arrow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.catalog_table_to_arrow" title="Link to this definition">#</a></dt>
+<dd><p>Load a catalog table into Arrow via PyIceberg.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.create_duckdb_connection">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.</span></span><span class="sig-name descname"><span class="pre">create_duckdb_connection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">database</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">':memory:'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DuckDBPyConnection</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/duckdb.html#create_duckdb_connection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.create_duckdb_connection" title="Link to this definition">#</a></dt>
+<dd><p>Create a DuckDB connection.</p>
+<p>DuckDB is optional for this project. This helper isolates the import so the
+core package remains engine-neutral unless the user explicitly opts in.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.join_catalog_image_assets_with_profiles">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.</span></span><span class="sig-name descname"><span class="pre">join_catalog_image_assets_with_profiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#iceberg_bioimage.integrations.catalog.SupportsScanCatalog" title="iceberg_bioimage.integrations.catalog.SupportsScanCatalog"><span class="pre">SupportsScanCatalog</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profiles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Table</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_assets_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'image_assets'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_index_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">join_keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">DEFAULT_JOIN_KEYS</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_assets_scan_options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#iceberg_bioimage.integrations.catalog.CatalogScanOptions" title="iceberg_bioimage.integrations.catalog.CatalogScanOptions"><span class="pre">CatalogScanOptions</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_index_scan_options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#iceberg_bioimage.integrations.catalog.CatalogScanOptions" title="iceberg_bioimage.integrations.catalog.CatalogScanOptions"><span class="pre">CatalogScanOptions</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Table</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/catalog.html#join_catalog_image_assets_with_profiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.join_catalog_image_assets_with_profiles" title="Link to this definition">#</a></dt>
+<dd><p>Join catalog-backed image metadata to a profile table.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>catalog</strong> – Catalog name or catalog-like object.</p></li>
+<li><p><strong>namespace</strong> – Namespace containing the metadata tables.</p></li>
+<li><p><strong>profiles</strong> – Profile rows or table to join against.</p></li>
+<li><p><strong>image_assets_table</strong> – Name of the canonical image-assets table.</p></li>
+<li><p><strong>chunk_index_table</strong> – Optional chunk-index table name.</p></li>
+<li><p><strong>join_keys</strong> – Join columns shared by image metadata and profiles.</p></li>
+<li><p><strong>image_assets_scan_options</strong> – Optional scan options for image-assets reads.</p></li>
+<li><p><strong>chunk_index_scan_options</strong> – Optional scan options for chunk-index reads.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.join_image_assets_with_profiles">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.</span></span><span class="sig-name descname"><span class="pre">join_image_assets_with_profiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_assets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">MetadataSource</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profiles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">MetadataSource</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">join_keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">DEFAULT_JOIN_KEYS</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">MetadataSource</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connection</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DuckDBPyConnection</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pa.Table</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/duckdb.html#join_image_assets_with_profiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.join_image_assets_with_profiles" title="Link to this definition">#</a></dt>
+<dd><p>Join image metadata to a profile table using the canonical join keys.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.load_catalog_table">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.</span></span><span class="sig-name descname"><span class="pre">load_catalog_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#iceberg_bioimage.integrations.catalog.SupportsScanCatalog" title="iceberg_bioimage.integrations.catalog.SupportsScanCatalog"><span class="pre">SupportsScanCatalog</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#iceberg_bioimage.integrations.catalog.SupportsIcebergTable" title="iceberg_bioimage.integrations.catalog.SupportsIcebergTable"><span class="pre">SupportsIcebergTable</span></a></span></span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/catalog.html#load_catalog_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.load_catalog_table" title="Link to this definition">#</a></dt>
+<dd><p>Load a canonical metadata table from a catalog.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.publish_chunk_index">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.</span></span><span class="sig-name descname"><span class="pre">publish_chunk_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#iceberg_bioimage.publishing.image_assets.SupportsCatalog" title="iceberg_bioimage.publishing.image_assets.SupportsCatalog"><span class="pre">SupportsCatalog</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scan_result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#iceberg_bioimage.models.scan_result.ScanResult" title="iceberg_bioimage.models.scan_result.ScanResult"><span class="pre">ScanResult</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/publishing/chunk_index.html#publish_chunk_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.publish_chunk_index" title="Link to this definition">#</a></dt>
+<dd><p>Publish derived chunk metadata into the canonical <cite>chunk_index</cite> table.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.publish_image_assets">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.</span></span><span class="sig-name descname"><span class="pre">publish_image_assets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#iceberg_bioimage.publishing.image_assets.SupportsCatalog" title="iceberg_bioimage.publishing.image_assets.SupportsCatalog"><span class="pre">SupportsCatalog</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scan_result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#iceberg_bioimage.models.scan_result.ScanResult" title="iceberg_bioimage.models.scan_result.ScanResult"><span class="pre">ScanResult</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/publishing/image_assets.html#publish_image_assets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.publish_image_assets" title="Link to this definition">#</a></dt>
+<dd><p>Publish a scan result into the canonical <cite>image_assets</cite> Iceberg table.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.query_metadata_table">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.</span></span><span class="sig-name descname"><span class="pre">query_metadata_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">MetadataSource</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">FilterClause</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connection</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DuckDBPyConnection</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pa.Table</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/duckdb.html#query_metadata_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.query_metadata_table" title="Link to this definition">#</a></dt>
+<dd><p>Query a metadata table from a Parquet path, Arrow table, or row list.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.register_store">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.</span></span><span class="sig-name descname"><span class="pre">register_store</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uri</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">catalog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#iceberg_bioimage.publishing.image_assets.SupportsCatalog" title="iceberg_bioimage.publishing.image_assets.SupportsCatalog"><span class="pre">SupportsCatalog</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_assets_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'image_assets'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_index_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'chunk_index'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#iceberg_bioimage.models.scan_result.RegistrationResult" title="iceberg_bioimage.models.scan_result.RegistrationResult"><span class="pre">RegistrationResult</span></a></span></span><a class="reference internal" href="_modules/iceberg_bioimage/api.html#register_store"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.register_store" title="Link to this definition">#</a></dt>
+<dd><p>Scan a store and publish canonical metadata tables.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.scan_store">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.</span></span><span class="sig-name descname"><span class="pre">scan_store</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uri</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#iceberg_bioimage.models.scan_result.ScanResult" title="iceberg_bioimage.models.scan_result.ScanResult"><span class="pre">ScanResult</span></a></span></span><a class="reference internal" href="_modules/iceberg_bioimage/api.html#scan_store"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.scan_store" title="Link to this definition">#</a></dt>
+<dd><p>Scan a supported image store and return canonical metadata.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.validate_microscopy_profile_columns">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.</span></span><span class="sig-name descname"><span class="pre">validate_microscopy_profile_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'profile_table'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#iceberg_bioimage.models.scan_result.ContractValidationResult" title="iceberg_bioimage.models.scan_result.ContractValidationResult"><span class="pre">ContractValidationResult</span></a></span></span><a class="reference internal" href="_modules/iceberg_bioimage/validation/contracts.html#validate_microscopy_profile_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.validate_microscopy_profile_columns" title="Link to this definition">#</a></dt>
+<dd><p>Validate a schema against the microscopy join contract.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.validate_microscopy_profile_table">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.</span></span><span class="sig-name descname"><span class="pre">validate_microscopy_profile_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#iceberg_bioimage.models.scan_result.ContractValidationResult" title="iceberg_bioimage.models.scan_result.ContractValidationResult"><span class="pre">ContractValidationResult</span></a></span></span><a class="reference internal" href="_modules/iceberg_bioimage/validation/contracts.html#validate_microscopy_profile_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.validate_microscopy_profile_table" title="Link to this definition">#</a></dt>
+<dd><p>Validate a local profile table file against the microscopy join contract.</p>
+</dd></dl>
+
+</section>
+<section id="module-iceberg_bioimage.api">
+<span id="scan-api"></span><h2>Scan API<a class="headerlink" href="#module-iceberg_bioimage.api" title="Link to this heading">#</a></h2>
+<p>Public API entry points.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.api.register_store">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.api.</span></span><span class="sig-name descname"><span class="pre">register_store</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uri</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">catalog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#iceberg_bioimage.publishing.image_assets.SupportsCatalog" title="iceberg_bioimage.publishing.image_assets.SupportsCatalog"><span class="pre">SupportsCatalog</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_assets_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'image_assets'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_index_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'chunk_index'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#iceberg_bioimage.models.scan_result.RegistrationResult" title="iceberg_bioimage.models.scan_result.RegistrationResult"><span class="pre">RegistrationResult</span></a></span></span><a class="reference internal" href="_modules/iceberg_bioimage/api.html#register_store"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.api.register_store" title="Link to this definition">#</a></dt>
+<dd><p>Scan a store and publish canonical metadata tables.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.api.scan_store">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.api.</span></span><span class="sig-name descname"><span class="pre">scan_store</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uri</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#iceberg_bioimage.models.scan_result.ScanResult" title="iceberg_bioimage.models.scan_result.ScanResult"><span class="pre">ScanResult</span></a></span></span><a class="reference internal" href="_modules/iceberg_bioimage/api.html#scan_store"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.api.scan_store" title="Link to this definition">#</a></dt>
+<dd><p>Scan a supported image store and return canonical metadata.</p>
+</dd></dl>
+
+</section>
+<section id="module-iceberg_bioimage.models.scan_result">
+<span id="models"></span><h2>Models<a class="headerlink" href="#module-iceberg_bioimage.models.scan_result" title="Link to this heading">#</a></h2>
+<p>Serializable canonical scan models.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="iceberg_bioimage.models.scan_result.ContractValidationResult">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.models.scan_result.</span></span><span class="sig-name descname"><span class="pre">ContractValidationResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">target:</span> <span class="pre">str,</span> <span class="pre">present_columns:</span> <span class="pre">list[str],</span> <span class="pre">required_columns:</span> <span class="pre">list[str],</span> <span class="pre">recommended_columns:</span> <span class="pre">list[str],</span> <span class="pre">missing_required_columns:</span> <span class="pre">list[str],</span> <span class="pre">missing_recommended_columns:</span> <span class="pre">list[str],</span> <span class="pre">warnings:</span> <span class="pre">list[str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#ContractValidationResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.models.scan_result.ContractValidationResult" title="Link to this definition">#</a></dt>
+<dd><p>Serializable result for schema-level contract validation.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="iceberg_bioimage.models.scan_result.ContractValidationResult.is_valid">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_valid</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#iceberg_bioimage.models.scan_result.ContractValidationResult.is_valid" title="Link to this definition">#</a></dt>
+<dd><p>Return whether all required columns are present.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.models.scan_result.ContractValidationResult.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#ContractValidationResult.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.models.scan_result.ContractValidationResult.to_dict" title="Link to this definition">#</a></dt>
+<dd><p>Return a JSON-serializable representation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.models.scan_result.ContractValidationResult.to_json">
+<span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">json_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#ContractValidationResult.to_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.models.scan_result.ContractValidationResult.to_json" title="Link to this definition">#</a></dt>
+<dd><p>Serialize the validation result to JSON.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iceberg_bioimage.models.scan_result.ImageAsset">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.models.scan_result.</span></span><span class="sig-name descname"><span class="pre">ImageAsset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">uri:</span> <span class="pre">str,</span> <span class="pre">shape:</span> <span class="pre">list[int],</span> <span class="pre">dtype:</span> <span class="pre">str,</span> <span class="pre">array_path:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">chunk_shape:</span> <span class="pre">list[int]</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">metadata:</span> <span class="pre">dict[str,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">image_id:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#ImageAsset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.models.scan_result.ImageAsset" title="Link to this definition">#</a></dt>
+<dd><p>Canonical representation of one discovered image asset.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.models.scan_result.ImageAsset.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#ImageAsset.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.models.scan_result.ImageAsset.to_dict" title="Link to this definition">#</a></dt>
+<dd><p>Return a JSON-serializable representation.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iceberg_bioimage.models.scan_result.RegistrationResult">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.models.scan_result.</span></span><span class="sig-name descname"><span class="pre">RegistrationResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_uri</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_assets_rows_published</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_rows_published</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#RegistrationResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.models.scan_result.RegistrationResult" title="Link to this definition">#</a></dt>
+<dd><p>Serializable result for a metadata registration workflow.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.models.scan_result.RegistrationResult.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#RegistrationResult.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.models.scan_result.RegistrationResult.to_dict" title="Link to this definition">#</a></dt>
+<dd><p>Return a JSON-serializable representation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.models.scan_result.RegistrationResult.to_json">
+<span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">json_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#RegistrationResult.to_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.models.scan_result.RegistrationResult.to_json" title="Link to this definition">#</a></dt>
+<dd><p>Serialize the registration result to JSON.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iceberg_bioimage.models.scan_result.ScanResult">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.models.scan_result.</span></span><span class="sig-name descname"><span class="pre">ScanResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">source_uri:</span> <span class="pre">str,</span> <span class="pre">format_family:</span> <span class="pre">str,</span> <span class="pre">image_assets:</span> <span class="pre">list[~iceberg_bioimage.models.scan_result.ImageAsset],</span> <span class="pre">warnings:</span> <span class="pre">list[str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#ScanResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.models.scan_result.ScanResult" title="Link to this definition">#</a></dt>
+<dd><p>Canonical scan output shared across adapters and publishers.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.models.scan_result.ScanResult.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#ScanResult.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.models.scan_result.ScanResult.to_dict" title="Link to this definition">#</a></dt>
+<dd><p>Return a JSON-serializable representation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.models.scan_result.ScanResult.to_json">
+<span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">json_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/models/scan_result.html#ScanResult.to_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.models.scan_result.ScanResult.to_json" title="Link to this definition">#</a></dt>
+<dd><p>Serialize the scan result to JSON.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-iceberg_bioimage.publishing.image_assets">
+<span id="publishing"></span><h2>Publishing<a class="headerlink" href="#module-iceberg_bioimage.publishing.image_assets" title="Link to this heading">#</a></h2>
+<p>Image asset publishing helpers.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="iceberg_bioimage.publishing.image_assets.SupportsAppend">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.publishing.image_assets.</span></span><span class="sig-name descname"><span class="pre">SupportsAppend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iceberg_bioimage/publishing/image_assets.html#SupportsAppend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.publishing.image_assets.SupportsAppend" title="Link to this definition">#</a></dt>
+<dd><p>Protocol for appendable Iceberg-like tables.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.publishing.image_assets.SupportsAppend.append">
+<span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Table</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/publishing/image_assets.html#SupportsAppend.append"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.publishing.image_assets.SupportsAppend.append" title="Link to this definition">#</a></dt>
+<dd><p>Append a pyarrow table.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iceberg_bioimage.publishing.image_assets.SupportsCatalog">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.publishing.image_assets.</span></span><span class="sig-name descname"><span class="pre">SupportsCatalog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iceberg_bioimage/publishing/image_assets.html#SupportsCatalog"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.publishing.image_assets.SupportsCatalog" title="Link to this definition">#</a></dt>
+<dd><p>Protocol for catalog objects used by the publishing layer.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.publishing.image_assets.SupportsCatalog.create_table">
+<span class="sig-name descname"><span class="pre">create_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">identifier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#iceberg_bioimage.publishing.image_assets.SupportsAppend" title="iceberg_bioimage.publishing.image_assets.SupportsAppend"><span class="pre">SupportsAppend</span></a></span></span><a class="reference internal" href="_modules/iceberg_bioimage/publishing/image_assets.html#SupportsCatalog.create_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.publishing.image_assets.SupportsCatalog.create_table" title="Link to this definition">#</a></dt>
+<dd><p>Create and return a table.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.publishing.image_assets.SupportsCatalog.load_table">
+<span class="sig-name descname"><span class="pre">load_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">identifier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#iceberg_bioimage.publishing.image_assets.SupportsAppend" title="iceberg_bioimage.publishing.image_assets.SupportsAppend"><span class="pre">SupportsAppend</span></a></span></span><a class="reference internal" href="_modules/iceberg_bioimage/publishing/image_assets.html#SupportsCatalog.load_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.publishing.image_assets.SupportsCatalog.load_table" title="Link to this definition">#</a></dt>
+<dd><p>Load an existing table.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.publishing.image_assets.publish_image_assets">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.publishing.image_assets.</span></span><span class="sig-name descname"><span class="pre">publish_image_assets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#iceberg_bioimage.publishing.image_assets.SupportsCatalog" title="iceberg_bioimage.publishing.image_assets.SupportsCatalog"><span class="pre">SupportsCatalog</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scan_result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#iceberg_bioimage.models.scan_result.ScanResult" title="iceberg_bioimage.models.scan_result.ScanResult"><span class="pre">ScanResult</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/publishing/image_assets.html#publish_image_assets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.publishing.image_assets.publish_image_assets" title="Link to this definition">#</a></dt>
+<dd><p>Publish a scan result into the canonical <cite>image_assets</cite> Iceberg table.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.publishing.image_assets.scan_result_to_rows">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.publishing.image_assets.</span></span><span class="sig-name descname"><span class="pre">scan_result_to_rows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan_result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#iceberg_bioimage.models.scan_result.ScanResult" title="iceberg_bioimage.models.scan_result.ScanResult"><span class="pre">ScanResult</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/publishing/image_assets.html#scan_result_to_rows"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.publishing.image_assets.scan_result_to_rows" title="Link to this definition">#</a></dt>
+<dd><p>Convert a scan result into canonical image_assets rows.</p>
+</dd></dl>
+
+<p id="module-iceberg_bioimage.publishing.chunk_index">Chunk index publishing helpers.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.publishing.chunk_index.publish_chunk_index">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.publishing.chunk_index.</span></span><span class="sig-name descname"><span class="pre">publish_chunk_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#iceberg_bioimage.publishing.image_assets.SupportsCatalog" title="iceberg_bioimage.publishing.image_assets.SupportsCatalog"><span class="pre">SupportsCatalog</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scan_result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#iceberg_bioimage.models.scan_result.ScanResult" title="iceberg_bioimage.models.scan_result.ScanResult"><span class="pre">ScanResult</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/publishing/chunk_index.html#publish_chunk_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.publishing.chunk_index.publish_chunk_index" title="Link to this definition">#</a></dt>
+<dd><p>Publish derived chunk metadata into the canonical <cite>chunk_index</cite> table.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.publishing.chunk_index.scan_result_to_chunk_rows">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.publishing.chunk_index.</span></span><span class="sig-name descname"><span class="pre">scan_result_to_chunk_rows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan_result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#iceberg_bioimage.models.scan_result.ScanResult" title="iceberg_bioimage.models.scan_result.ScanResult"><span class="pre">ScanResult</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/publishing/chunk_index.html#scan_result_to_chunk_rows"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.publishing.chunk_index.scan_result_to_chunk_rows" title="Link to this definition">#</a></dt>
+<dd><p>Convert a scan result into canonical chunk_index rows.</p>
+</dd></dl>
+
+</section>
+<section id="module-iceberg_bioimage.validation.contracts">
+<span id="validation"></span><h2>Validation<a class="headerlink" href="#module-iceberg_bioimage.validation.contracts" title="Link to this heading">#</a></h2>
+<p>Validation helpers for canonical scan objects and join contracts.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.validation.contracts.raise_for_invalid_scan_result">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.validation.contracts.</span></span><span class="sig-name descname"><span class="pre">raise_for_invalid_scan_result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan_result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#iceberg_bioimage.models.scan_result.ScanResult" title="iceberg_bioimage.models.scan_result.ScanResult"><span class="pre">ScanResult</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/validation/contracts.html#raise_for_invalid_scan_result"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.validation.contracts.raise_for_invalid_scan_result" title="Link to this definition">#</a></dt>
+<dd><p>Raise a ValueError when a scan result is invalid.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.validation.contracts.validate_microscopy_profile_columns">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.validation.contracts.</span></span><span class="sig-name descname"><span class="pre">validate_microscopy_profile_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'profile_table'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#iceberg_bioimage.models.scan_result.ContractValidationResult" title="iceberg_bioimage.models.scan_result.ContractValidationResult"><span class="pre">ContractValidationResult</span></a></span></span><a class="reference internal" href="_modules/iceberg_bioimage/validation/contracts.html#validate_microscopy_profile_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.validation.contracts.validate_microscopy_profile_columns" title="Link to this definition">#</a></dt>
+<dd><p>Validate a schema against the microscopy join contract.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.validation.contracts.validate_microscopy_profile_table">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.validation.contracts.</span></span><span class="sig-name descname"><span class="pre">validate_microscopy_profile_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#iceberg_bioimage.models.scan_result.ContractValidationResult" title="iceberg_bioimage.models.scan_result.ContractValidationResult"><span class="pre">ContractValidationResult</span></a></span></span><a class="reference internal" href="_modules/iceberg_bioimage/validation/contracts.html#validate_microscopy_profile_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.validation.contracts.validate_microscopy_profile_table" title="Link to this definition">#</a></dt>
+<dd><p>Validate a local profile table file against the microscopy join contract.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.validation.contracts.validate_scan_result">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.validation.contracts.</span></span><span class="sig-name descname"><span class="pre">validate_scan_result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan_result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#iceberg_bioimage.models.scan_result.ScanResult" title="iceberg_bioimage.models.scan_result.ScanResult"><span class="pre">ScanResult</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/validation/contracts.html#validate_scan_result"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.validation.contracts.validate_scan_result" title="Link to this definition">#</a></dt>
+<dd><p>Return validation errors for a scan result.</p>
+</dd></dl>
+
+</section>
+<section id="module-iceberg_bioimage.integrations.duckdb">
+<span id="optional-duckdb-integration"></span><h2>Optional DuckDB Integration<a class="headerlink" href="#module-iceberg_bioimage.integrations.duckdb" title="Link to this heading">#</a></h2>
+<p>Optional DuckDB query helpers for canonical metadata tables.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.integrations.duckdb.create_duckdb_connection">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.integrations.duckdb.</span></span><span class="sig-name descname"><span class="pre">create_duckdb_connection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">database</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">':memory:'</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DuckDBPyConnection</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/duckdb.html#create_duckdb_connection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.integrations.duckdb.create_duckdb_connection" title="Link to this definition">#</a></dt>
+<dd><p>Create a DuckDB connection.</p>
+<p>DuckDB is optional for this project. This helper isolates the import so the
+core package remains engine-neutral unless the user explicitly opts in.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.integrations.duckdb.join_image_assets_with_profiles">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.integrations.duckdb.</span></span><span class="sig-name descname"><span class="pre">join_image_assets_with_profiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_assets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">MetadataSource</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profiles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">MetadataSource</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">join_keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">DEFAULT_JOIN_KEYS</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">MetadataSource</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connection</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DuckDBPyConnection</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pa.Table</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/duckdb.html#join_image_assets_with_profiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.integrations.duckdb.join_image_assets_with_profiles" title="Link to this definition">#</a></dt>
+<dd><p>Join image metadata to a profile table using the canonical join keys.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.integrations.duckdb.query_metadata_table">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.integrations.duckdb.</span></span><span class="sig-name descname"><span class="pre">query_metadata_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">MetadataSource</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">FilterClause</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connection</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DuckDBPyConnection</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pa.Table</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/duckdb.html#query_metadata_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.integrations.duckdb.query_metadata_table" title="Link to this definition">#</a></dt>
+<dd><p>Query a metadata table from a Parquet path, Arrow table, or row list.</p>
+</dd></dl>
+
+<p id="module-iceberg_bioimage.integrations.catalog">Catalog-facing helpers for reading canonical Iceberg metadata tables.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="iceberg_bioimage.integrations.catalog.CatalogScanOptions">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.integrations.catalog.</span></span><span class="sig-name descname"><span class="pre">CatalogScanOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">where</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snapshot_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/catalog.html#CatalogScanOptions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.integrations.catalog.CatalogScanOptions" title="Link to this definition">#</a></dt>
+<dd><p>Options for scanning a catalog-backed metadata table.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iceberg_bioimage.integrations.catalog.SupportsIcebergScan">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.integrations.catalog.</span></span><span class="sig-name descname"><span class="pre">SupportsIcebergScan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/catalog.html#SupportsIcebergScan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.integrations.catalog.SupportsIcebergScan" title="Link to this definition">#</a></dt>
+<dd><p>Protocol for pyiceberg scan objects.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.integrations.catalog.SupportsIcebergScan.to_arrow">
+<span class="sig-name descname"><span class="pre">to_arrow</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Table</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/catalog.html#SupportsIcebergScan.to_arrow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.integrations.catalog.SupportsIcebergScan.to_arrow" title="Link to this definition">#</a></dt>
+<dd><p>Materialize the scan as an Arrow table.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iceberg_bioimage.integrations.catalog.SupportsIcebergTable">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.integrations.catalog.</span></span><span class="sig-name descname"><span class="pre">SupportsIcebergTable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/catalog.html#SupportsIcebergTable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.integrations.catalog.SupportsIcebergTable" title="Link to this definition">#</a></dt>
+<dd><p>Protocol for pyiceberg table objects.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.integrations.catalog.SupportsIcebergTable.scan">
+<span class="sig-name descname"><span class="pre">scan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row_filter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'True'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selected_fields</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">('*',)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case_sensitive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snapshot_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#iceberg_bioimage.integrations.catalog.SupportsIcebergScan" title="iceberg_bioimage.integrations.catalog.SupportsIcebergScan"><span class="pre">SupportsIcebergScan</span></a></span></span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/catalog.html#SupportsIcebergTable.scan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.integrations.catalog.SupportsIcebergTable.scan" title="Link to this definition">#</a></dt>
+<dd><p>Return a scan object for the current table.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="iceberg_bioimage.integrations.catalog.SupportsScanCatalog">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.integrations.catalog.</span></span><span class="sig-name descname"><span class="pre">SupportsScanCatalog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/catalog.html#SupportsScanCatalog"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.integrations.catalog.SupportsScanCatalog" title="Link to this definition">#</a></dt>
+<dd><p>Protocol for catalogs used by the read-only integration helpers.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="iceberg_bioimage.integrations.catalog.SupportsScanCatalog.load_table">
+<span class="sig-name descname"><span class="pre">load_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">identifier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#iceberg_bioimage.integrations.catalog.SupportsIcebergTable" title="iceberg_bioimage.integrations.catalog.SupportsIcebergTable"><span class="pre">SupportsIcebergTable</span></a></span></span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/catalog.html#SupportsScanCatalog.load_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.integrations.catalog.SupportsScanCatalog.load_table" title="Link to this definition">#</a></dt>
+<dd><p>Load an existing Iceberg table.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.integrations.catalog.catalog_table_to_arrow">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.integrations.catalog.</span></span><span class="sig-name descname"><span class="pre">catalog_table_to_arrow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#iceberg_bioimage.integrations.catalog.SupportsScanCatalog" title="iceberg_bioimage.integrations.catalog.SupportsScanCatalog"><span class="pre">SupportsScanCatalog</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">scan_options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#iceberg_bioimage.integrations.catalog.CatalogScanOptions" title="iceberg_bioimage.integrations.catalog.CatalogScanOptions"><span class="pre">CatalogScanOptions</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Table</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/catalog.html#catalog_table_to_arrow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.integrations.catalog.catalog_table_to_arrow" title="Link to this definition">#</a></dt>
+<dd><p>Load a catalog table into Arrow via PyIceberg.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.integrations.catalog.join_catalog_image_assets_with_profiles">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.integrations.catalog.</span></span><span class="sig-name descname"><span class="pre">join_catalog_image_assets_with_profiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#iceberg_bioimage.integrations.catalog.SupportsScanCatalog" title="iceberg_bioimage.integrations.catalog.SupportsScanCatalog"><span class="pre">SupportsScanCatalog</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profiles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Table</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_assets_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'image_assets'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_index_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">join_keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">DEFAULT_JOIN_KEYS</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_assets_scan_options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#iceberg_bioimage.integrations.catalog.CatalogScanOptions" title="iceberg_bioimage.integrations.catalog.CatalogScanOptions"><span class="pre">CatalogScanOptions</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_index_scan_options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#iceberg_bioimage.integrations.catalog.CatalogScanOptions" title="iceberg_bioimage.integrations.catalog.CatalogScanOptions"><span class="pre">CatalogScanOptions</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Table</span></span></span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/catalog.html#join_catalog_image_assets_with_profiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.integrations.catalog.join_catalog_image_assets_with_profiles" title="Link to this definition">#</a></dt>
+<dd><p>Join catalog-backed image metadata to a profile table.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>catalog</strong> – Catalog name or catalog-like object.</p></li>
+<li><p><strong>namespace</strong> – Namespace containing the metadata tables.</p></li>
+<li><p><strong>profiles</strong> – Profile rows or table to join against.</p></li>
+<li><p><strong>image_assets_table</strong> – Name of the canonical image-assets table.</p></li>
+<li><p><strong>chunk_index_table</strong> – Optional chunk-index table name.</p></li>
+<li><p><strong>join_keys</strong> – Join columns shared by image metadata and profiles.</p></li>
+<li><p><strong>image_assets_scan_options</strong> – Optional scan options for image-assets reads.</p></li>
+<li><p><strong>chunk_index_scan_options</strong> – Optional scan options for chunk-index reads.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="iceberg_bioimage.integrations.catalog.load_catalog_table">
+<span class="sig-prename descclassname"><span class="pre">iceberg_bioimage.integrations.catalog.</span></span><span class="sig-name descname"><span class="pre">load_catalog_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#iceberg_bioimage.integrations.catalog.SupportsScanCatalog" title="iceberg_bioimage.integrations.catalog.SupportsScanCatalog"><span class="pre">SupportsScanCatalog</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#iceberg_bioimage.integrations.catalog.SupportsIcebergTable" title="iceberg_bioimage.integrations.catalog.SupportsIcebergTable"><span class="pre">SupportsIcebergTable</span></a></span></span><a class="reference internal" href="_modules/iceberg_bioimage/integrations/catalog.html#load_catalog_table"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#iceberg_bioimage.integrations.catalog.load_catalog_table" title="Link to this definition">#</a></dt>
+<dd><p>Load a canonical metadata table from a catalog.</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">iceberg-bioimage</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="duckdb.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">DuckDB Integration</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, DBMI Community.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
