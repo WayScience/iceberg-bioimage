@@ -94,17 +94,29 @@ def join_catalog_image_assets_with_profiles(
     namespace: str | Sequence[str],
     profiles: MetadataSource,
     *,
+    image_assets_table: str | None = "image_assets",
     chunk_index_table: str | None = None,
     join_keys: Sequence[str] = DEFAULT_JOIN_KEYS,
     image_assets_scan_options: CatalogScanOptions | None = None,
     chunk_index_scan_options: CatalogScanOptions | None = None,
 ) -> pa.Table:
-    """Join catalog-backed image metadata to a profile table."""
+    """Join catalog-backed image metadata to a profile table.
+
+    Args:
+        catalog: Catalog name or catalog-like object.
+        namespace: Namespace containing the metadata tables.
+        profiles: Profile rows or table to join against.
+        image_assets_table: Name of the canonical image-assets table.
+        chunk_index_table: Optional chunk-index table name.
+        join_keys: Join columns shared by image metadata and profiles.
+        image_assets_scan_options: Optional scan options for image-assets reads.
+        chunk_index_scan_options: Optional scan options for chunk-index reads.
+    """
 
     image_assets = catalog_table_to_arrow(
         catalog,
         namespace,
-        "image_assets",
+        image_assets_table,
         scan_options=image_assets_scan_options,
     )
     chunk_index = None

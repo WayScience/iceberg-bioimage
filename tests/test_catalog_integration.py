@@ -141,7 +141,7 @@ def test_join_catalog_image_assets_with_profiles(
     )
     catalog = FakeCatalog(
         {
-            ("bioimage", "image_assets"): image_assets_table,
+            ("bioimage", "custom_image_assets"): image_assets_table,
             ("bioimage", "chunk_index"): chunk_index_table,
         }
     )
@@ -188,6 +188,7 @@ def test_join_catalog_image_assets_with_profiles(
         catalog,
         "bioimage",
         profiles,
+        image_assets_table="custom_image_assets",
         chunk_index_table="chunk_index",
         image_assets_scan_options=CatalogScanOptions(limit=1),
         chunk_index_scan_options=CatalogScanOptions(limit=1),

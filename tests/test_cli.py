@@ -159,10 +159,13 @@ def test_main_returns_cli_error_for_value_error(
     monkeypatch: MonkeyPatch,
     capsys: CaptureFixture[str],
 ) -> None:
+    def raise_value_error(args: object) -> int:
+        raise ValueError("bad dataset")
+
     monkeypatch.setattr(
         cli_module,
         "_handle_scan",
-        lambda args: (_ for _ in ()).throw(ValueError("bad dataset")),
+        raise_value_error,
     )
 
     exit_code = cli_module.main(["scan", "data/missing.zarr"])
