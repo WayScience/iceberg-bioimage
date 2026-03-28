@@ -113,8 +113,10 @@ def join_catalog_image_assets_with_profiles(
         image_assets_scan_options: Optional scan options for image-assets reads.
         chunk_index_scan_options: Optional scan options for chunk-index reads.
     """
-    if not join_keys:
+    normalized_join_keys = _normalize_columns(join_keys)
+    if not normalized_join_keys:
         raise ValueError("join_keys must be a non-empty sequence of column names.")
+    join_keys = normalized_join_keys
 
     image_assets = catalog_table_to_arrow(
         catalog,

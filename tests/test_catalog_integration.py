@@ -245,3 +245,46 @@ def test_join_catalog_image_assets_with_profiles_rejects_empty_join_keys() -> No
         assert str(exc) == "join_keys must be a non-empty sequence of column names."
     else:  # pragma: no cover - defensive assertion style for clarity
         raise AssertionError("Expected ValueError for empty join_keys.")
+
+
+def test_join_catalog_image_assets_with_profiles_accepts_string_join_key(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    image_assets_table = FakeIcebergTable(
+        pa.table(
+            {
+                "dataset_id": ["ds-1"],
+                "uri": ["data/example.zarr"],
+            }
+        )
+    )
+    catalog = FakeCatalog({("bioimage", "image_assets"): image_assets_table})
+    profiles = pa.table({"dataset_id": ["ds-1"], "cell_count": [42]})
+
+    def _fake_join_image_assets_with_profiles(
+        image_assets: pa.Table,
+        profiles_table: pa.Table,
+        *,
+        join_keys: tuple[str, ...] = ("dataset_id", "image_id"),
+        chunk_index: pa.Table | None = None,
+    ) -> pa.Table:
+        assert image_assets.to_pydict()["uri"] == ["data/example.zarr"]
+        assert profiles_table.to_pydict()["cell_count"] == [42]
+        assert join_keys == ["dataset_id"]
+        assert chunk_index is None
+        return image_assets
+
+    monkeypatch.setattr(
+        catalog_module,
+        "join_image_assets_with_profiles",
+        _fake_join_image_assets_with_profiles,
+    )
+
+    result = join_catalog_image_assets_with_profiles(
+        catalog,
+        "bioimage",
+        profiles,
+        join_keys="dataset_id",
+    )
+
+    assert result.to_pydict()["dataset_id"] == ["ds-1"]
