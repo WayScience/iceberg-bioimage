@@ -33,7 +33,7 @@ dependencies = [
   "pyarrow>=18",
   "pyiceberg>=0.7.1",
   "tifffile>=2025.1.10",
-  "zarr>=2.18.4,<3",
+  "zarr>=2.18.4,<4",
 ]
 urls.Documentation = "https://d33bs.github.io/iceberg-bioimage/"
 urls.Homepage = "https://github.com/d33bs/iceberg-bioimage"
