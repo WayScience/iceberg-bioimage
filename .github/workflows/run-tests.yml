@@ -51,8 +51,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
       - name: Run Ruff
-        run: uv run --frozen ruff check
+        run: uv run --group dev --frozen ruff check
       - name: Build docs
         run: uv run --group docs --frozen sphinx-build -b html docs/src docs/_build/html
       - name: Run optional DuckDB integration tests
-        run: uv run --group duckdb --frozen pytest tests/test_duckdb.py
+        run: uv run --group dev --group duckdb --frozen pytest tests/test_duckdb.py
