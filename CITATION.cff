@@ -1,0 +1,26 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+---
+cff-version: 1.2.0
+title: iceberg-bioimage
+message: >-
+  If you use this software, please cite it using the
+  metadata from the CITATION.cff file.
+type: software
+authors:
+  - given-names: Dave
+    family-names: Bunten
+    orcid: "https://orcid.org/0000-0001-6041-3665"
+url: "https://github.com/d33bs/iceberg-bioimage"
+repository-code: "https://github.com/d33bs/iceberg-bioimage"
+repository-artifact: "https://pypi.org/project/iceberg-bioimage/"
+abstract: >-
+  A format-agnostic framework for cataloging and querying bioimaging data
+  (Zarr, OME-TIFF) with Apache Iceberg as the metadata layer.
+keywords:
+  - python
+  - bioimaging
+  - iceberg
+  - zarr
+  - ome-tiff
+license: BSD-3-Clause
