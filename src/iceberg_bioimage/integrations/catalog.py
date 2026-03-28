@@ -79,10 +79,11 @@ def catalog_table_to_arrow(
     """Load a catalog table into Arrow via PyIceberg."""
 
     options = CatalogScanOptions() if scan_options is None else scan_options
+    columns = _normalize_columns(options.columns)
     table = load_catalog_table(catalog, namespace, table_name)
     scan = table.scan(
         row_filter="True" if options.where is None else options.where,
-        selected_fields=(("*",) if options.columns is None else tuple(options.columns)),
+        selected_fields=(("*",) if columns is None else tuple(columns)),
         snapshot_id=options.snapshot_id,
         limit=options.limit,
     )
@@ -94,7 +95,7 @@ def join_catalog_image_assets_with_profiles(
     namespace: str | Sequence[str],
     profiles: MetadataSource,
     *,
-    image_assets_table: str | None = "image_assets",
+    image_assets_table: str = "image_assets",
     chunk_index_table: str | None = None,
     join_keys: Sequence[str] = DEFAULT_JOIN_KEYS,
     image_assets_scan_options: CatalogScanOptions | None = None,
@@ -112,6 +113,8 @@ def join_catalog_image_assets_with_profiles(
         image_assets_scan_options: Optional scan options for image-assets reads.
         chunk_index_scan_options: Optional scan options for chunk-index reads.
     """
+    if not join_keys:
+        raise ValueError("join_keys must be a non-empty sequence of column names.")
 
     image_assets = catalog_table_to_arrow(
         catalog,
@@ -134,3 +137,12 @@ def join_catalog_image_assets_with_profiles(
         join_keys=join_keys,
         chunk_index=chunk_index,
     )
+
+
+def _normalize_columns(columns: Sequence[str] | None) -> Sequence[str] | None:
+    if columns is None:
+        return None
+    if isinstance(columns, str):
+        return [columns]
+
+    return columns

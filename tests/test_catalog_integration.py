@@ -114,6 +114,28 @@ def test_catalog_table_to_arrow() -> None:
     ]
 
 
+def test_catalog_table_to_arrow_accepts_string_column_name() -> None:
+    fake_table = FakeIcebergTable(
+        pa.table(
+            {
+                "dataset_id": ["ds-1"],
+                "image_id": ["img-1"],
+            }
+        )
+    )
+    catalog = FakeCatalog({("bioimage", "image_assets"): fake_table})
+
+    result = catalog_table_to_arrow(
+        catalog,
+        "bioimage",
+        "image_assets",
+        scan_options=CatalogScanOptions(columns="dataset_id"),
+    )
+
+    assert result.to_pydict() == {"dataset_id": ["ds-1"]}
+    assert fake_table.calls[0]["selected_fields"] == ("dataset_id",)
+
+
 def test_join_catalog_image_assets_with_profiles(
     monkeypatch: MonkeyPatch,
 ) -> None:
@@ -206,3 +228,20 @@ def test_join_catalog_image_assets_with_profiles(
     }
     assert image_assets_table.calls[0]["limit"] == 1
     assert chunk_index_table.calls[0]["limit"] == 1
+
+
+def test_join_catalog_image_assets_with_profiles_rejects_empty_join_keys() -> None:
+    catalog = FakeCatalog({})
+    profiles = pa.table({"dataset_id": ["ds-1"], "image_id": ["img-1"]})
+
+    try:
+        join_catalog_image_assets_with_profiles(
+            catalog,
+            "bioimage",
+            profiles,
+            join_keys=(),
+        )
+    except ValueError as exc:
+        assert str(exc) == "join_keys must be a non-empty sequence of column names."
+    else:  # pragma: no cover - defensive assertion style for clarity
+        raise AssertionError("Expected ValueError for empty join_keys.")

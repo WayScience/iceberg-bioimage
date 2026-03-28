@@ -5,6 +5,7 @@ from __future__ import annotations
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pyarrow as pa
@@ -28,6 +29,7 @@ def test_scan_cli(tmp_path: Path) -> None:
         capture_output=True,
         text=True,
         check=True,
+        timeout=30,
     )
 
     assert "format_family: zarr" in output.stdout
@@ -58,6 +60,7 @@ def test_validate_contract_cli(tmp_path: Path) -> None:
         capture_output=True,
         text=True,
         check=True,
+        timeout=30,
     )
 
     assert "is_valid: True" in output.stdout
@@ -82,11 +85,11 @@ def test_register_cli_publish_chunks(
         assert image_assets_table == "image_assets"
         assert chunk_index_table == "chunk_index"
 
-        class _Result:
-            image_assets_rows_published = 1
-            chunk_rows_published = 4
-
-        return _Result()
+        return SimpleNamespace(
+            image_assets_rows_published=1,
+            chunk_rows_published=4,
+            source_uri=uri,
+        )
 
     monkeypatch.setattr(
         cli_module,
@@ -130,7 +133,7 @@ def test_publish_chunks_cli(
         assert catalog == "default"
         assert namespace == "bioimage"
         assert table_name == "chunk_index"
-        assert scan_result is not None
+        assert getattr(scan_result, "source_uri", None) == str(store_path)
         return 2
 
     monkeypatch.setattr(
