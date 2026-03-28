@@ -1,0 +1,26 @@
+---
+# workflow for drafting releases on GitHub
+# see: https://github.com/release-drafter/release-drafter
+name: release drafter
+
+'on':
+  push:
+    branches:
+      - main
+
+jobs:
+  draft_release:
+    permissions:
+      # write permission is required to create a github release
+      contents: write
+      # write permission is required for autolabeler
+      # otherwise, read permission is required at least
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      # release-drafter/release-drafter v6.1.0
+      # yamllint disable rule:line-length
+      - uses: release-drafter/release-drafter@b1476f6e6eb133afa41ed8589daba6dc69b4d3f5
+      # yamllint enable rule:line-length
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
