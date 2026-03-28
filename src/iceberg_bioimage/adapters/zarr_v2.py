@@ -85,5 +85,11 @@ class ZarrV2Adapter(BaseAdapter):
 
     def _image_id(self, uri: str, array_path: str | None) -> str:
         name = Path(uri.rstrip("/")).name
-        stem = name[:-5] if name.casefold().endswith(".zarr") else name
+        normalized = name.casefold()
+        if normalized.endswith(".ome.zarr"):
+            stem = name[:-9]
+        elif normalized.endswith(".zarr"):
+            stem = name[:-5]
+        else:
+            stem = name
         return stem if array_path is None else f"{stem}:{array_path}"

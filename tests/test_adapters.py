@@ -16,3 +16,9 @@ def test_zarr_image_id_strips_suffix_case_insensitively() -> None:
     adapter = ZarrV2Adapter()
 
     assert adapter._image_id("/tmp/data.ZARR", None) == "data"
+
+
+def test_zarr_image_id_strips_ome_zarr_suffix() -> None:
+    adapter = ZarrV2Adapter()
+
+    assert adapter._image_id("/tmp/sample.OME.ZARR", None) == "sample"
