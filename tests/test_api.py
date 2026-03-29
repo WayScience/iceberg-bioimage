@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
+import pytest
 import tifffile
 import zarr
 
@@ -27,9 +28,9 @@ EXPECTED_CHUNK_ROW_COUNT = 4
 
 def test_scan_store_reads_zarr(tmp_path: Path) -> None:
     store_path = tmp_path / "plate.zarr"
-    root = zarr.open_group(store_path, mode="w")
+    root = zarr.open_group(store_path, mode="w", zarr_version=2)
     data = np.arange(12, dtype=np.uint16).reshape(3, 4)
-    root.create_dataset("0", shape=data.shape, data=data, chunks=(2, 2))
+    root.create_array("0", data=data, chunks=(2, 2))
 
     scan = scan_store(str(store_path))
 
@@ -109,7 +110,7 @@ def test_scan_store_reads_local_zarr_v3_metadata(tmp_path: Path) -> None:
 
 def test_summarize_store_reports_storage_variants(tmp_path: Path) -> None:
     store_path = tmp_path / "plate.zarr"
-    root = zarr.open_group(store_path, mode="w")
+    root = zarr.open_group(store_path, mode="w", zarr_version=2)
     root.attrs["multiscales"] = [
         {
             "axes": ["c", "y", "x"],
@@ -117,7 +118,7 @@ def test_summarize_store_reports_storage_variants(tmp_path: Path) -> None:
         }
     ]
     data = np.arange(12, dtype=np.uint16).reshape(1, 3, 4)
-    root.create_dataset("0", shape=data.shape, data=data, chunks=(1, 3, 2))
+    root.create_array("0", data=data, chunks=(1, 3, 2))
 
     summary = summarize_store(str(store_path))
 
@@ -154,10 +155,12 @@ def test_summarize_scan_result_includes_root_array_path() -> None:
 
 
 def test_join_profiles_with_scan_result(tmp_path: Path) -> None:
+    pytest.importorskip("duckdb")
+
     store_path = tmp_path / "plate.zarr"
-    root = zarr.open_group(store_path, mode="w")
+    root = zarr.open_group(store_path, mode="w", zarr_version=2)
     data = np.arange(12, dtype=np.uint16).reshape(3, 4)
-    root.create_dataset("0", shape=data.shape, data=data, chunks=(2, 2))
+    root.create_array("0", data=data, chunks=(2, 2))
     scan = scan_store(str(store_path))
     profiles = pa.table(
         {
@@ -180,10 +183,12 @@ def test_join_profiles_with_scan_result(tmp_path: Path) -> None:
 
 
 def test_join_profiles_with_store_from_parquet(tmp_path: Path) -> None:
+    pytest.importorskip("duckdb")
+
     store_path = tmp_path / "plate.zarr"
-    root = zarr.open_group(store_path, mode="w")
+    root = zarr.open_group(store_path, mode="w", zarr_version=2)
     data = np.arange(12, dtype=np.uint16).reshape(3, 4)
-    root.create_dataset("0", shape=data.shape, data=data, chunks=(2, 2))
+    root.create_array("0", data=data, chunks=(2, 2))
 
     profile_table = tmp_path / "profiles.parquet"
     pq.write_table(
@@ -207,9 +212,9 @@ def test_join_profiles_with_scan_result_rejects_invalid_profiles(
     tmp_path: Path,
 ) -> None:
     store_path = tmp_path / "plate.zarr"
-    root = zarr.open_group(store_path, mode="w")
+    root = zarr.open_group(store_path, mode="w", zarr_version=2)
     data = np.arange(6, dtype=np.uint8).reshape(2, 3)
-    root.create_dataset("0", shape=data.shape, data=data, chunks=(1, 3))
+    root.create_array("0", data=data, chunks=(1, 3))
     scan = scan_store(str(store_path))
     profiles = pa.table({"dataset_id": ["plate"], "cell_count": [3]})
 
