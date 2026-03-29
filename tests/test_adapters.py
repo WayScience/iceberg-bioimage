@@ -40,6 +40,18 @@ def test_zarr_adapter_detects_local_v3_store(tmp_path: Path) -> None:
     assert adapter._is_local_zarr_v3(str(store_path)) is True
 
 
+def test_zarr_adapter_detects_local_v3_store_from_file_uri(tmp_path: Path) -> None:
+    store_path = tmp_path / "demo.zarr"
+    store_path.mkdir()
+    (store_path / "zarr.json").write_text(
+        json.dumps({"zarr_format": 3, "node_type": "group"})
+    )
+
+    adapter = ZarrV2Adapter()
+
+    assert adapter._is_local_zarr_v3(store_path.resolve().as_uri()) is True
+
+
 def test_zarr_adapter_collects_arrays_without_visititems() -> None:
     adapter = ZarrV2Adapter()
     image_assets = []

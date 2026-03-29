@@ -133,6 +133,70 @@ def test_summarize_store_reports_storage_variants(tmp_path: Path) -> None:
     assert summary.storage_variants == ["zarr-v2"]
 
 
+def test_scan_store_uses_nested_group_multiscales_metadata(tmp_path: Path) -> None:
+    store_path = tmp_path / "plate.zarr"
+    root = zarr.open_group(store_path, mode="w", zarr_version=2)
+    series = root.create_group("series")
+    series.attrs["multiscales"] = [
+        {
+            "axes": ["c", "y", "x"],
+            "datasets": [{"path": "0"}],
+        }
+    ]
+    data = np.arange(12, dtype=np.uint16).reshape(1, 3, 4)
+    series.create_array("0", data=data, chunks=(1, 3, 2))
+
+    scan = scan_store(str(store_path))
+
+    assert scan.image_assets[0].array_path == "series/0"
+    assert scan.image_assets[0].metadata["axes"] == "cyx"
+    assert scan.image_assets[0].metadata["channel_count"] == 1
+
+
+def test_scan_store_reads_local_zarr_v3_metadata_from_file_uri(
+    tmp_path: Path,
+) -> None:
+    store_path = tmp_path / "plate.ome.zarr"
+    store_path.mkdir()
+    (store_path / "0").mkdir()
+    (store_path / "zarr.json").write_text(
+        json.dumps(
+            {
+                "zarr_format": 3,
+                "node_type": "group",
+                "attributes": {
+                    "multiscales": [
+                        {
+                            "axes": ["c", "y", "x"],
+                            "datasets": [{"path": "0"}],
+                        }
+                    ]
+                },
+            }
+        )
+    )
+    (store_path / "0" / "zarr.json").write_text(
+        json.dumps(
+            {
+                "zarr_format": 3,
+                "node_type": "array",
+                "shape": [2, 32, 16],
+                "data_type": "uint16",
+                "chunk_grid": {
+                    "name": "regular",
+                    "configuration": {"chunk_shape": [1, 16, 16]},
+                },
+            }
+        )
+    )
+
+    scan = scan_store(store_path.resolve().as_uri())
+
+    assert scan.format_family == "zarr"
+    assert scan.image_assets[0].metadata["storage_variant"] == "zarr-v3"
+    assert scan.image_assets[0].metadata["axes"] == "cyx"
+
+
 def test_summarize_scan_result_includes_root_array_path() -> None:
     summary = summarize_scan_result(
         ScanResult(

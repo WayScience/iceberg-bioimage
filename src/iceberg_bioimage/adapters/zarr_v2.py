@@ -6,6 +6,7 @@ import json
 from collections.abc import Mapping
 from pathlib import Path
 from urllib.parse import urlparse
+from urllib.request import url2pathname
 
 import zarr
 
@@ -37,6 +38,7 @@ class ZarrV2Adapter(BaseAdapter):
                     array_path=None,
                     array=store,
                     root_attrs=root_attrs,
+                    group_path=None,
                     storage_variant="zarr-v2",
                 )
             )
@@ -63,15 +65,16 @@ class ZarrV2Adapter(BaseAdapter):
         image_assets: list[ImageAsset],
         array_path: str,
         node: object,
-        root_attrs: object,
+        metadata_context: tuple[object, str | None],
     ) -> None:
+        root_attrs, group_path = metadata_context
         if hasattr(node, "shape") and hasattr(node, "dtype"):
             image_assets.append(
                 self._build_asset(
                     uri=uri,
                     array_path=array_path,
                     array=node,
-                    root_attrs=root_attrs,
+                    metadata_context=(root_attrs, group_path),
                     storage_variant="zarr-v2",
                 )
             )
@@ -85,17 +88,9 @@ class ZarrV2Adapter(BaseAdapter):
         *,
         prefix: str = "",
     ) -> None:
-        if hasattr(node, "visititems"):
-            node.visititems(
-                lambda path, child: self._maybe_collect_array(
-                    uri,
-                    image_assets,
-                    path,
-                    child,
-                    root_attrs,
-                )
-            )
-            return
+        node_attrs = getattr(node, "attrs", None)
+        group_attrs = node_attrs if node_attrs is not None else root_attrs
+        group_path = prefix or None
 
         for key in self._node_keys(node):
             child = node[key]
@@ -106,14 +101,14 @@ class ZarrV2Adapter(BaseAdapter):
                     image_assets,
                     path,
                     child,
-                    root_attrs,
+                    (group_attrs, group_path),
                 )
                 continue
             self._collect_group_arrays(
                 uri=uri,
                 image_assets=image_assets,
                 node=child,
-                root_attrs=root_attrs,
+                root_attrs=group_attrs,
                 prefix=path,
             )
 
@@ -128,16 +123,19 @@ class ZarrV2Adapter(BaseAdapter):
         uri: str,
         array_path: str | None,
         array: object,
-        root_attrs: object,
+        metadata_context: tuple[object, str | None],
         storage_variant: str,
     ) -> ImageAsset:
+        root_attrs, group_path = metadata_context
         path = None if array_path == "" else array_path
         metadata = {
             "store_name": Path(uri).name,
             "storage_variant": storage_variant,
             "ndim": len(getattr(array, "shape")),
         }
-        metadata.update(self._extract_axes_metadata(path, root_attrs))
+        metadata.update(
+            self._extract_axes_metadata(path, root_attrs, group_path=group_path)
+        )
         metadata["channel_count"] = self._channel_count_from_axes(
             metadata.get("axes"),
             getattr(array, "shape"),
@@ -173,17 +171,18 @@ class ZarrV2Adapter(BaseAdapter):
     def _is_local_zarr_v3(self, uri: str) -> bool:
         """Return whether ``uri`` is a local Zarr v3 metadata store."""
 
-        parsed = urlparse(uri)
-        if parsed.scheme not in {"", "file"}:
+        path = self._local_store_path(uri)
+        if path is None:
             return False
-        path = Path(uri)
         return path.is_dir() and (path / "zarr.json").exists()
 
     def _scan_local_zarr_v3(self, uri: str) -> ScanResult:
-        root = Path(uri)
+        root = self._local_store_path(uri)
+        if root is None:
+            raise ValueError(
+                f"Zarr v3 metadata scanning requires a local path: {uri!r}."
+            )
         image_assets: list[ImageAsset] = []
-        root_metadata = json.loads((root / "zarr.json").read_text())
-        root_attributes = root_metadata.get("attributes", {})
 
         for metadata_path in sorted(root.rglob("zarr.json")):
             node_metadata = json.loads(metadata_path.read_text())
@@ -198,7 +197,18 @@ class ZarrV2Adapter(BaseAdapter):
                 "storage_variant": "zarr-v3",
                 "ndim": len(node_metadata.get("shape", [])),
             }
-            metadata.update(self._extract_axes_metadata(array_path, root_attributes))
+            group_attrs, group_path = self._resolve_v3_axes_context(
+                root,
+                array_dir,
+                array_path,
+            )
+            metadata.update(
+                self._extract_axes_metadata(
+                    array_path,
+                    group_attrs,
+                    group_path=group_path,
+                )
+            )
             metadata["channel_count"] = self._channel_count_from_axes(
                 metadata.get("axes"),
                 node_metadata.get("shape", []),
@@ -231,6 +241,8 @@ class ZarrV2Adapter(BaseAdapter):
         self,
         array_path: str | None,
         root_attrs: object,
+        *,
+        group_path: str | None = None,
     ) -> dict[str, object]:
         axes = None
         multiscales = None
@@ -243,7 +255,8 @@ class ZarrV2Adapter(BaseAdapter):
                     continue
                 dataset_paths = {dataset.get("path") for dataset in datasets}
                 normalized_path = "" if array_path is None else array_path
-                if normalized_path in dataset_paths:
+                relative_path = self._relative_array_path(normalized_path, group_path)
+                if relative_path in dataset_paths:
                     axes_value = multiscale.get("axes")
                     if isinstance(axes_value, list):
                         axes = "".join(
@@ -274,6 +287,54 @@ class ZarrV2Adapter(BaseAdapter):
             return None
 
         return int(shape[idx])
+
+    def _local_store_path(self, uri: str) -> Path | None:
+        parsed = urlparse(uri)
+        if parsed.scheme == "file":
+            return Path(url2pathname(parsed.path))
+        if parsed.scheme == "":
+            return Path(parsed.path or uri)
+        return None
+
+    def _resolve_v3_axes_context(
+        self,
+        root: Path,
+        array_dir: Path,
+        array_path: str | None,
+    ) -> tuple[object, str | None]:
+        for group_dir in [array_dir.parent, *array_dir.parent.parents]:
+            if not group_dir.is_relative_to(root):
+                continue
+            metadata_path = group_dir / "zarr.json"
+            if not metadata_path.exists():
+                continue
+            group_metadata = json.loads(metadata_path.read_text())
+            group_attrs = group_metadata.get("attributes", {})
+            group_path = self._group_path(root, group_dir)
+            if self._extract_axes_metadata(
+                array_path,
+                group_attrs,
+                group_path=group_path,
+            ):
+                return group_attrs, group_path
+
+        return {}, None
+
+    def _group_path(self, root: Path, group_dir: Path) -> str | None:
+        relative_path = group_dir.relative_to(root).as_posix()
+        return None if relative_path == "." else relative_path
+
+    def _relative_array_path(
+        self,
+        array_path: str,
+        group_path: str | None,
+    ) -> str:
+        if group_path is None:
+            return array_path
+        prefix = f"{group_path}/"
+        if array_path.startswith(prefix):
+            return array_path[len(prefix) :]
+        return array_path
 
     def _coerce_v3_dtype(self, data_type: object) -> str:
         if isinstance(data_type, str):
