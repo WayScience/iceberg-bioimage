@@ -146,9 +146,10 @@ def _register_source(
     source: MetadataSource,
 ) -> None:
     if isinstance(source, (str, Path)):
+        source_literal = _quote_literal(str(source))
         connection.execute(
-            f"CREATE OR REPLACE VIEW {name} AS SELECT * FROM read_parquet(?)",
-            [str(source)],
+            f"CREATE OR REPLACE VIEW {name} "
+            f"AS SELECT * FROM read_parquet({source_literal})"
         )
         return
 

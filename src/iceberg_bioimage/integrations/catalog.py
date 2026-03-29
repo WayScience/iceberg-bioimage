@@ -46,6 +46,9 @@ class SupportsScanCatalog(Protocol):
     def load_table(self, identifier: tuple[str, ...]) -> SupportsIcebergTable:
         """Load an existing Iceberg table."""
 
+    def list_tables(self, namespace: tuple[str, ...]) -> list[tuple[str, ...]]:
+        """List tables within a namespace."""
+
 
 @dataclass(frozen=True, slots=True)
 class CatalogScanOptions:
@@ -67,6 +70,20 @@ def load_catalog_table(
     resolved_catalog = _resolve_catalog(catalog)
     identifier = (*_normalize_namespace(namespace), table_name)
     return resolved_catalog.load_table(identifier)
+
+
+def list_catalog_tables(
+    catalog: str | SupportsScanCatalog,
+    namespace: str | Sequence[str],
+) -> list[str]:
+    """List canonical metadata tables available in a catalog namespace."""
+
+    resolved_catalog = _resolve_catalog(catalog)
+    resolved_namespace = _normalize_namespace(namespace)
+    return [
+        identifier[-1]
+        for identifier in resolved_catalog.list_tables(resolved_namespace)
+    ]
 
 
 def catalog_table_to_arrow(

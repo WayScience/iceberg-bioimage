@@ -67,6 +67,33 @@ def test_validate_contract_cli(tmp_path: Path) -> None:
     assert "missing_recommended_columns:" in output.stdout
 
 
+def test_summarize_cli(monkeypatch: MonkeyPatch, capsys: CaptureFixture[str]) -> None:
+    def _fake_summarize_store(uri: str) -> object:
+        assert uri == "data/example.ome.zarr"
+        return SimpleNamespace(
+            source_uri=uri,
+            format_family="zarr",
+            image_asset_count=2,
+            chunked_asset_count=1,
+            array_paths=["0", "1"],
+            dtypes=["uint16"],
+            shapes=[[1, 256, 256], [1, 128, 128]],
+            axes=["cyx"],
+            channel_counts=[1],
+            storage_variants=["zarr-v2"],
+            warnings=[],
+        )
+
+    monkeypatch.setattr(cli_module, "summarize_store", _fake_summarize_store)
+
+    exit_code = cli_module.main(["summarize", "data/example.ome.zarr"])
+    output = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "image_asset_count: 2" in output.out
+    assert "storage_variants: zarr-v2" in output.out
+
+
 def test_register_cli_publish_chunks(
     monkeypatch: MonkeyPatch,
     capsys: CaptureFixture[str],
@@ -156,6 +183,54 @@ def test_publish_chunks_cli(
 
     assert exit_code == 0
     assert '"rows_published": 2' in output.out
+
+
+def test_join_profiles_cli(
+    tmp_path: Path,
+    monkeypatch: MonkeyPatch,
+    capsys: CaptureFixture[str],
+) -> None:
+    output_path = tmp_path / "joined.parquet"
+
+    def _fake_join_profiles_with_store(
+        uri: str,
+        profile_table: str,
+        *,
+        include_chunks: bool = False,
+    ) -> pa.Table:
+        assert uri == "data/example.zarr"
+        assert profile_table == "data/profiles.parquet"
+        assert include_chunks is True
+        return pa.table(
+            {
+                "dataset_id": ["example"],
+                "image_id": ["example:0"],
+                "cell_count": [5],
+            }
+        )
+
+    monkeypatch.setattr(
+        cli_module,
+        "join_profiles_with_store",
+        _fake_join_profiles_with_store,
+    )
+
+    exit_code = cli_module.main(
+        [
+            "join-profiles",
+            "--output",
+            str(output_path),
+            "--include-chunks",
+            "data/example.zarr",
+            "data/profiles.parquet",
+        ]
+    )
+    output = capsys.readouterr()
+    written = pq.read_table(output_path)
+
+    assert exit_code == 0
+    assert written.to_pydict()["cell_count"] == [5]
+    assert '"rows_written": 1' in output.out
 
 
 def test_main_returns_cli_error_for_value_error(
