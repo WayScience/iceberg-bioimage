@@ -31,8 +31,8 @@ The package intentionally keeps one scan entry point for `.zarr` paths:
 - Local Zarr v3 stores are scanned from `zarr.json` metadata
 - Summaries expose the detected storage variant so users can inspect mixed
   catalogs without learning separate APIs
-- The package dependency range now permits both Zarr 2 and Zarr 3 runtimes, so
-  optional integrations such as OME-Arrow can coexist with the core scanner
+- The package dependency range now permits both Zarr 2 and Zarr 3 runtimes.
+- Optional integrations such as OME-Arrow can coexist with the core scanner.
 
 This keeps the package approachable while the wider ecosystem continues to
 settle around Zarr v3 runtime support.

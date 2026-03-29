@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping
 from pathlib import Path
+from urllib.parse import urlparse
 
 import zarr
 
@@ -170,6 +171,11 @@ class ZarrV2Adapter(BaseAdapter):
         return stem if array_path is None else f"{stem}:{array_path}"
 
     def _is_local_zarr_v3(self, uri: str) -> bool:
+        """Return whether ``uri`` is a local Zarr v3 metadata store."""
+
+        parsed = urlparse(uri)
+        if parsed.scheme not in {"", "file"}:
+            return False
         path = Path(uri)
         return path.is_dir() and (path / "zarr.json").exists()
 
@@ -263,8 +269,11 @@ class ZarrV2Adapter(BaseAdapter):
             return None
         if not isinstance(shape, (list, tuple)):
             return None
+        idx = normalized_axes.index("C")
+        if idx >= len(shape):
+            return None
 
-        return int(shape[normalized_axes.index("C")])
+        return int(shape[idx])
 
     def _coerce_v3_dtype(self, data_type: object) -> str:
         if isinstance(data_type, str):

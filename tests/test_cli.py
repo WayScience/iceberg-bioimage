@@ -22,7 +22,7 @@ def test_scan_cli(tmp_path: Path) -> None:
     store_path = tmp_path / "demo.zarr"
     root = zarr.open_group(store_path, mode="w")
     data = np.arange(6, dtype=np.uint8).reshape(2, 3)
-    root.create_dataset("0", shape=data.shape, data=data, chunks=(1, 3))
+    root.create_array("0", data=data, chunks=(1, 3))
 
     output = subprocess.run(
         [sys.executable, "-m", "iceberg_bioimage.cli", "scan", str(store_path)],
@@ -149,7 +149,7 @@ def test_publish_chunks_cli(
     store_path = tmp_path / "demo.zarr"
     root = zarr.open_group(store_path, mode="w")
     data = np.arange(6, dtype=np.uint8).reshape(2, 3)
-    root.create_dataset("0", shape=data.shape, data=data, chunks=(1, 3))
+    root.create_array("0", data=data, chunks=(1, 3))
 
     def _fake_publish_chunk_index(
         catalog: str,

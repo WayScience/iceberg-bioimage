@@ -67,7 +67,7 @@ def load_catalog_table(
 ) -> SupportsIcebergTable:
     """Load a canonical metadata table from a catalog."""
 
-    resolved_catalog = _resolve_catalog(catalog)
+    resolved_catalog = _resolve_scan_catalog(catalog)
     identifier = (*_normalize_namespace(namespace), table_name)
     return resolved_catalog.load_table(identifier)
 
@@ -78,7 +78,7 @@ def list_catalog_tables(
 ) -> list[str]:
     """List canonical metadata tables available in a catalog namespace."""
 
-    resolved_catalog = _resolve_catalog(catalog)
+    resolved_catalog = _resolve_scan_catalog(catalog)
     resolved_namespace = _normalize_namespace(namespace)
     return [
         identifier[-1]
@@ -165,3 +165,11 @@ def _normalize_columns(columns: Sequence[str] | None) -> Sequence[str] | None:
         return [columns]
 
     return columns
+
+
+def _resolve_scan_catalog(catalog: str | SupportsScanCatalog) -> SupportsScanCatalog:
+    resolved_catalog = _resolve_catalog(catalog)
+    if not hasattr(resolved_catalog, "list_tables"):
+        raise TypeError("Catalog must provide a list_tables(namespace) method.")
+
+    return resolved_catalog

@@ -91,9 +91,9 @@ def test_list_catalog_tables() -> None:
         }
     )
 
-    assert list_catalog_tables(catalog, "bioimage") == [
-        "image_assets",
+    assert sorted(list_catalog_tables(catalog, "bioimage")) == [
         "chunk_index",
+        "image_assets",
     ]
 
 
