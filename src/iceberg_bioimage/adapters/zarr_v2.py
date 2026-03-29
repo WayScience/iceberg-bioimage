@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Mapping
 from pathlib import Path
 from urllib.parse import urlparse
@@ -12,6 +13,8 @@ import zarr
 
 from iceberg_bioimage.adapters.base import BaseAdapter
 from iceberg_bioimage.models.scan_result import ImageAsset, ScanResult
+
+logger = logging.getLogger(__name__)
 
 
 class ZarrV2Adapter(BaseAdapter):
@@ -37,8 +40,7 @@ class ZarrV2Adapter(BaseAdapter):
                     uri=uri,
                     array_path=None,
                     array=store,
-                    root_attrs=root_attrs,
-                    group_path=None,
+                    metadata_context=(root_attrs, None),
                     storage_variant="zarr-v2",
                 )
             )
@@ -185,7 +187,15 @@ class ZarrV2Adapter(BaseAdapter):
         image_assets: list[ImageAsset] = []
 
         for metadata_path in sorted(root.rglob("zarr.json")):
-            node_metadata = json.loads(metadata_path.read_text())
+            try:
+                node_metadata = json.loads(metadata_path.read_text())
+            except json.JSONDecodeError as exc:
+                logger.warning(
+                    "Skipping malformed zarr.json at %s: %s",
+                    metadata_path,
+                    exc,
+                )
+                continue
             if node_metadata.get("node_type") != "array":
                 continue
 

@@ -197,6 +197,40 @@ def test_scan_store_reads_local_zarr_v3_metadata_from_file_uri(
     assert scan.image_assets[0].metadata["axes"] == "cyx"
 
 
+def test_scan_store_skips_malformed_local_zarr_v3_metadata(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    store_path = tmp_path / "plate.ome.zarr"
+    store_path.mkdir()
+    (store_path / "0").mkdir()
+    (store_path / "bad").mkdir()
+    (store_path / "zarr.json").write_text(
+        json.dumps({"zarr_format": 3, "node_type": "group"})
+    )
+    (store_path / "0" / "zarr.json").write_text(
+        json.dumps(
+            {
+                "zarr_format": 3,
+                "node_type": "array",
+                "shape": [2, 32, 16],
+                "data_type": "uint16",
+                "chunk_grid": {
+                    "name": "regular",
+                    "configuration": {"chunk_shape": [1, 16, 16]},
+                },
+            }
+        )
+    )
+    (store_path / "bad" / "zarr.json").write_text("{not-json")
+
+    with caplog.at_level("WARNING"):
+        scan = scan_store(str(store_path))
+
+    assert scan.image_assets[0].array_path == "0"
+    assert "Skipping malformed zarr.json" in caplog.text
+
+
 def test_summarize_scan_result_includes_root_array_path() -> None:
     summary = summarize_scan_result(
         ScanResult(
