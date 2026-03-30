@@ -80,6 +80,7 @@ references:
     repository-code: "https://github.com/wayscience/ome-arrow"
     notes: >-
       OME-Arrow was reviewed as the Arrow-native image-value companion project.
-      iceberg-bioimage does not currently vendor or depend on it because the
-      present ome-arrow stack requires zarr>=3 while iceberg-bioimage still
-      targets zarr<3 for scanning support.
+      Both projects target the Zarr ecosystem: the current ome-arrow stack
+      requires zarr>=3, while iceberg-bioimage supports zarr<4 with scanning
+      and metadata handling for Zarr v2 and v3 layouts; iceberg-bioimage does
+      not vendor or depend on ome-arrow.

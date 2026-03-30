@@ -66,6 +66,8 @@ print(summary.to_dict())
 contract = validate_microscopy_profile_table("data/cells.parquet")
 print(contract.is_valid)
 
+# Requires the optional DuckDB integration:
+#   pip install 'iceberg-bioimage[duckdb]'
 joined = join_profiles_with_store("data/experiment.zarr", "data/cells.parquet")
 print(joined.num_rows)
 ```

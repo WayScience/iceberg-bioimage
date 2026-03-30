@@ -251,3 +251,39 @@ def test_main_returns_cli_error_for_value_error(
 
     assert exit_code == CLI_VALUE_ERROR_EXIT_CODE
     assert "Error: bad dataset" in output.err
+
+
+def test_main_returns_cli_error_for_runtime_error(
+    monkeypatch: MonkeyPatch,
+    capsys: CaptureFixture[str],
+) -> None:
+    def raise_runtime_error(
+        uri: str,
+        profile_table: str,
+        *,
+        include_chunks: bool = False,
+    ) -> pa.Table:
+        assert uri == "data/example.zarr"
+        assert profile_table == "data/profiles.parquet"
+        assert include_chunks is False
+        raise RuntimeError("optional duckdb dependency group")
+
+    monkeypatch.setattr(
+        cli_module,
+        "join_profiles_with_store",
+        raise_runtime_error,
+    )
+
+    exit_code = cli_module.main(
+        [
+            "join-profiles",
+            "--output",
+            "joined.parquet",
+            "data/example.zarr",
+            "data/profiles.parquet",
+        ]
+    )
+    output = capsys.readouterr()
+
+    assert exit_code == CLI_VALUE_ERROR_EXIT_CODE
+    assert "Error: optional duckdb dependency group" in output.err

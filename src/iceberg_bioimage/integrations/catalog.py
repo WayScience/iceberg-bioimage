@@ -80,10 +80,11 @@ def list_catalog_tables(
 
     resolved_catalog = _resolve_scan_catalog(catalog)
     resolved_namespace = _normalize_namespace(namespace)
-    return [
+    table_names = {
         identifier[-1]
         for identifier in resolved_catalog.list_tables(resolved_namespace)
-    ]
+    }
+    return sorted(table_names)
 
 
 def catalog_table_to_arrow(

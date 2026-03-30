@@ -143,7 +143,11 @@ def join_profiles_with_scan_result(
     *,
     include_chunks: bool = False,
 ) -> pa.Table:
-    """Join canonical image assets from a scan result to profile rows."""
+    """Join canonical image assets from a scan result to profile rows.
+
+    This helper uses the optional DuckDB integration at runtime. Install the
+    `duckdb` extra/group before calling it.
+    """
 
     validation = _validate_profiles(profiles)
     if not validation.is_valid:
@@ -170,7 +174,11 @@ def join_profiles_with_store(
     *,
     include_chunks: bool = False,
 ) -> pa.Table:
-    """Scan a store and join its canonical image assets to profile rows."""
+    """Scan a store and join its canonical image assets to profile rows.
+
+    This helper uses the optional DuckDB integration at runtime. Install the
+    `duckdb` extra/group before calling it.
+    """
 
     return join_profiles_with_scan_result(
         scan_store(uri),

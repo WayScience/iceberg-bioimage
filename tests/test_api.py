@@ -483,6 +483,35 @@ def test_join_profiles_with_scan_result_rejects_invalid_profiles(
         raise AssertionError("Expected invalid profiles to raise ValueError.")
 
 
+def test_join_profiles_with_scan_result_reports_missing_duckdb(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store_path = tmp_path / "plate.zarr"
+    root = zarr.open_group(store_path, mode="w", zarr_version=2)
+    data = np.arange(6, dtype=np.uint8).reshape(2, 3)
+    root.create_array("0", data=data, chunks=(1, 3))
+    scan = scan_store(str(store_path))
+    profiles = pa.table(
+        {
+            "dataset_id": ["plate"],
+            "image_id": ["plate:0"],
+            "cell_count": [3],
+        }
+    )
+
+    def _raise_missing_duckdb(*args: object, **kwargs: object) -> pa.Table:
+        raise RuntimeError("optional duckdb dependency group")
+
+    monkeypatch.setattr(
+        "iceberg_bioimage.api.join_image_assets_with_profiles",
+        _raise_missing_duckdb,
+    )
+
+    with pytest.raises(RuntimeError, match="optional duckdb dependency group"):
+        join_profiles_with_scan_result(scan, profiles)
+
+
 def test_scan_store_rejects_unknown_format() -> None:
     try:
         scan_store("example.h5")
