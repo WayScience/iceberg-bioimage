@@ -89,10 +89,15 @@ class ZarrV2Adapter(BaseAdapter):
         root_attrs: object,
         *,
         prefix: str = "",
+        metadata_owner_path: str | None = None,
     ) -> None:
         node_attrs = getattr(node, "attrs", None)
-        group_attrs = node_attrs if node_attrs is not None else root_attrs
-        group_path = prefix or None
+        has_local_multiscales = False
+        if isinstance(node_attrs, Mapping) or hasattr(node_attrs, "get"):
+            has_local_multiscales = node_attrs.get("multiscales") is not None
+        group_attrs = node_attrs if has_local_multiscales else root_attrs
+        if has_local_multiscales:
+            metadata_owner_path = prefix or None
 
         for key in self._node_keys(node):
             child = node[key]
@@ -103,7 +108,7 @@ class ZarrV2Adapter(BaseAdapter):
                     image_assets,
                     path,
                     child,
-                    (group_attrs, group_path),
+                    (group_attrs, metadata_owner_path),
                 )
                 continue
             self._collect_group_arrays(
@@ -112,6 +117,7 @@ class ZarrV2Adapter(BaseAdapter):
                 node=child,
                 root_attrs=group_attrs,
                 prefix=path,
+                metadata_owner_path=metadata_owner_path,
             )
 
     def _node_keys(self, node: object) -> list[str]:
@@ -318,7 +324,15 @@ class ZarrV2Adapter(BaseAdapter):
             metadata_path = group_dir / "zarr.json"
             if not metadata_path.exists():
                 continue
-            group_metadata = json.loads(metadata_path.read_text())
+            try:
+                group_metadata = json.loads(metadata_path.read_text())
+            except json.JSONDecodeError as exc:
+                logger.warning(
+                    "Skipping malformed parent zarr.json at %s: %s",
+                    metadata_path,
+                    exc,
+                )
+                continue
             group_attrs = group_metadata.get("attributes", {})
             group_path = self._group_path(root, group_dir)
             if self._extract_axes_metadata(

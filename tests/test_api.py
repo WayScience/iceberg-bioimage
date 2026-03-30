@@ -153,6 +153,27 @@ def test_scan_store_uses_nested_group_multiscales_metadata(tmp_path: Path) -> No
     assert scan.image_assets[0].metadata["channel_count"] == 1
 
 
+def test_scan_store_uses_metadata_owner_path_for_nested_arrays(tmp_path: Path) -> None:
+    store_path = tmp_path / "plate.zarr"
+    root = zarr.open_group(store_path, mode="w", zarr_version=2)
+    series = root.create_group("series")
+    series.attrs["multiscales"] = [
+        {
+            "axes": ["c", "y", "x"],
+            "datasets": [{"path": "level/0"}],
+        }
+    ]
+    level_group = series.create_group("level")
+    data = np.arange(12, dtype=np.uint16).reshape(1, 3, 4)
+    level_group.create_array("0", data=data, chunks=(1, 3, 2))
+
+    scan = scan_store(str(store_path))
+
+    assert scan.image_assets[0].array_path == "series/level/0"
+    assert scan.image_assets[0].metadata["axes"] == "cyx"
+    assert scan.image_assets[0].metadata["channel_count"] == 1
+
+
 def test_scan_store_reads_local_zarr_v3_metadata_from_file_uri(
     tmp_path: Path,
 ) -> None:
@@ -229,6 +250,58 @@ def test_scan_store_skips_malformed_local_zarr_v3_metadata(
 
     assert scan.image_assets[0].array_path == "0"
     assert "Skipping malformed zarr.json" in caplog.text
+
+
+def test_scan_store_skips_malformed_parent_v3_metadata(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    store_path = tmp_path / "plate.ome.zarr"
+    series_path = store_path / "series"
+    level_path = series_path / "level"
+    array_path = level_path / "0"
+    array_path.mkdir(parents=True)
+    (store_path / "zarr.json").write_text(
+        json.dumps(
+            {
+                "zarr_format": 3,
+                "node_type": "group",
+                "attributes": {
+                    "multiscales": [
+                        {
+                            "axes": ["c", "y", "x"],
+                            "datasets": [{"path": "series/level/0"}],
+                        }
+                    ]
+                },
+            }
+        )
+    )
+    (series_path / "zarr.json").write_text("{not-json")
+    (level_path / "zarr.json").write_text(
+        json.dumps({"zarr_format": 3, "node_type": "group"})
+    )
+    (array_path / "zarr.json").write_text(
+        json.dumps(
+            {
+                "zarr_format": 3,
+                "node_type": "array",
+                "shape": [2, 32, 16],
+                "data_type": "uint16",
+                "chunk_grid": {
+                    "name": "regular",
+                    "configuration": {"chunk_shape": [1, 16, 16]},
+                },
+            }
+        )
+    )
+
+    with caplog.at_level("WARNING"):
+        scan = scan_store(str(store_path))
+
+    assert scan.image_assets[0].array_path == "series/level/0"
+    assert scan.image_assets[0].metadata["axes"] == "cyx"
+    assert "Skipping malformed parent zarr.json" in caplog.text
 
 
 def test_summarize_scan_result_includes_root_array_path() -> None:
