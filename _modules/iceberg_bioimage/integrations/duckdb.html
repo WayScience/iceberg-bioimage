@@ -138,6 +138,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples/metadata-workflow.html">
+    Metadata Workflow Example
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../workflow.html">
     Workflow
   </a>
@@ -240,6 +247,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../duckdb.html">
     DuckDB Integration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples/metadata-workflow.html">
+    Metadata Workflow Example
   </a>
 </li>
 
@@ -501,10 +515,7 @@
     <span class="n">source</span><span class="p">:</span> <span class="n">MetadataSource</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
-        <span class="n">connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;CREATE OR REPLACE VIEW </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> AS SELECT * FROM read_parquet(?)&quot;</span><span class="p">,</span>
-            <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="p">)],</span>
-        <span class="p">)</span>
+        <span class="n">connection</span><span class="o">.</span><span class="n">from_parquet</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="p">))</span><span class="o">.</span><span class="n">create_view</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">return</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>

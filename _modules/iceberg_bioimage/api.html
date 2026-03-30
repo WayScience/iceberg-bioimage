@@ -138,6 +138,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../examples/metadata-workflow.html">
+    Metadata Workflow Example
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../workflow.html">
     Workflow
   </a>
@@ -240,6 +247,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../duckdb.html">
     DuckDB Integration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../examples/metadata-workflow.html">
+    Metadata Workflow Example
   </a>
 </li>
 
@@ -349,15 +363,35 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pa</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.adapters.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseAdapter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.adapters.ome_tiff</span><span class="w"> </span><span class="kn">import</span> <span class="n">OMETiffAdapter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.adapters.zarr_v2</span><span class="w"> </span><span class="kn">import</span> <span class="n">ZarrV2Adapter</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.models.scan_result</span><span class="w"> </span><span class="kn">import</span> <span class="n">RegistrationResult</span><span class="p">,</span> <span class="n">ScanResult</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.publishing.chunk_index</span><span class="w"> </span><span class="kn">import</span> <span class="n">publish_chunk_index</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.integrations.duckdb</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">MetadataSource</span><span class="p">,</span>
+    <span class="n">join_image_assets_with_profiles</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.models.scan_result</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ContractValidationResult</span><span class="p">,</span>
+    <span class="n">DatasetSummary</span><span class="p">,</span>
+    <span class="n">RegistrationResult</span><span class="p">,</span>
+    <span class="n">ScanResult</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.publishing.chunk_index</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">publish_chunk_index</span><span class="p">,</span>
+    <span class="n">scan_result_to_chunk_rows</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.publishing.image_assets</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">SupportsCatalog</span><span class="p">,</span>
     <span class="n">publish_image_assets</span><span class="p">,</span>
+    <span class="n">scan_result_to_rows</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.validation.contracts</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">validate_microscopy_profile_columns</span><span class="p">,</span>
+    <span class="n">validate_microscopy_profile_table</span><span class="p">,</span>
 <span class="p">)</span>
 
 
@@ -415,6 +449,132 @@
         <span class="n">chunk_rows_published</span><span class="o">=</span><span class="n">chunk_rows</span><span class="p">,</span>
     <span class="p">)</span></div>
 
+
+
+<div class="viewcode-block" id="summarize_scan_result">
+<a class="viewcode-back" href="../../python-api.html#iceberg_bioimage.summarize_scan_result">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">summarize_scan_result</span><span class="p">(</span><span class="n">scan_result</span><span class="p">:</span> <span class="n">ScanResult</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DatasetSummary</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a concise user-facing summary from a scan result.&quot;&quot;&quot;</span>
+
+    <span class="n">axes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">asset</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">asset</span> <span class="ow">in</span> <span class="n">scan_result</span><span class="o">.</span><span class="n">image_assets</span>
+            <span class="k">if</span> <span class="n">asset</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;axes&quot;</span><span class="p">)</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+    <span class="n">channel_counts</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">asset</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;channel_count&quot;</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">asset</span> <span class="ow">in</span> <span class="n">scan_result</span><span class="o">.</span><span class="n">image_assets</span>
+            <span class="k">if</span> <span class="n">asset</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;channel_count&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+    <span class="n">storage_variants</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">asset</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;storage_variant&quot;</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">asset</span> <span class="ow">in</span> <span class="n">scan_result</span><span class="o">.</span><span class="n">image_assets</span>
+            <span class="k">if</span> <span class="n">asset</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;storage_variant&quot;</span><span class="p">)</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+    <span class="n">shapes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span><span class="nb">tuple</span><span class="p">(</span><span class="n">asset</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="k">for</span> <span class="n">asset</span> <span class="ow">in</span> <span class="n">scan_result</span><span class="o">.</span><span class="n">image_assets</span><span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">DatasetSummary</span><span class="p">(</span>
+        <span class="n">source_uri</span><span class="o">=</span><span class="n">scan_result</span><span class="o">.</span><span class="n">source_uri</span><span class="p">,</span>
+        <span class="n">format_family</span><span class="o">=</span><span class="n">scan_result</span><span class="o">.</span><span class="n">format_family</span><span class="p">,</span>
+        <span class="n">image_asset_count</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">scan_result</span><span class="o">.</span><span class="n">image_assets</span><span class="p">),</span>
+        <span class="n">chunked_asset_count</span><span class="o">=</span><span class="nb">sum</span><span class="p">(</span>
+            <span class="mi">1</span> <span class="k">for</span> <span class="n">asset</span> <span class="ow">in</span> <span class="n">scan_result</span><span class="o">.</span><span class="n">image_assets</span> <span class="k">if</span> <span class="n">asset</span><span class="o">.</span><span class="n">chunk_shape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">),</span>
+        <span class="n">array_paths</span><span class="o">=</span><span class="p">[</span>
+            <span class="n">asset</span><span class="o">.</span><span class="n">array_path</span> <span class="k">if</span> <span class="n">asset</span><span class="o">.</span><span class="n">array_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;&lt;root&gt;&quot;</span>
+            <span class="k">for</span> <span class="n">asset</span> <span class="ow">in</span> <span class="n">scan_result</span><span class="o">.</span><span class="n">image_assets</span>
+        <span class="p">],</span>
+        <span class="n">dtypes</span><span class="o">=</span><span class="nb">sorted</span><span class="p">({</span><span class="n">asset</span><span class="o">.</span><span class="n">dtype</span> <span class="k">for</span> <span class="n">asset</span> <span class="ow">in</span> <span class="n">scan_result</span><span class="o">.</span><span class="n">image_assets</span><span class="p">}),</span>
+        <span class="n">shapes</span><span class="o">=</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="k">for</span> <span class="n">shape</span> <span class="ow">in</span> <span class="n">shapes</span><span class="p">],</span>
+        <span class="n">axes</span><span class="o">=</span><span class="n">axes</span><span class="p">,</span>
+        <span class="n">channel_counts</span><span class="o">=</span><span class="n">channel_counts</span><span class="p">,</span>
+        <span class="n">storage_variants</span><span class="o">=</span><span class="n">storage_variants</span><span class="p">,</span>
+        <span class="n">warnings</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">scan_result</span><span class="o">.</span><span class="n">warnings</span><span class="p">),</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="summarize_store">
+<a class="viewcode-back" href="../../python-api.html#iceberg_bioimage.summarize_store">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">summarize_store</span><span class="p">(</span><span class="n">uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DatasetSummary</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scan a store and return a concise dataset summary.&quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">summarize_scan_result</span><span class="p">(</span><span class="n">scan_store</span><span class="p">(</span><span class="n">uri</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="join_profiles_with_scan_result">
+<a class="viewcode-back" href="../../python-api.html#iceberg_bioimage.join_profiles_with_scan_result">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">join_profiles_with_scan_result</span><span class="p">(</span>
+    <span class="n">scan_result</span><span class="p">:</span> <span class="n">ScanResult</span><span class="p">,</span>
+    <span class="n">profiles</span><span class="p">:</span> <span class="n">MetadataSource</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">include_chunks</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Join canonical image assets from a scan result to profile rows.</span>
+
+<span class="sd">    This helper uses the optional DuckDB integration at runtime. Install the</span>
+<span class="sd">    `duckdb` extra/group before calling it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">validation</span> <span class="o">=</span> <span class="n">_validate_profiles</span><span class="p">(</span><span class="n">profiles</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">validation</span><span class="o">.</span><span class="n">is_valid</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Profiles do not satisfy the microscopy join contract: &quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">validation</span><span class="o">.</span><span class="n">missing_required_columns</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="n">image_assets</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_pylist</span><span class="p">(</span><span class="n">scan_result_to_rows</span><span class="p">(</span><span class="n">scan_result</span><span class="p">))</span>
+    <span class="n">chunk_index</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">include_chunks</span><span class="p">:</span>
+        <span class="n">chunk_index</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_pylist</span><span class="p">(</span><span class="n">scan_result_to_chunk_rows</span><span class="p">(</span><span class="n">scan_result</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">join_image_assets_with_profiles</span><span class="p">(</span>
+        <span class="n">image_assets</span><span class="p">,</span>
+        <span class="n">profiles</span><span class="p">,</span>
+        <span class="n">chunk_index</span><span class="o">=</span><span class="n">chunk_index</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="join_profiles_with_store">
+<a class="viewcode-back" href="../../python-api.html#iceberg_bioimage.join_profiles_with_store">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">join_profiles_with_store</span><span class="p">(</span>
+    <span class="n">uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">profiles</span><span class="p">:</span> <span class="n">MetadataSource</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">include_chunks</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scan a store and join its canonical image assets to profile rows.</span>
+
+<span class="sd">    This helper uses the optional DuckDB integration at runtime. Install the</span>
+<span class="sd">    `duckdb` extra/group before calling it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">join_profiles_with_scan_result</span><span class="p">(</span>
+        <span class="n">scan_store</span><span class="p">(</span><span class="n">uri</span><span class="p">),</span>
+        <span class="n">profiles</span><span class="p">,</span>
+        <span class="n">include_chunks</span><span class="o">=</span><span class="n">include_chunks</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_profiles</span><span class="p">(</span><span class="n">profiles</span><span class="p">:</span> <span class="n">MetadataSource</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ContractValidationResult</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">profiles</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">validate_microscopy_profile_table</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">profiles</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">profiles</span><span class="p">,</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">validate_microscopy_profile_columns</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">profiles</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">names</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">profiles</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">columns</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">key</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">profiles</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">row</span><span class="p">})</span>
+        <span class="k">return</span> <span class="n">validate_microscopy_profile_columns</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span>
+
+    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported profile source type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">profiles</span><span class="p">)</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 
                 </article>

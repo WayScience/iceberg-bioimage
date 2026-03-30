@@ -46,7 +46,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'workflow';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="DuckDB Integration" href="duckdb.html" />
+    <link rel="prev" title="Metadata Workflow Example" href="examples/metadata-workflow.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -135,6 +135,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="duckdb.html">
     DuckDB Integration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples/metadata-workflow.html">
+    Metadata Workflow Example
   </a>
 </li>
 
@@ -240,6 +247,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="duckdb.html">
     DuckDB Integration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples/metadata-workflow.html">
+    Metadata Workflow Example
   </a>
 </li>
 
@@ -356,10 +370,13 @@
 <p>The library currently supports:</p>
 <ul class="simple">
 <li><p>Scanning Zarr and OME-TIFF stores into canonical <code class="docutils literal notranslate"><span class="pre">ScanResult</span></code> objects</p></li>
+<li><p>Summarizing scan results into ergonomic <code class="docutils literal notranslate"><span class="pre">DatasetSummary</span></code> objects</p></li>
 <li><p>Publishing canonical <code class="docutils literal notranslate"><span class="pre">image_assets</span></code> rows to Iceberg with PyIceberg</p></li>
 <li><p>Publishing canonical <code class="docutils literal notranslate"><span class="pre">chunk_index</span></code> rows for chunked assets</p></li>
 <li><p>Validating profile-table schemas against the microscopy join contract</p></li>
+<li><p>Joining scanned image metadata to profile tables through a high-level API</p></li>
 <li><p>Optional DuckDB query helpers over canonical metadata tables</p></li>
+<li><p>Optional OME-Arrow helpers for Arrow-native image payload workflows</p></li>
 <li><p>Catalog-facing adapters for loading canonical metadata into query workflows</p></li>
 </ul>
 <p>DuckDB integration remains optional and outside the core metadata model. The
@@ -368,6 +385,21 @@ publishing so other query engines can be added later without reshaping the
 core package.</p>
 <p>Chunk index publishing is intentionally metadata-only. Assets without chunking
 metadata simply produce zero <code class="docutils literal notranslate"><span class="pre">chunk_index</span></code> rows.</p>
+</section>
+<section id="zarr-v2-and-v3">
+<h2>Zarr v2 and v3<a class="headerlink" href="#zarr-v2-and-v3" title="Link to this heading">#</a></h2>
+<p>The package intentionally keeps one scan entry point for <code class="docutils literal notranslate"><span class="pre">.zarr</span></code> paths:
+<code class="docutils literal notranslate"><span class="pre">scan_store(...)</span></code>.</p>
+<ul class="simple">
+<li><p>Local Zarr v2 stores are scanned through the <code class="docutils literal notranslate"><span class="pre">zarr</span></code> Python package</p></li>
+<li><p>Local Zarr v3 stores are scanned from <code class="docutils literal notranslate"><span class="pre">zarr.json</span></code> metadata</p></li>
+<li><p>Summaries expose the detected storage variant so users can inspect mixed
+catalogs without learning separate APIs</p></li>
+<li><p>The package dependency range now permits both Zarr 2 and Zarr 3 runtimes.</p></li>
+<li><p>Optional integrations such as OME-Arrow can coexist with the core scanner.</p></li>
+</ul>
+<p>This keeps the package approachable while the wider ecosystem continues to
+settle around Zarr v3 runtime support.</p>
 </section>
 <section id="microscopy-join-contract">
 <h2>Microscopy join contract<a class="headerlink" href="#microscopy-join-contract" title="Link to this heading">#</a></h2>
@@ -389,10 +421,12 @@ metadata without taking on execution-engine responsibilities.</p>
 <section id="cli-examples">
 <h2>CLI examples<a class="headerlink" href="#cli-examples" title="Link to this heading">#</a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>iceberg-bioimage<span class="w"> </span>scan<span class="w"> </span>data/experiment.zarr
+iceberg-bioimage<span class="w"> </span>summarize<span class="w"> </span>data/experiment.zarr
 iceberg-bioimage<span class="w"> </span>register<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage<span class="w"> </span>data/experiment.zarr
 iceberg-bioimage<span class="w"> </span>register<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage<span class="w"> </span>--publish-chunks<span class="w"> </span>data/experiment.zarr
 iceberg-bioimage<span class="w"> </span>publish-chunks<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage<span class="w"> </span>data/experiment.zarr
 iceberg-bioimage<span class="w"> </span>validate-contract<span class="w"> </span>data/cells.parquet
+iceberg-bioimage<span class="w"> </span>join-profiles<span class="w"> </span>data/experiment.zarr<span class="w"> </span>data/cells.parquet<span class="w"> </span>--output<span class="w"> </span>joined.parquet
 </pre></div>
 </div>
 </section>
@@ -402,6 +436,8 @@ iceberg-bioimage<span class="w"> </span>validate-contract<span class="w"> </span
 <li><p><code class="docutils literal notranslate"><span class="pre">examples/quickstart.py</span></code>: minimal registration and validation flow</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">examples/catalog_duckdb.py</span></code>: catalog-backed metadata joined to analysis rows</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">examples/synthetic_workflow.py</span></code>: self-contained local synthetic workflow</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs/src/examples/metadata-workflow.ipynb</span></code>: summary and join workflow in a
+notebook</p></li>
 </ul>
 </section>
 </section>
@@ -417,12 +453,12 @@ iceberg-bioimage<span class="w"> </span>validate-contract<span class="w"> </span
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="duckdb.html"
+       href="examples/metadata-workflow.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">DuckDB Integration</p>
+        <p class="prev-next-title">Metadata Workflow Example</p>
       </div>
     </a>
 </div>

@@ -138,6 +138,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples/metadata-workflow.html">
+    Metadata Workflow Example
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../workflow.html">
     Workflow
   </a>
@@ -240,6 +247,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../duckdb.html">
     DuckDB Integration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples/metadata-workflow.html">
+    Metadata Workflow Example
   </a>
 </li>
 
@@ -407,6 +421,12 @@
 <a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.SupportsScanCatalog.load_table">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_table</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">identifier</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">SupportsIcebergTable</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load an existing Iceberg table.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="SupportsScanCatalog.list_tables">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.SupportsScanCatalog.list_tables">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">list_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">namespace</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;List tables within a namespace.&quot;&quot;&quot;</span></div>
 </div>
 
 
@@ -433,9 +453,27 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SupportsIcebergTable</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Load a canonical metadata table from a catalog.&quot;&quot;&quot;</span>
 
-    <span class="n">resolved_catalog</span> <span class="o">=</span> <span class="n">_resolve_catalog</span><span class="p">(</span><span class="n">catalog</span><span class="p">)</span>
+    <span class="n">resolved_catalog</span> <span class="o">=</span> <span class="n">_resolve_scan_catalog</span><span class="p">(</span><span class="n">catalog</span><span class="p">)</span>
     <span class="n">identifier</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">_normalize_namespace</span><span class="p">(</span><span class="n">namespace</span><span class="p">),</span> <span class="n">table_name</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">resolved_catalog</span><span class="o">.</span><span class="n">load_table</span><span class="p">(</span><span class="n">identifier</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="list_catalog_tables">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.list_catalog_tables">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">list_catalog_tables</span><span class="p">(</span>
+    <span class="n">catalog</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">SupportsScanCatalog</span><span class="p">,</span>
+    <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;List canonical metadata tables available in a catalog namespace.&quot;&quot;&quot;</span>
+
+    <span class="n">resolved_catalog</span> <span class="o">=</span> <span class="n">_resolve_scan_catalog</span><span class="p">(</span><span class="n">catalog</span><span class="p">)</span>
+    <span class="n">resolved_namespace</span> <span class="o">=</span> <span class="n">_normalize_namespace</span><span class="p">(</span><span class="n">namespace</span><span class="p">)</span>
+    <span class="n">table_names</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">identifier</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">identifier</span> <span class="ow">in</span> <span class="n">resolved_catalog</span><span class="o">.</span><span class="n">list_tables</span><span class="p">(</span><span class="n">resolved_namespace</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">table_names</span><span class="p">)</span></div>
 
 
 
@@ -524,6 +562,14 @@
         <span class="k">return</span> <span class="p">[</span><span class="n">columns</span><span class="p">]</span>
 
     <span class="k">return</span> <span class="n">columns</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_scan_catalog</span><span class="p">(</span><span class="n">catalog</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">SupportsScanCatalog</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SupportsScanCatalog</span><span class="p">:</span>
+    <span class="n">resolved_catalog</span> <span class="o">=</span> <span class="n">_resolve_catalog</span><span class="p">(</span><span class="n">catalog</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">resolved_catalog</span><span class="p">,</span> <span class="s2">&quot;list_tables&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Catalog must provide a list_tables(namespace) method.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">resolved_catalog</span>
 </pre></div>
 
                 </article>
