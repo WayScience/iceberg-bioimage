@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import url2pathname
@@ -15,6 +16,17 @@ from iceberg_bioimage.adapters.base import BaseAdapter
 from iceberg_bioimage.models.scan_result import ImageAsset, ScanResult
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class TraversalContext:
+    """Traversal state for recursive Zarr v2 group scanning."""
+
+    uri: str
+    image_assets: list[ImageAsset]
+    root_attrs: object
+    prefix: str = ""
+    metadata_owner_path: str | None = None
 
 
 class ZarrV2Adapter(BaseAdapter):
@@ -46,10 +58,12 @@ class ZarrV2Adapter(BaseAdapter):
             )
         else:
             self._collect_group_arrays(
-                uri=uri,
-                image_assets=image_assets,
                 node=store,
-                root_attrs=root_attrs,
+                context=TraversalContext(
+                    uri=uri,
+                    image_assets=image_assets,
+                    root_attrs=root_attrs,
+                ),
             )
 
         if not image_assets:
@@ -81,43 +95,37 @@ class ZarrV2Adapter(BaseAdapter):
                 )
             )
 
-    def _collect_group_arrays(
-        self,
-        uri: str,
-        image_assets: list[ImageAsset],
-        node: object,
-        root_attrs: object,
-        *,
-        prefix: str = "",
-        metadata_owner_path: str | None = None,
-    ) -> None:
+    def _collect_group_arrays(self, node: object, context: TraversalContext) -> None:
         node_attrs = getattr(node, "attrs", None)
         has_local_multiscales = False
         if isinstance(node_attrs, Mapping) or hasattr(node_attrs, "get"):
             has_local_multiscales = node_attrs.get("multiscales") is not None
-        group_attrs = node_attrs if has_local_multiscales else root_attrs
+        group_attrs = node_attrs if has_local_multiscales else context.root_attrs
+        metadata_owner_path = context.metadata_owner_path
         if has_local_multiscales:
-            metadata_owner_path = prefix or None
+            metadata_owner_path = context.prefix or None
 
         for key in self._node_keys(node):
             child = node[key]
-            path = f"{prefix}/{key}" if prefix else str(key)
+            path = f"{context.prefix}/{key}" if context.prefix else str(key)
             if hasattr(child, "shape") and hasattr(child, "dtype"):
                 self._maybe_collect_array(
-                    uri,
-                    image_assets,
+                    context.uri,
+                    context.image_assets,
                     path,
                     child,
                     (group_attrs, metadata_owner_path),
                 )
                 continue
             self._collect_group_arrays(
-                uri=uri,
-                image_assets=image_assets,
                 node=child,
-                root_attrs=group_attrs,
-                prefix=path,
-                metadata_owner_path=metadata_owner_path,
+                context=TraversalContext(
+                    uri=context.uri,
+                    image_assets=context.image_assets,
+                    root_attrs=group_attrs,
+                    prefix=path,
+                    metadata_owner_path=metadata_owner_path,
+                ),
             )
 
     def _node_keys(self, node: object) -> list[str]:
@@ -200,6 +208,12 @@ class ZarrV2Adapter(BaseAdapter):
                     "Skipping malformed zarr.json at %s: %s",
                     metadata_path,
                     exc,
+                )
+                continue
+            if not isinstance(node_metadata, Mapping):
+                logger.warning(
+                    "Skipping non-object zarr.json at %s: expected a JSON object",
+                    metadata_path,
                 )
                 continue
             if node_metadata.get("node_type") != "array":
@@ -331,6 +345,13 @@ class ZarrV2Adapter(BaseAdapter):
                     "Skipping malformed parent zarr.json at %s: %s",
                     metadata_path,
                     exc,
+                )
+                continue
+            if not isinstance(group_metadata, Mapping):
+                logger.warning(
+                    "Skipping non-object parent zarr.json at %s: "
+                    "expected a JSON object",
+                    metadata_path,
                 )
                 continue
             group_attrs = group_metadata.get("attributes", {})

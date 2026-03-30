@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 from iceberg_bioimage.adapters.ome_tiff import OMETiffAdapter
-from iceberg_bioimage.adapters.zarr_v2 import ZarrV2Adapter
+from iceberg_bioimage.adapters.zarr_v2 import TraversalContext, ZarrV2Adapter
 
 
 def test_ome_tiff_image_id_strips_suffix_case_insensitively() -> None:
@@ -72,10 +72,12 @@ def test_zarr_adapter_collects_arrays_without_visititems() -> None:
             return self._mapping[key]
 
     adapter._collect_group_arrays(
-        uri="/tmp/demo.zarr",
-        image_assets=image_assets,
         node=FakeGroup({"0": FakeArray()}),
-        root_attrs={},
+        context=TraversalContext(
+            uri="/tmp/demo.zarr",
+            image_assets=image_assets,
+            root_attrs={},
+        ),
     )
 
     assert [asset.array_path for asset in image_assets] == ["0"]
