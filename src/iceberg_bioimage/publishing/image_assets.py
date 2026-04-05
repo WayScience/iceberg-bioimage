@@ -114,20 +114,15 @@ def _load_or_create_table(
     requested_namespace = _normalize_namespace(namespace)
     candidate_namespaces = _namespace_candidates(requested_namespace)
 
-    for resolved_namespace in candidate_namespaces:
-        identifier = (*resolved_namespace, table_name)
-        try:
-            table = catalog.load_table(identifier)
-        except NoSuchTableError:  # pragma: no cover - depends on active catalog backend
-            continue
-
-        _warn_for_namespace_resolution(
+    try:
+        return _load_table_with_namespace_fallback(
+            catalog,
             requested_namespace,
-            resolved_namespace,
             table_name,
             operation="publishing",
         )
-        return table
+    except NoSuchTableError:
+        pass
 
     build_schema = (
         _build_image_assets_schema if schema_builder is None else schema_builder
@@ -284,6 +279,7 @@ def _list_tables_with_namespace_fallback(
 
     requested_namespace = _normalize_namespace(namespace)
     discovered: dict[str, tuple[str, ...]] = {}
+    warned_for_list = False
 
     for resolved_namespace in _namespace_candidates(requested_namespace):
         try:
@@ -291,13 +287,14 @@ def _list_tables_with_namespace_fallback(
         except NoSuchNamespaceError:
             continue
 
-        if identifiers:
+        if identifiers and not warned_for_list:
             _warn_for_namespace_resolution(
                 requested_namespace,
                 resolved_namespace,
                 "catalog tables",
                 operation="listing",
             )
+            warned_for_list = True
         for identifier in identifiers:
             discovered.setdefault(identifier[-1], identifier)
 
@@ -339,13 +336,21 @@ def _warn_for_namespace_resolution(
     expected_namespace_parts = _namespace_candidates(requested_namespace)[0]
     expected_namespace = ".".join(expected_namespace_parts)
     resolved_namespace_name = ".".join(resolved_namespace)
+    expected_full = (
+        f"{expected_namespace}.{table_name}" if expected_namespace else table_name
+    )
+    resolved_full = (
+        f"{resolved_namespace_name}.{table_name}"
+        if resolved_namespace_name
+        else table_name
+    )
     action = "Creating" if creating else "Using"
     warnings.warn(
         (
             f"Namespace '{'.'.join(requested_namespace)}' does not match "
             f"CytoTable's expected Iceberg namespace layout. {action} "
-            f"'{resolved_namespace_name}.{table_name}' during {operation}; "
-            f"CytoTable expects '{expected_namespace}.{table_name}'."
+            f"'{resolved_full}' during {operation}; "
+            f"CytoTable expects '{expected_full}'."
         ),
         UserWarning,
         stacklevel=3,

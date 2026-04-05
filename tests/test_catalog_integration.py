@@ -104,6 +104,21 @@ def test_list_catalog_tables() -> None:
         ]
 
 
+def test_list_catalog_tables_warns_once_when_both_namespace_layouts_exist() -> None:
+    catalog = FakeCatalog(
+        {
+            ("cytotable", "image_assets"): FakeIcebergTable(pa.table({})),
+            ("image_assets",): FakeIcebergTable(pa.table({})),
+        }
+    )
+
+    with pytest.warns(UserWarning) as recorded:
+        assert list_catalog_tables(catalog, ()) == ["image_assets"]
+
+    assert len(recorded) == 1
+    assert "CytoTable's expected Iceberg namespace layout" in str(recorded[0].message)
+
+
 def test_catalog_table_to_arrow() -> None:
     fake_table = FakeIcebergTable(
         pa.table(

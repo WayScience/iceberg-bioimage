@@ -82,7 +82,12 @@ def join_image_assets_with_profiles(  # noqa: PLR0913
     connection: DuckDBPyConnection | None = None,
     profile_dataset_id: str | None = None,
 ) -> pa.Table:
-    """Join image metadata to a profile table using the canonical join keys."""
+    """Join image metadata to a profile table using the canonical join keys.
+
+    If ``profile_dataset_id`` is provided, that value is used to populate the
+    profile-side ``dataset_id`` when the profile input lacks one. When it is
+    None, the profile input is expected to carry ``dataset_id`` already.
+    """
 
     duckdb_connection, owns_connection = _get_connection(connection)
     try:
