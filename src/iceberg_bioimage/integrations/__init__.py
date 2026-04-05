@@ -35,8 +35,8 @@ __all__ = [
     "join_catalog_image_assets_with_profiles",
     "join_image_assets_with_profiles",
     "list_catalog_tables",
-    "load_warehouse_manifest",
     "load_catalog_table",
+    "load_warehouse_manifest",
     "query_metadata_table",
     "scan_ome_arrow",
 ]

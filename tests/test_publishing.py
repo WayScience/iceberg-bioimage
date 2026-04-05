@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 import pytest
+from pyiceberg.exceptions import NamespaceAlreadyExistsError
 from pytest import MonkeyPatch
 
 from iceberg_bioimage.models.scan_result import ImageAsset, ScanResult
@@ -128,6 +129,12 @@ def test_publish_image_assets_uses_existing_legacy_table(
 def test_publish_image_assets_create_namespace_fallback_suppresses_existing_error(
     monkeypatch: MonkeyPatch,
 ) -> None:
+    class ExistingNamespaceCatalog(FakeCreateNamespaceCatalog):
+        def create_namespace(self, namespace: tuple[str, ...]) -> None:
+            raise NamespaceAlreadyExistsError(
+                f"Namespace already exists: {namespace!r}"
+            )
+
     scan_result = ScanResult(
         source_uri="/tmp/experiment.zarr",
         format_family="zarr",
@@ -139,9 +146,7 @@ def test_publish_image_assets_create_namespace_fallback_suppresses_existing_erro
             )
         ],
     )
-    fake_catalog = FakeCreateNamespaceCatalog()
-    namespace = ("bioimage", "cytotable")
-    fake_catalog.namespaces.add(namespace)
+    fake_catalog = ExistingNamespaceCatalog()
 
     monkeypatch.setattr(
         image_assets_module,
@@ -158,7 +163,6 @@ def test_publish_image_assets_create_namespace_fallback_suppresses_existing_erro
         )
 
     assert row_count == 1
-    assert fake_catalog.created_namespaces == []
     assert fake_catalog.created_identifiers == [
         ("bioimage", "cytotable", "image_assets")
     ]

@@ -157,16 +157,10 @@ def _register_source(
     connection: DuckDBPyConnection,
     name: str,
     source: MetadataSource,
-) -> None:
-    if isinstance(source, (str, Path)):
-        connection.from_parquet(str(source)).create_view(name, replace=True)
-        return
-
-    if isinstance(source, list):
-        connection.register(name, pa.Table.from_pylist(source))
-        return
-
-    connection.register(name, source)
+) -> DuckDBPyRelation:
+    relation = _relation_for_source(connection, source)
+    relation.create_view(name, replace=True)
+    return relation
 
 
 def _register_profiles_source(
@@ -175,12 +169,11 @@ def _register_profiles_source(
     *,
     dataset_id: str | None = None,
 ) -> None:
-    _register_source(connection, "profiles_source", source)
-    columns = _columns_for_source(source)
+    relation = _register_source(connection, "profiles_source", source)
+    columns = _columns_for_source(relation)
     projection = _profile_projection(columns, dataset_id=dataset_id)
     connection.execute(
-        "CREATE OR REPLACE VIEW profiles AS "
-        f"SELECT {projection} FROM profiles_source"
+        f"CREATE OR REPLACE VIEW profiles AS SELECT {projection} FROM profiles_source"
     )
 
 
@@ -196,7 +189,9 @@ def _require_duckdb() -> object:
     return duckdb
 
 
-def _columns_for_source(source: MetadataSource) -> list[str]:
+def _columns_for_source(source: MetadataSource | DuckDBPyRelation) -> list[str]:
+    if hasattr(source, "columns"):
+        return list(source.columns)
     if isinstance(source, list):
         if not source:
             return []

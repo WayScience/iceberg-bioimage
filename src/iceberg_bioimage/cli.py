@@ -335,9 +335,7 @@ def _handle_export_cytomining_catalog(args: argparse.Namespace) -> int:
         args.warehouse_root,
         profiles=args.profiles,
         image_assets_table_name=args.image_assets_table,
-        chunk_index_table_name=(
-            None if args.skip_chunks else args.chunk_index_table
-        ),
+        chunk_index_table_name=(None if args.skip_chunks else args.chunk_index_table),
         profile_dataset_id=args.profile_dataset_id,
         mode=args.mode,
     )

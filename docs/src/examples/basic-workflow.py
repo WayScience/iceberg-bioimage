@@ -77,9 +77,7 @@ class DemoCatalog:
 
     def list_tables(self, namespace: tuple[str, ...]) -> list[tuple[str, ...]]:
         return [
-            identifier
-            for identifier in self.tables
-            if identifier[:-1] == namespace
+            identifier for identifier in self.tables if identifier[:-1] == namespace
         ]
 
 
@@ -91,7 +89,6 @@ def warehouse_snapshot(catalog: DemoCatalog) -> dict[str, list[dict[str, object]
             rows.extend(appended.to_pylist())
         snapshot[".".join(identifier)] = rows
     return snapshot
-
 
 
 # +

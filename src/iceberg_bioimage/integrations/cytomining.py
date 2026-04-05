@@ -412,8 +412,6 @@ def _catalog_source_ref(
     namespace: str | tuple[str, ...],
     table_name: str,
 ) -> str:
-    namespace_label = (
-        namespace if isinstance(namespace, str) else ".".join(namespace)
-    )
+    namespace_label = namespace if isinstance(namespace, str) else ".".join(namespace)
     catalog_label = catalog if isinstance(catalog, str) else type(catalog).__name__
     return f"{catalog_label}:{namespace_label}.{table_name}"

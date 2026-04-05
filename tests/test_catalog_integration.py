@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import pyarrow as pa
 import pytest
 from pyiceberg.exceptions import NoSuchTableError
@@ -234,7 +236,7 @@ def test_join_catalog_image_assets_with_profiles(
         image_assets: pa.Table,
         profiles_table: pa.Table,
         *,
-        join_keys: tuple[str, ...] = ("dataset_id", "image_id"),
+        join_keys: Sequence[str] = ("dataset_id", "image_id"),
         chunk_index: pa.Table | None = None,
         profile_dataset_id: str | None = None,
     ) -> pa.Table:

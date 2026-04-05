@@ -172,11 +172,7 @@ def resolve_microscopy_profile_columns(
             continue
 
         resolved[column] = next(
-            (
-                alias
-                for alias in aliases.get(column, ())
-                if alias in present_columns
-            ),
+            (alias for alias in aliases.get(column, ()) if alias in present_columns),
             None,
         )
 

@@ -185,9 +185,7 @@ def test_export_profiles_to_cytomining_warehouse_appends_named_tables(
     assert pycytominer_result.row_counts == {"pycytominer_profiles": 1}
     assert cosmicqc_result.row_counts == {"cosmicqc_profiles": 1}
 
-    pycytominer_table = ds.dataset(
-        warehouse_root / "pycytominer_profiles"
-    ).to_table()
+    pycytominer_table = ds.dataset(warehouse_root / "pycytominer_profiles").to_table()
     cosmicqc_table = ds.dataset(warehouse_root / "cosmicqc_profiles").to_table()
 
     assert pycytominer_table.to_pydict()["dataset_id"] == ["plate"]

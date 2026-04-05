@@ -28,8 +28,8 @@ For Cytomining workflows, a common pattern is:
 
 1. export `image_assets`, optional `chunk_index`, and optional `joined_profiles`
    into a Parquet warehouse root
-2. use `pycytominer` to load those Parquet datasets directly
-3. use DuckDB helpers here when you want lightweight SQL over the same metadata
+1. use `pycytominer` to load those Parquet datasets directly
+1. use DuckDB helpers here when you want lightweight SQL over the same metadata
 
 ## Example
 
