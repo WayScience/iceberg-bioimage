@@ -14,7 +14,8 @@ from iceberg_bioimage.integrations.duckdb import (
     join_image_assets_with_profiles,
 )
 from iceberg_bioimage.publishing.image_assets import (
-    _normalize_namespace,
+    _list_tables_with_namespace_fallback,
+    _load_table_with_namespace_fallback,
     _resolve_catalog,
 )
 
@@ -68,8 +69,12 @@ def load_catalog_table(
     """Load a canonical metadata table from a catalog."""
 
     resolved_catalog = _resolve_scan_catalog(catalog)
-    identifier = (*_normalize_namespace(namespace), table_name)
-    return resolved_catalog.load_table(identifier)
+    return _load_table_with_namespace_fallback(
+        resolved_catalog,
+        namespace,
+        table_name,
+        operation="loading",
+    )
 
 
 def list_catalog_tables(
@@ -79,10 +84,12 @@ def list_catalog_tables(
     """List canonical metadata tables available in a catalog namespace."""
 
     resolved_catalog = _resolve_scan_catalog(catalog)
-    resolved_namespace = _normalize_namespace(namespace)
     table_names = {
         identifier[-1]
-        for identifier in resolved_catalog.list_tables(resolved_namespace)
+        for identifier in _list_tables_with_namespace_fallback(
+            resolved_catalog,
+            namespace,
+        )
     }
     return sorted(table_names)
 
@@ -118,6 +125,7 @@ def join_catalog_image_assets_with_profiles(
     join_keys: Sequence[str] = DEFAULT_JOIN_KEYS,
     image_assets_scan_options: CatalogScanOptions | None = None,
     chunk_index_scan_options: CatalogScanOptions | None = None,
+    profile_dataset_id: str | None = None,
 ) -> pa.Table:
     """Join catalog-backed image metadata to a profile table.
 
@@ -156,6 +164,7 @@ def join_catalog_image_assets_with_profiles(
         profiles,
         join_keys=join_keys,
         chunk_index=chunk_index,
+        profile_dataset_id=profile_dataset_id,
     )
 
 

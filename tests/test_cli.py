@@ -185,6 +185,244 @@ def test_publish_chunks_cli(
     assert '"rows_published": 2' in output.out
 
 
+def test_ingest_cli(
+    monkeypatch: MonkeyPatch,
+    capsys: CaptureFixture[str],
+) -> None:
+    def _fake_ingest_stores_to_warehouse(
+        uris: list[str],
+        catalog: str,
+        namespace: str,
+        *,
+        image_assets_table: str = "image_assets",
+        chunk_index_table: str | None = "chunk_index",
+    ) -> object:
+        assert uris == ["data/a.zarr", "data/b.zarr"]
+        assert catalog == "default"
+        assert namespace == "bioimage"
+        assert image_assets_table == "image_assets"
+        assert chunk_index_table == "chunk_index"
+        return SimpleNamespace(
+            to_json=lambda **kwargs: cli_module.json.dumps(
+                {
+                    "catalog": catalog,
+                    "namespace": ["bioimage"],
+                    "dataset_count": 2,
+                    "image_assets_rows_published": 2,
+                    "chunk_rows_published": 4,
+                },
+                **kwargs,
+            )
+        )
+
+    monkeypatch.setattr(
+        cli_module,
+        "ingest_stores_to_warehouse",
+        _fake_ingest_stores_to_warehouse,
+    )
+
+    exit_code = cli_module.main(
+        [
+            "ingest",
+            "--catalog",
+            "default",
+            "--namespace",
+            "bioimage",
+            "data/a.zarr",
+            "data/b.zarr",
+        ]
+    )
+    output = capsys.readouterr()
+
+    assert exit_code == 0
+    assert '"dataset_count": 2' in output.out
+
+
+def test_export_cytomining_cli(
+    monkeypatch: MonkeyPatch,
+    capsys: CaptureFixture[str],
+) -> None:
+    def _fake_export_store_to_cytomining_warehouse(  # noqa: PLR0913
+        uri: str,
+        warehouse_root: str,
+        *,
+        profiles: str | None = None,
+        include_chunks: bool = True,
+        image_assets_table_name: str = "image_assets",
+        chunk_index_table_name: str = "chunk_index",
+        joined_table_name: str = "joined_profiles",
+        profile_dataset_id: str | None = None,
+        mode: str = "overwrite",
+    ) -> object:
+        assert uri == "data/example.zarr"
+        assert warehouse_root == "warehouse-root"
+        assert profiles == "data/profiles.parquet"
+        assert include_chunks is True
+        assert image_assets_table_name == "image_assets"
+        assert chunk_index_table_name == "chunk_index"
+        assert joined_table_name == "joined_profiles"
+        assert profile_dataset_id == "plate"
+        assert mode == "append"
+        return SimpleNamespace(
+            to_json=lambda **kwargs: cli_module.json.dumps(
+                {
+                    "warehouse_root": warehouse_root,
+                    "tables_written": ["image_assets", "joined_profiles"],
+                    "row_counts": {"image_assets": 1, "joined_profiles": 1},
+                },
+                **kwargs,
+            )
+        )
+
+    monkeypatch.setattr(
+        cli_module,
+        "export_store_to_cytomining_warehouse",
+        _fake_export_store_to_cytomining_warehouse,
+    )
+
+    exit_code = cli_module.main(
+        [
+            "export-cytomining",
+            "--warehouse-root",
+            "warehouse-root",
+            "--profiles",
+            "data/profiles.parquet",
+            "--profile-dataset-id",
+            "plate",
+            "--mode",
+            "append",
+            "data/example.zarr",
+        ]
+    )
+    output = capsys.readouterr()
+
+    assert exit_code == 0
+    assert '"tables_written": [' in output.out
+
+
+def test_export_cytomining_catalog_cli(
+    monkeypatch: MonkeyPatch,
+    capsys: CaptureFixture[str],
+) -> None:
+    def _fake_export_catalog_to_cytomining_warehouse(  # noqa: PLR0913
+        catalog: str,
+        namespace: str,
+        warehouse_root: str,
+        *,
+        profiles: str | None = None,
+        image_assets_table_name: str = "image_assets",
+        chunk_index_table_name: str | None = "chunk_index",
+        joined_table_name: str = "joined_profiles",
+        profile_dataset_id: str | None = None,
+        mode: str = "overwrite",
+    ) -> object:
+        assert catalog == "default"
+        assert namespace == "bioimage"
+        assert warehouse_root == "warehouse-root"
+        assert profiles == "data/profiles.parquet"
+        assert image_assets_table_name == "custom_image_assets"
+        assert chunk_index_table_name is None
+        assert joined_table_name == "joined_profiles"
+        assert profile_dataset_id == "plate"
+        assert mode == "append"
+        return SimpleNamespace(
+            to_json=lambda **kwargs: cli_module.json.dumps(
+                {
+                    "warehouse_root": warehouse_root,
+                    "tables_written": ["custom_image_assets", "joined_profiles"],
+                    "row_counts": {
+                        "custom_image_assets": 1,
+                        "joined_profiles": 1,
+                    },
+                },
+                **kwargs,
+            )
+        )
+
+    monkeypatch.setattr(
+        cli_module,
+        "export_catalog_to_cytomining_warehouse",
+        _fake_export_catalog_to_cytomining_warehouse,
+    )
+
+    exit_code = cli_module.main(
+        [
+            "export-cytomining-catalog",
+            "--catalog",
+            "default",
+            "--namespace",
+            "bioimage",
+            "--warehouse-root",
+            "warehouse-root",
+            "--profiles",
+            "data/profiles.parquet",
+            "--image-assets-table",
+            "custom_image_assets",
+            "--skip-chunks",
+            "--profile-dataset-id",
+            "plate",
+            "--mode",
+            "append",
+        ]
+    )
+    output = capsys.readouterr()
+
+    assert exit_code == 0
+    assert '"custom_image_assets"' in output.out
+
+
+def test_export_cytomining_profiles_cli(
+    monkeypatch: MonkeyPatch,
+    capsys: CaptureFixture[str],
+) -> None:
+    def _fake_export_profiles_to_cytomining_warehouse(
+        profiles: str,
+        warehouse_root: str,
+        *,
+        table_name: str = "profiles",
+        profile_dataset_id: str | None = None,
+        mode: str = "append",
+    ) -> object:
+        assert profiles == "data/profiles.parquet"
+        assert warehouse_root == "warehouse-root"
+        assert table_name == "cosmicqc_profiles"
+        assert profile_dataset_id == "plate"
+        assert mode == "append"
+        return SimpleNamespace(
+            to_json=lambda **kwargs: cli_module.json.dumps(
+                {
+                    "warehouse_root": warehouse_root,
+                    "tables_written": [table_name],
+                    "row_counts": {table_name: 1},
+                },
+                **kwargs,
+            )
+        )
+
+    monkeypatch.setattr(
+        cli_module,
+        "export_profiles_to_cytomining_warehouse",
+        _fake_export_profiles_to_cytomining_warehouse,
+    )
+
+    exit_code = cli_module.main(
+        [
+            "export-cytomining-profiles",
+            "--warehouse-root",
+            "warehouse-root",
+            "--table-name",
+            "cosmicqc_profiles",
+            "--profile-dataset-id",
+            "plate",
+            "data/profiles.parquet",
+        ]
+    )
+    output = capsys.readouterr()
+
+    assert exit_code == 0
+    assert '"cosmicqc_profiles"' in output.out
+
+
 def test_join_profiles_cli(
     tmp_path: Path,
     monkeypatch: MonkeyPatch,
@@ -197,10 +435,12 @@ def test_join_profiles_cli(
         profile_table: str,
         *,
         include_chunks: bool = False,
+        profile_dataset_id: str | None = None,
     ) -> pa.Table:
         assert uri == "data/example.zarr"
         assert profile_table == "data/profiles.parquet"
         assert include_chunks is True
+        assert profile_dataset_id is None
         return pa.table(
             {
                 "dataset_id": ["example"],
@@ -262,10 +502,12 @@ def test_main_returns_cli_error_for_runtime_error(
         profile_table: str,
         *,
         include_chunks: bool = False,
+        profile_dataset_id: str | None = None,
     ) -> pa.Table:
         assert uri == "data/example.zarr"
         assert profile_table == "data/profiles.parquet"
         assert include_chunks is False
+        assert profile_dataset_id is None
         raise RuntimeError("optional duckdb dependency group")
 
     monkeypatch.setattr(

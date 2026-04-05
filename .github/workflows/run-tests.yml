@@ -59,12 +59,21 @@ jobs:
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78
       - name: Run Ruff
         run: uv run --group dev --frozen ruff check
+      - name: Check package build artifacts
+        run: |
+          uv build
+          uvx twine check dist/*
       - name: Build docs
         run: |
           uv run --group docs --frozen sphinx-build \
             -b html \
             docs/src \
             docs/_build/html
+      - name: Check notebook review pairs
+        run: |
+          uv run --group notebooks --frozen \
+            python -m jupytext --sync docs/src/examples/*.ipynb
+          git diff --exit-code docs/src/examples
       - name: Run optional DuckDB integration tests
         run: |
           uv run --group dev --group duckdb --frozen \

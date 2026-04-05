@@ -14,6 +14,8 @@ maxdepth: 3
 ---
 python-api
 duckdb
+cytomining
 examples/metadata-workflow
+examples/basic-workflow
 workflow
 ```

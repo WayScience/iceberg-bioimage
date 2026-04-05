@@ -7,6 +7,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, TypeAlias
 
 import pyarrow as pa
+import pyarrow.dataset as ds
+
+from iceberg_bioimage.validation.contracts import resolve_microscopy_profile_columns
 
 if TYPE_CHECKING:
     from duckdb import DuckDBPyConnection, DuckDBPyRelation
@@ -70,19 +73,24 @@ def query_metadata_table(
     return result
 
 
-def join_image_assets_with_profiles(
+def join_image_assets_with_profiles(  # noqa: PLR0913
     image_assets: MetadataSource,
     profiles: MetadataSource,
     *,
     join_keys: Sequence[str] = DEFAULT_JOIN_KEYS,
     chunk_index: MetadataSource | None = None,
     connection: DuckDBPyConnection | None = None,
+    profile_dataset_id: str | None = None,
 ) -> pa.Table:
     """Join image metadata to a profile table using the canonical join keys."""
 
     duckdb_connection, owns_connection = _get_connection(connection)
     _register_source(duckdb_connection, "image_assets", image_assets)
-    _register_source(duckdb_connection, "profiles", profiles)
+    _register_profiles_source(
+        duckdb_connection,
+        profiles,
+        dataset_id=profile_dataset_id,
+    )
 
     using_clause = ", ".join(join_keys)
     query = [
@@ -156,6 +164,21 @@ def _register_source(
     connection.register(name, source)
 
 
+def _register_profiles_source(
+    connection: DuckDBPyConnection,
+    source: MetadataSource,
+    *,
+    dataset_id: str | None = None,
+) -> None:
+    _register_source(connection, "profiles_source", source)
+    columns = _columns_for_source(source)
+    projection = _profile_projection(columns, dataset_id=dataset_id)
+    connection.execute(
+        "CREATE OR REPLACE VIEW profiles AS "
+        f"SELECT {projection} FROM profiles_source"
+    )
+
+
 def _require_duckdb() -> object:
     try:
         import duckdb
@@ -166,6 +189,19 @@ def _require_duckdb() -> object:
         ) from exc
 
     return duckdb
+
+
+def _columns_for_source(source: MetadataSource) -> list[str]:
+    if isinstance(source, list):
+        if not source:
+            return []
+        return list(pa.Table.from_pylist(source).schema.names)
+    if isinstance(source, pa.Table):
+        return list(source.schema.names)
+    if isinstance(source, (str, Path)):
+        return list(ds.dataset(source).schema.names)
+
+    return []
 
 
 def _as_arrow_table(result: pa.Table | pa.RecordBatchReader) -> pa.Table:
@@ -219,3 +255,36 @@ def _quote_literal(value: FilterValue | None) -> str:
         return "'" + value.replace("'", "''") + "'"
 
     return str(value)
+
+
+def _profile_projection(
+    columns: Sequence[str],
+    *,
+    dataset_id: str | None = None,
+) -> str:
+    projection = ["profiles_source.*"]
+    resolved = resolve_microscopy_profile_columns(list(columns))
+
+    if "dataset_id" not in columns:
+        dataset_source = resolved["dataset_id"]
+        if dataset_source is not None:
+            projection.append(
+                f"{_quote_identifier(dataset_source)} "
+                f"AS {_quote_identifier('dataset_id')}"
+            )
+        elif dataset_id is not None:
+            projection.append(
+                f"{_quote_literal(dataset_id)} AS {_quote_identifier('dataset_id')}"
+            )
+
+    for canonical in ("image_id", "plate_id", "well_id", "site_id"):
+        if canonical in columns:
+            continue
+        source = resolved[canonical]
+        if source is None:
+            continue
+        projection.append(
+            f"{_quote_identifier(source)} AS {_quote_identifier(canonical)}"
+        )
+
+    return ", ".join(projection)

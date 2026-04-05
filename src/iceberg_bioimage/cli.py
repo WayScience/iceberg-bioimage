@@ -9,10 +9,16 @@ import sys
 import pyarrow.parquet as pq
 
 from iceberg_bioimage.api import (
+    ingest_stores_to_warehouse,
     join_profiles_with_store,
     register_store,
     scan_store,
     summarize_store,
+)
+from iceberg_bioimage.integrations.cytomining import (
+    export_catalog_to_cytomining_warehouse,
+    export_profiles_to_cytomining_warehouse,
+    export_store_to_cytomining_warehouse,
 )
 from iceberg_bioimage.models.scan_result import (
     ContractValidationResult,
@@ -69,6 +75,114 @@ def build_parser() -> argparse.ArgumentParser:
     register_parser.add_argument("--chunk-table-name", default="chunk_index")
     register_parser.set_defaults(handler=_handle_register)
 
+    ingest_parser = subparsers.add_parser(
+        "ingest",
+        help=(
+            "Ingest one or more existing datasets into a "
+            "Cytotable-compatible warehouse."
+        ),
+    )
+    ingest_parser.add_argument("uris", nargs="+")
+    ingest_parser.add_argument("--catalog", required=True)
+    ingest_parser.add_argument("--namespace", required=True)
+    ingest_parser.add_argument("--table-name", default="image_assets")
+    ingest_parser.add_argument(
+        "--chunk-table-name",
+        default="chunk_index",
+        help="Chunk-index table name. Use --skip-chunks to disable chunk ingestion.",
+    )
+    ingest_parser.add_argument(
+        "--skip-chunks",
+        action="store_true",
+        help="Skip chunk-index ingestion and publish only image_assets rows.",
+    )
+    ingest_parser.set_defaults(handler=_handle_ingest)
+
+    cytomining_parser = subparsers.add_parser(
+        "export-cytomining",
+        help="Export a dataset into a Parquet Cytomining warehouse root.",
+    )
+    cytomining_parser.add_argument("uri")
+    cytomining_parser.add_argument("--warehouse-root", required=True)
+    cytomining_parser.add_argument("--profiles")
+    cytomining_parser.add_argument(
+        "--skip-chunks",
+        action="store_true",
+        help="Skip chunk-index export and write only image_assets or joined_profiles.",
+    )
+    cytomining_parser.add_argument(
+        "--profile-dataset-id",
+        help=(
+            "Inject dataset_id for profile tables that only carry "
+            "Cytomining Metadata_* columns."
+        ),
+    )
+    cytomining_parser.add_argument(
+        "--mode",
+        choices=("overwrite", "append"),
+        default="overwrite",
+    )
+    cytomining_parser.set_defaults(handler=_handle_export_cytomining)
+
+    cytomining_catalog_parser = subparsers.add_parser(
+        "export-cytomining-catalog",
+        help="Export catalog-backed metadata into a Parquet Cytomining warehouse root.",
+    )
+    cytomining_catalog_parser.add_argument("--catalog", required=True)
+    cytomining_catalog_parser.add_argument("--namespace", required=True)
+    cytomining_catalog_parser.add_argument("--warehouse-root", required=True)
+    cytomining_catalog_parser.add_argument("--profiles")
+    cytomining_catalog_parser.add_argument(
+        "--image-assets-table",
+        default="image_assets",
+    )
+    cytomining_catalog_parser.add_argument(
+        "--chunk-index-table",
+        default="chunk_index",
+    )
+    cytomining_catalog_parser.add_argument(
+        "--skip-chunks",
+        action="store_true",
+        help="Skip chunk-index export and write only image_assets or joined_profiles.",
+    )
+    cytomining_catalog_parser.add_argument(
+        "--profile-dataset-id",
+        help=(
+            "Inject dataset_id for profile tables that only carry "
+            "Cytomining Metadata_* columns."
+        ),
+    )
+    cytomining_catalog_parser.add_argument(
+        "--mode",
+        choices=("overwrite", "append"),
+        default="overwrite",
+    )
+    cytomining_catalog_parser.set_defaults(handler=_handle_export_cytomining_catalog)
+
+    cytomining_profiles_parser = subparsers.add_parser(
+        "export-cytomining-profiles",
+        help="Append a Cytomining profile table into a Parquet warehouse root.",
+    )
+    cytomining_profiles_parser.add_argument("profiles")
+    cytomining_profiles_parser.add_argument("--warehouse-root", required=True)
+    cytomining_profiles_parser.add_argument(
+        "--table-name",
+        default="profiles",
+    )
+    cytomining_profiles_parser.add_argument(
+        "--profile-dataset-id",
+        help=(
+            "Inject dataset_id for profile tables that only carry "
+            "Cytomining Metadata_* columns."
+        ),
+    )
+    cytomining_profiles_parser.add_argument(
+        "--mode",
+        choices=("overwrite", "append"),
+        default="append",
+    )
+    cytomining_profiles_parser.set_defaults(handler=_handle_export_cytomining_profiles)
+
     validate_parser = subparsers.add_parser(
         "validate-contract",
         help="Validate a profile table against the microscopy join contract.",
@@ -102,6 +216,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--include-chunks",
         action="store_true",
         help="Include chunk_index rows in the join when available.",
+    )
+    join_parser.add_argument(
+        "--profile-dataset-id",
+        help=(
+            "Inject dataset_id for profile tables that only carry "
+            "pycytominer/coSMicQC Metadata_* columns."
+        ),
     )
     join_parser.set_defaults(handler=_handle_join_profiles)
 
@@ -182,6 +303,60 @@ def _handle_validate_contract(args: argparse.Namespace) -> int:
     return 0 if result.is_valid else 1
 
 
+def _handle_ingest(args: argparse.Namespace) -> int:
+    result = ingest_stores_to_warehouse(
+        args.uris,
+        args.catalog,
+        args.namespace,
+        image_assets_table=args.table_name,
+        chunk_index_table=(None if args.skip_chunks else args.chunk_table_name),
+    )
+    print(result.to_json(indent=2, sort_keys=True))
+    return 0
+
+
+def _handle_export_cytomining(args: argparse.Namespace) -> int:
+    result = export_store_to_cytomining_warehouse(
+        args.uri,
+        args.warehouse_root,
+        profiles=args.profiles,
+        include_chunks=not args.skip_chunks,
+        profile_dataset_id=args.profile_dataset_id,
+        mode=args.mode,
+    )
+    print(result.to_json(indent=2, sort_keys=True))
+    return 0
+
+
+def _handle_export_cytomining_catalog(args: argparse.Namespace) -> int:
+    result = export_catalog_to_cytomining_warehouse(
+        args.catalog,
+        args.namespace,
+        args.warehouse_root,
+        profiles=args.profiles,
+        image_assets_table_name=args.image_assets_table,
+        chunk_index_table_name=(
+            None if args.skip_chunks else args.chunk_index_table
+        ),
+        profile_dataset_id=args.profile_dataset_id,
+        mode=args.mode,
+    )
+    print(result.to_json(indent=2, sort_keys=True))
+    return 0
+
+
+def _handle_export_cytomining_profiles(args: argparse.Namespace) -> int:
+    result = export_profiles_to_cytomining_warehouse(
+        args.profiles,
+        args.warehouse_root,
+        table_name=args.table_name,
+        profile_dataset_id=args.profile_dataset_id,
+        mode=args.mode,
+    )
+    print(result.to_json(indent=2, sort_keys=True))
+    return 0
+
+
 def _handle_publish_chunks(args: argparse.Namespace) -> int:
     scan_result = scan_store(args.uri)
     row_count = publish_chunk_index(
@@ -211,6 +386,7 @@ def _handle_join_profiles(args: argparse.Namespace) -> int:
         args.uri,
         args.profile_table,
         include_chunks=args.include_chunks,
+        profile_dataset_id=args.profile_dataset_id,
     )
     pq.write_table(joined, args.output)
     print(

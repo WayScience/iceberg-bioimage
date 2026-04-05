@@ -7,6 +7,14 @@ from .catalog import (
     list_catalog_tables,
     load_catalog_table,
 )
+from .cytomining import (
+    export_catalog_to_cytomining_warehouse,
+    export_profiles_to_cytomining_warehouse,
+    export_scan_result_to_cytomining_warehouse,
+    export_store_to_cytomining_warehouse,
+    export_table_to_cytomining_warehouse,
+    load_warehouse_manifest,
+)
 from .duckdb import (
     create_duckdb_connection,
     join_image_assets_with_profiles,
@@ -19,9 +27,15 @@ __all__ = [
     "catalog_table_to_arrow",
     "create_duckdb_connection",
     "create_ome_arrow",
+    "export_catalog_to_cytomining_warehouse",
+    "export_profiles_to_cytomining_warehouse",
+    "export_scan_result_to_cytomining_warehouse",
+    "export_store_to_cytomining_warehouse",
+    "export_table_to_cytomining_warehouse",
     "join_catalog_image_assets_with_profiles",
     "join_image_assets_with_profiles",
     "list_catalog_tables",
+    "load_warehouse_manifest",
     "load_catalog_table",
     "query_metadata_table",
     "scan_ome_arrow",

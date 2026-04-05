@@ -1,8 +1,8 @@
 # DuckDB Integration
 
 DuckDB is the first supported query integration for `iceberg-bioimage`, but it
-is intentionally optional. The core package still focuses on scanning,
-canonicalization, validation, and publishing.
+is intentionally optional. The core package focuses on scanning,
+canonicalization, Cytomining warehouse export, validation, and publishing.
 
 ## Install
 
@@ -23,6 +23,13 @@ These helpers operate on canonical metadata in Parquet, Arrow, or row-list
 form. Catalog-backed helpers use PyIceberg to materialize canonical metadata
 tables into Arrow before querying. None of these helpers replace catalog
 management, storage access, or image IO.
+
+For Cytomining workflows, a common pattern is:
+
+1. export `image_assets`, optional `chunk_index`, and optional `joined_profiles`
+   into a Parquet warehouse root
+2. use `pycytominer` to load those Parquet datasets directly
+3. use DuckDB helpers here when you want lightweight SQL over the same metadata
 
 ## Example
 

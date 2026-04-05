@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import pyarrow as pa
+import pytest
+from pyiceberg.exceptions import NoSuchTableError
 from pytest import MonkeyPatch
 
 from iceberg_bioimage.integrations import catalog as catalog_module
@@ -65,6 +67,9 @@ class FakeCatalog:
         self.tables = tables
 
     def load_table(self, identifier: tuple[str, ...]) -> FakeIcebergTable:
+        if identifier not in self.tables:
+            raise NoSuchTableError(f"Missing table: {identifier!r}")
+
         return self.tables[identifier]
 
     def list_tables(self, namespace: tuple[str, ...]) -> list[tuple[str, ...]]:
@@ -75,9 +80,10 @@ class FakeCatalog:
 
 def test_load_catalog_table() -> None:
     fake_table = FakeIcebergTable(pa.table({"dataset_id": ["ds-1"]}))
-    catalog = FakeCatalog({("bioimage", "image_assets"): fake_table})
+    catalog = FakeCatalog({("bioimage", "cytotable", "image_assets"): fake_table})
 
-    loaded = load_catalog_table(catalog, "bioimage", "image_assets")
+    with pytest.warns(UserWarning, match="CytoTable's expected Iceberg namespace"):
+        loaded = load_catalog_table(catalog, "bioimage", "image_assets")
 
     assert loaded is fake_table
 
@@ -85,16 +91,17 @@ def test_load_catalog_table() -> None:
 def test_list_catalog_tables() -> None:
     catalog = FakeCatalog(
         {
-            ("bioimage", "image_assets"): FakeIcebergTable(pa.table({})),
-            ("bioimage", "chunk_index"): FakeIcebergTable(pa.table({})),
+            ("bioimage", "cytotable", "image_assets"): FakeIcebergTable(pa.table({})),
+            ("bioimage", "cytotable", "chunk_index"): FakeIcebergTable(pa.table({})),
             ("other", "image_assets"): FakeIcebergTable(pa.table({})),
         }
     )
 
-    assert list_catalog_tables(catalog, "bioimage") == [
-        "chunk_index",
-        "image_assets",
-    ]
+    with pytest.warns(UserWarning, match="CytoTable's expected Iceberg namespace"):
+        assert list_catalog_tables(catalog, "bioimage") == [
+            "chunk_index",
+            "image_assets",
+        ]
 
 
 def test_catalog_table_to_arrow() -> None:
@@ -107,11 +114,11 @@ def test_catalog_table_to_arrow() -> None:
             }
         )
     )
-    catalog = FakeCatalog({("bioimage", "image_assets"): fake_table})
+    catalog = FakeCatalog({("bioimage", "cytotable", "image_assets"): fake_table})
 
     result = catalog_table_to_arrow(
         catalog,
-        "bioimage",
+        "bioimage.cytotable",
         "image_assets",
         scan_options=CatalogScanOptions(
             columns=["dataset_id", "image_id"],
@@ -144,11 +151,11 @@ def test_catalog_table_to_arrow_accepts_string_column_name() -> None:
             }
         )
     )
-    catalog = FakeCatalog({("bioimage", "image_assets"): fake_table})
+    catalog = FakeCatalog({("bioimage", "cytotable", "image_assets"): fake_table})
 
     result = catalog_table_to_arrow(
         catalog,
-        "bioimage",
+        "bioimage.cytotable",
         "image_assets",
         scan_options=CatalogScanOptions(columns="dataset_id"),
     )
@@ -184,8 +191,8 @@ def test_join_catalog_image_assets_with_profiles(
     )
     catalog = FakeCatalog(
         {
-            ("bioimage", "custom_image_assets"): image_assets_table,
-            ("bioimage", "chunk_index"): chunk_index_table,
+            ("bioimage", "cytotable", "custom_image_assets"): image_assets_table,
+            ("bioimage", "cytotable", "chunk_index"): chunk_index_table,
         }
     )
     profiles = pa.table(
@@ -214,11 +221,13 @@ def test_join_catalog_image_assets_with_profiles(
         *,
         join_keys: tuple[str, ...] = ("dataset_id", "image_id"),
         chunk_index: pa.Table | None = None,
+        profile_dataset_id: str | None = None,
     ) -> pa.Table:
         assert image_assets.to_pydict()["uri"] == ["data/example.zarr"]
         assert profiles_table.to_pydict()["cell_count"] == [42]
         assert join_keys == ("dataset_id", "image_id")
         assert chunk_index is not None
+        assert profile_dataset_id is None
         return expected
 
     monkeypatch.setattr(
@@ -229,7 +238,7 @@ def test_join_catalog_image_assets_with_profiles(
 
     result = join_catalog_image_assets_with_profiles(
         catalog,
-        "bioimage",
+        "bioimage.cytotable",
         profiles,
         image_assets_table="custom_image_assets",
         chunk_index_table="chunk_index",
@@ -279,7 +288,9 @@ def test_join_catalog_image_assets_with_profiles_accepts_string_join_key(
             }
         )
     )
-    catalog = FakeCatalog({("bioimage", "image_assets"): image_assets_table})
+    catalog = FakeCatalog(
+        {("bioimage", "cytotable", "image_assets"): image_assets_table}
+    )
     profiles = pa.table({"dataset_id": ["ds-1"], "cell_count": [42]})
 
     def _fake_join_image_assets_with_profiles(
@@ -288,11 +299,13 @@ def test_join_catalog_image_assets_with_profiles_accepts_string_join_key(
         *,
         join_keys: tuple[str, ...] = ("dataset_id", "image_id"),
         chunk_index: pa.Table | None = None,
+        profile_dataset_id: str | None = None,
     ) -> pa.Table:
         assert image_assets.to_pydict()["uri"] == ["data/example.zarr"]
         assert profiles_table.to_pydict()["cell_count"] == [42]
         assert join_keys == ["dataset_id"]
         assert chunk_index is None
+        assert profile_dataset_id is None
         return image_assets
 
     monkeypatch.setattr(
@@ -303,7 +316,7 @@ def test_join_catalog_image_assets_with_profiles_accepts_string_join_key(
 
     result = join_catalog_image_assets_with_profiles(
         catalog,
-        "bioimage",
+        "bioimage.cytotable",
         profiles,
         join_keys="dataset_id",
     )

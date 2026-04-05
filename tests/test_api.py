@@ -15,6 +15,8 @@ import zarr
 from iceberg_bioimage import (
     ImageAsset,
     ScanResult,
+    ingest_scan_results_to_warehouse,
+    ingest_stores_to_warehouse,
     join_profiles_with_scan_result,
     join_profiles_with_store,
     scan_store,
@@ -24,6 +26,131 @@ from iceberg_bioimage import (
 
 EXPECTED_CHANNEL_COUNT = 2
 EXPECTED_CHUNK_ROW_COUNT = 4
+
+
+def test_ingest_scan_results_to_warehouse(monkeypatch: pytest.MonkeyPatch) -> None:
+    scan_results = [
+        ScanResult(
+            source_uri="/tmp/a.zarr",
+            format_family="zarr",
+            image_assets=[ImageAsset(uri="/tmp/a.zarr", shape=[2, 2], dtype="uint16")],
+            warnings=["warn-a"],
+        ),
+        ScanResult(
+            source_uri="/tmp/b.zarr",
+            format_family="zarr",
+            image_assets=[
+                ImageAsset(
+                    uri="/tmp/b.zarr",
+                    shape=[4, 4],
+                    dtype="uint16",
+                    chunk_shape=[2, 2],
+                )
+            ],
+        ),
+    ]
+    image_calls: list[tuple[object, object, object, str]] = []
+    chunk_calls: list[tuple[object, object, object, str]] = []
+
+    def _fake_publish_image_assets(
+        catalog: object,
+        namespace: object,
+        table_name: object,
+        scan_result: ScanResult,
+    ) -> int:
+        image_calls.append((catalog, namespace, table_name, scan_result.source_uri))
+        return 1
+
+    def _fake_publish_chunk_index(
+        catalog: object,
+        namespace: object,
+        table_name: object,
+        scan_result: ScanResult,
+    ) -> int:
+        chunk_calls.append((catalog, namespace, table_name, scan_result.source_uri))
+        return 4 if scan_result.source_uri.endswith("b.zarr") else 0
+
+    monkeypatch.setattr(
+        "iceberg_bioimage.api.publish_image_assets",
+        _fake_publish_image_assets,
+    )
+    monkeypatch.setattr(
+        "iceberg_bioimage.api.publish_chunk_index",
+        _fake_publish_chunk_index,
+    )
+
+    result = ingest_scan_results_to_warehouse(
+        scan_results,
+        "default",
+        "bioimage",
+    )
+
+    assert result.to_dict() == {
+        "catalog": "default",
+        "namespace": ["bioimage"],
+        "image_assets_table": "image_assets",
+        "chunk_index_table": "chunk_index",
+        "dataset_count": 2,
+        "image_assets_rows_published": 2,
+        "chunk_rows_published": 4,
+        "datasets": [
+            {
+                "source_uri": "/tmp/a.zarr",
+                "image_assets_rows_published": 1,
+                "chunk_rows_published": 0,
+            },
+            {
+                "source_uri": "/tmp/b.zarr",
+                "image_assets_rows_published": 1,
+                "chunk_rows_published": 4,
+            },
+        ],
+        "warnings": ["warn-a"],
+    }
+    assert image_calls == [
+        ("default", ("bioimage",), "image_assets", "/tmp/a.zarr"),
+        ("default", ("bioimage",), "image_assets", "/tmp/b.zarr"),
+    ]
+    assert chunk_calls == [
+        ("default", ("bioimage",), "chunk_index", "/tmp/a.zarr"),
+        ("default", ("bioimage",), "chunk_index", "/tmp/b.zarr"),
+    ]
+
+
+def test_ingest_stores_to_warehouse_scans_inputs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    scan_calls: list[str] = []
+
+    def _fake_scan_store(uri: str) -> ScanResult:
+        scan_calls.append(uri)
+        return ScanResult(
+            source_uri=f"/canonical/{Path(uri).name}",
+            format_family="zarr",
+            image_assets=[ImageAsset(uri=uri, shape=[1, 1], dtype="uint16")],
+        )
+
+    monkeypatch.setattr("iceberg_bioimage.api.scan_store", _fake_scan_store)
+    monkeypatch.setattr(
+        "iceberg_bioimage.api.publish_image_assets",
+        lambda catalog, namespace, table_name, scan_result: 1,
+    )
+    monkeypatch.setattr(
+        "iceberg_bioimage.api.publish_chunk_index",
+        lambda catalog, namespace, table_name, scan_result: 0,
+    )
+
+    result = ingest_stores_to_warehouse(
+        ["data/a.zarr", "data/b.zarr"],
+        "default",
+        "bioimage",
+    )
+
+    assert scan_calls == ["data/a.zarr", "data/b.zarr"]
+    assert [dataset.source_uri for dataset in result.datasets] == [
+        "/canonical/a.zarr",
+        "/canonical/b.zarr",
+    ]
 
 
 def test_scan_store_reads_zarr(tmp_path: Path) -> None:
@@ -463,6 +590,51 @@ def test_join_profiles_with_store_from_parquet(tmp_path: Path) -> None:
 
     assert joined.to_pydict()["cell_count"] == [11]
     assert joined.to_pydict()["image_id"] == ["plate:0"]
+
+
+def test_join_profiles_with_store_from_pycytominer_fixture(tmp_path: Path) -> None:
+    pytest.importorskip("duckdb")
+
+    store_path = tmp_path / "plate.zarr"
+    root = zarr.open_group(store_path, mode="w", zarr_version=2)
+    data = np.arange(12, dtype=np.uint16).reshape(3, 4)
+    root.create_array("0", data=data, chunks=(2, 2))
+
+    profile_table = Path(__file__).parent / "data" / "profiles_pycytominer.parquet"
+
+    joined = join_profiles_with_store(str(store_path), profile_table)
+
+    assert joined.to_pydict()["dataset_id"] == ["plate"]
+    assert joined.to_pydict()["image_id"] == ["plate:0"]
+    assert joined.to_pydict()["plate_id"] == ["Plate-1"]
+    assert joined.to_pydict()["well_id"] == ["A01"]
+    assert joined.to_pydict()["site_id"] == ["1"]
+    assert joined.to_pydict()["AreaShape_Area"] == [101.5]
+
+
+def test_join_profiles_with_store_from_cosmicqc_fixture(
+    tmp_path: Path,
+) -> None:
+    pytest.importorskip("duckdb")
+
+    store_path = tmp_path / "plate.zarr"
+    root = zarr.open_group(store_path, mode="w", zarr_version=2)
+    data = np.arange(12, dtype=np.uint16).reshape(3, 4)
+    root.create_array("0", data=data, chunks=(2, 2))
+
+    profile_table = Path(__file__).parent / "data" / "profiles_cosmicqc.parquet"
+
+    joined = join_profiles_with_store(
+        str(store_path),
+        profile_table,
+        profile_dataset_id="plate",
+    )
+
+    assert joined.to_pydict()["dataset_id"] == ["plate"]
+    assert joined.to_pydict()["image_id"] == ["plate:0"]
+    assert joined.to_pydict()["well_id"] == ["A01"]
+    assert joined.to_pydict()["site_id"] == ["1"]
+    assert joined.to_pydict()["QC_Pass"] == [True]
 
 
 def test_join_profiles_with_scan_result_rejects_invalid_profiles(
