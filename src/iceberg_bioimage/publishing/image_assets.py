@@ -6,10 +6,14 @@ import json
 import warnings
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Callable, Protocol
+from typing import Callable, Protocol, TypeVar
 
 import pyarrow as pa
-from pyiceberg.exceptions import NoSuchNamespaceError, NoSuchTableError
+from pyiceberg.exceptions import (
+    NamespaceAlreadyExistsError,
+    NoSuchNamespaceError,
+    NoSuchTableError,
+)
 
 from iceberg_bioimage.models.scan_result import ImageAsset, ScanResult
 from iceberg_bioimage.validation.contracts import raise_for_invalid_scan_result
@@ -22,6 +26,16 @@ class SupportsAppend(Protocol):
 
     def append(self, table: pa.Table) -> None:
         """Append a pyarrow table."""
+
+
+TTable = TypeVar("TTable")
+
+
+class SupportsLoadTable(Protocol[TTable]):
+    """Protocol for catalog objects that can load existing tables."""
+
+    def load_table(self, identifier: tuple[str, ...]) -> TTable:
+        """Load an existing table."""
 
 
 class SupportsCatalog(Protocol):
@@ -234,12 +248,12 @@ def _namespace_candidates(
 
 
 def _load_table_with_namespace_fallback(
-    catalog: SupportsCatalog,
+    catalog: SupportsLoadTable[TTable],
     namespace: str | Iterable[str],
     table_name: str,
     *,
     operation: str,
-) -> SupportsAppend:
+) -> TTable:
     requested_namespace = _normalize_namespace(namespace)
 
     for resolved_namespace in _namespace_candidates(requested_namespace):
@@ -301,9 +315,8 @@ def _ensure_namespace_exists(
     if hasattr(catalog, "create_namespace"):
         try:
             catalog.create_namespace(namespace)
-        except Exception as exc:  # pragma: no cover - backend-specific surface area
-            if isinstance(exc, NoSuchNamespaceError):
-                raise
+        except NamespaceAlreadyExistsError:  # pragma: no cover - backend-specific
+            return
 
 
 def _is_cytotable_namespace(namespace: tuple[str, ...]) -> bool:

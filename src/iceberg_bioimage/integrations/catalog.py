@@ -138,6 +138,8 @@ def join_catalog_image_assets_with_profiles(
         join_keys: Join columns shared by image metadata and profiles.
         image_assets_scan_options: Optional scan options for image-assets reads.
         chunk_index_scan_options: Optional scan options for chunk-index reads.
+        profile_dataset_id: Dataset identifier to inject for profile inputs that
+            do not carry their own `dataset_id` column. Defaults to None.
     """
     normalized_join_keys = _normalize_columns(join_keys)
     if not normalized_join_keys:

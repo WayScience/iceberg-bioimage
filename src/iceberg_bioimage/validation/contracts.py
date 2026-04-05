@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import tomllib
 from collections.abc import Mapping
+from json import JSONDecodeError
 from pathlib import Path
 
 import pyarrow.dataset as ds
@@ -154,7 +155,13 @@ def resolve_microscopy_profile_columns(
 
     present_columns = set(columns)
     resolved: dict[str, str | None] = {}
-    aliases = MICROSCOPY_PROFILE_COLUMN_ALIASES if alias_map is None else alias_map
+    aliases = {
+        canonical: list(known_aliases)
+        for canonical, known_aliases in MICROSCOPY_PROFILE_COLUMN_ALIASES.items()
+    }
+    if alias_map is not None:
+        for canonical, custom_aliases in alias_map.items():
+            aliases.setdefault(canonical, []).extend(custom_aliases)
 
     for column in (
         *MICROSCOPY_REQUIRED_JOIN_KEYS,
@@ -205,7 +212,12 @@ def validate_warehouse_manifest(path: str | Path) -> WarehouseValidationResult:
         result.errors.append("warehouse_manifest.json is missing.")
         return result
 
-    manifest = load_warehouse_manifest(root)
+    try:
+        manifest = load_warehouse_manifest(root)
+    except (JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        result.errors.append(f"Invalid warehouse_manifest.json: {exc}")
+        return result
+
     seen_table_names: set[str] = set()
     for table in manifest.tables:
         if table.table_name in seen_table_names:

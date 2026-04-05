@@ -60,7 +60,11 @@ from iceberg_bioimage import (
     validate_microscopy_profile_table,
 )
 
-registration = register_store("data/experiment.zarr", "default", "bioimage")
+registration = register_store(
+    "data/experiment.zarr",
+    "default",
+    "bioimage.cytotable",
+)
 print(registration.to_dict())
 
 summary = summarize_store("data/experiment.zarr")
@@ -77,7 +81,7 @@ print(joined.num_rows)
 warehouse = ingest_stores_to_warehouse(
     ["data/experiment-a.zarr", "data/experiment-b.zarr"],
     "default",
-    "bioimage",
+    "bioimage.cytotable",
 )
 print(warehouse.to_dict())
 
@@ -93,11 +97,11 @@ print(cytomining_export.to_dict())
 ```bash
 iceberg-bioimage scan data/experiment.zarr
 iceberg-bioimage summarize data/experiment.zarr
-iceberg-bioimage register --catalog default --namespace bioimage data/experiment.zarr
-iceberg-bioimage ingest --catalog default --namespace bioimage data/experiment-a.zarr data/experiment-b.zarr
+iceberg-bioimage register --catalog default --namespace bioimage.cytotable data/experiment.zarr
+iceberg-bioimage ingest --catalog default --namespace bioimage.cytotable data/experiment-a.zarr data/experiment-b.zarr
 iceberg-bioimage export-cytomining --warehouse-root warehouse-root data/experiment.zarr
-iceberg-bioimage publish-chunks --catalog default --namespace bioimage data/experiment.zarr
-iceberg-bioimage register --catalog default --namespace bioimage --publish-chunks data/experiment.zarr
+iceberg-bioimage publish-chunks --catalog default --namespace bioimage.cytotable data/experiment.zarr
+iceberg-bioimage register --catalog default --namespace bioimage.cytotable --publish-chunks data/experiment.zarr
 iceberg-bioimage validate-contract data/cells.parquet
 iceberg-bioimage join-profiles data/experiment.zarr data/cells.parquet --output joined.parquet
 ```
@@ -229,7 +233,7 @@ profiles = pa.table(
 
 joined = join_catalog_image_assets_with_profiles(
     "default",
-    "bioimage",
+    "bioimage.cytotable",
     profiles,
     chunk_index_table="chunk_index",
 )

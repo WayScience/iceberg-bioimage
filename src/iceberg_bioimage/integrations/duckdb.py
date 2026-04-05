@@ -56,21 +56,21 @@ def query_metadata_table(
     """Query a metadata table from a Parquet path, Arrow table, or row list."""
 
     duckdb_connection, owns_connection = _get_connection(connection)
-    relation = _relation_for_source(duckdb_connection, source)
+    try:
+        relation = _relation_for_source(duckdb_connection, source)
 
-    if filters:
-        relation = relation.filter(
-            _build_filter_expression(tuple(relation.columns), filters)
-        )
+        if filters:
+            relation = relation.filter(
+                _build_filter_expression(tuple(relation.columns), filters)
+            )
 
-    if columns:
-        relation = relation.project(", ".join(columns))
+        if columns:
+            relation = relation.project(", ".join(columns))
 
-    result = _as_arrow_table(relation.arrow())
-    if owns_connection:
-        duckdb_connection.close()
-
-    return result
+        return _as_arrow_table(relation.arrow())
+    finally:
+        if owns_connection:
+            duckdb_connection.close()
 
 
 def join_image_assets_with_profiles(  # noqa: PLR0913
@@ -85,45 +85,45 @@ def join_image_assets_with_profiles(  # noqa: PLR0913
     """Join image metadata to a profile table using the canonical join keys."""
 
     duckdb_connection, owns_connection = _get_connection(connection)
-    _register_source(duckdb_connection, "image_assets", image_assets)
-    _register_profiles_source(
-        duckdb_connection,
-        profiles,
-        dataset_id=profile_dataset_id,
-    )
-
-    using_clause = ", ".join(join_keys)
-    query = [
-        "SELECT ia.*,",
-        f"       p.* EXCLUDE ({using_clause})",
-    ]
-
-    if chunk_index is not None:
-        _register_source(duckdb_connection, "chunk_index", chunk_index)
-        query.append(
-            "     , " + ", ".join(f"ci.{field}" for field in CHUNK_INDEX_FIELDS)
+    try:
+        _register_source(duckdb_connection, "image_assets", image_assets)
+        _register_profiles_source(
+            duckdb_connection,
+            profiles,
+            dataset_id=profile_dataset_id,
         )
 
-    query.extend(
-        [
-            "FROM image_assets AS ia",
-            f"INNER JOIN profiles AS p USING ({using_clause})",
+        using_clause = ", ".join(join_keys)
+        query = [
+            "SELECT ia.*,",
+            f"       p.* EXCLUDE ({using_clause})",
         ]
-    )
 
-    if chunk_index is not None:
-        query.append(
-            "LEFT JOIN chunk_index AS ci "
-            "ON ia.dataset_id = ci.dataset_id "
-            "AND ia.image_id = ci.image_id "
-            "AND ia.array_path IS NOT DISTINCT FROM ci.array_path"
+        if chunk_index is not None:
+            _register_source(duckdb_connection, "chunk_index", chunk_index)
+            query.append(
+                "     , " + ", ".join(f"ci.{field}" for field in CHUNK_INDEX_FIELDS)
+            )
+
+        query.extend(
+            [
+                "FROM image_assets AS ia",
+                f"INNER JOIN profiles AS p USING ({using_clause})",
+            ]
         )
 
-    result = _as_arrow_table(duckdb_connection.execute("\n".join(query)).arrow())
-    if owns_connection:
-        duckdb_connection.close()
+        if chunk_index is not None:
+            query.append(
+                "LEFT JOIN chunk_index AS ci "
+                "ON ia.dataset_id = ci.dataset_id "
+                "AND ia.image_id = ci.image_id "
+                "AND ia.array_path IS NOT DISTINCT FROM ci.array_path"
+            )
 
-    return result
+        return _as_arrow_table(duckdb_connection.execute("\n".join(query)).arrow())
+    finally:
+        if owns_connection:
+            duckdb_connection.close()
 
 
 def _get_connection(

@@ -106,10 +106,10 @@ lint.select = [
 ]
 # Ignore `F401` (unused imports) for `__init__.py` file
 lint.per-file-ignores."__init__.py" = [ "F401" ]
+lint.per-file-ignores."src/iceberg_bioimage/cli.py" = [ "PLR0915" ]
 lint.per-file-ignores."src/iceberg_bioimage/integrations/catalog.py" = [ "PLR0913" ]
 lint.per-file-ignores."src/iceberg_bioimage/integrations/cytomining.py" = [ "PLC0415" ]
 lint.per-file-ignores."src/iceberg_bioimage/integrations/duckdb.py" = [ "PLC0415" ]
-lint.per-file-ignores."src/iceberg_bioimage/cli.py" = [ "PLR0915" ]
 lint.per-file-ignores."src/iceberg_bioimage/publishing/chunk_index.py" = [ "PLC0415" ]
 lint.per-file-ignores."src/iceberg_bioimage/publishing/image_assets.py" = [ "PLC0415" ]
 lint.per-file-ignores."src/iceberg_bioimage/validation/contracts.py" = [ "PLC0415" ]
@@ -140,7 +140,14 @@ uv build
 uvx twine check dist/*
 """
 tasks.notebooks.shell = """
+before="$(git status --porcelain -- docs/src/examples)"
 python -m jupytext --sync docs/src/examples/*.ipynb
+after="$(git status --porcelain -- docs/src/examples)"
+if [ "$before" != "$after" ]; then
+  echo "Notebook pairs are out of sync after jupytext sync. Commit the updated files."
+  git diff -- docs/src/examples
+  exit 1
+fi
 """
 tasks.jupyter.shell = """
 jupyter lab

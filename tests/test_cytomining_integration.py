@@ -71,7 +71,7 @@ def test_export_store_to_cytomining_warehouse_with_pycytominer_fixture(
     store_path = tmp_path / "plate.zarr"
     root = zarr.open_group(store_path, mode="w", zarr_version=2)
     data = np.arange(12, dtype=np.uint16).reshape(3, 4)
-    root.create_array("0", data=data, chunks=(2, 2))
+    root.create_dataset("0", shape=data.shape, data=data, chunks=(2, 2))
     warehouse_root = tmp_path / "warehouse"
     profile_table = Path(__file__).parent / "data" / "profiles_pycytominer.parquet"
 
@@ -98,16 +98,18 @@ def test_export_store_to_cytomining_warehouse_appends_to_existing_root(
 
     first_store = tmp_path / "plate.zarr"
     first_root = zarr.open_group(first_store, mode="w", zarr_version=2)
-    first_root.create_array(
+    first_root.create_dataset(
         "0",
+        shape=(3, 4),
         data=np.arange(12, dtype=np.uint16).reshape(3, 4),
         chunks=(2, 2),
     )
 
     second_store = tmp_path / "cells.ome.zarr"
     second_root = zarr.open_group(second_store, mode="w", zarr_version=2)
-    second_root.create_array(
+    second_root.create_dataset(
         "0",
+        shape=(2, 3),
         data=np.arange(6, dtype=np.uint16).reshape(2, 3),
         chunks=(1, 3),
     )

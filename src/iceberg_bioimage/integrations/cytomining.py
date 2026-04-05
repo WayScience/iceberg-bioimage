@@ -7,6 +7,7 @@ import shutil
 import uuid
 from collections.abc import Mapping
 from pathlib import Path
+from typing import Literal
 
 import pyarrow as pa
 import pyarrow.dataset as ds
@@ -24,6 +25,8 @@ from iceberg_bioimage.publishing.chunk_index import scan_result_to_chunk_rows
 from iceberg_bioimage.publishing.image_assets import scan_result_to_rows
 from iceberg_bioimage.validation.contracts import resolve_microscopy_profile_columns
 
+WriteMode = Literal["overwrite", "append"]
+
 
 def export_scan_result_to_cytomining_warehouse(  # noqa: PLR0913
     scan_result: ScanResult,
@@ -35,7 +38,7 @@ def export_scan_result_to_cytomining_warehouse(  # noqa: PLR0913
     chunk_index_table_name: str = "chunk_index",
     joined_table_name: str = "joined_profiles",
     profile_dataset_id: str | None = None,
-    mode: str = "overwrite",
+    mode: WriteMode = "overwrite",
 ) -> CytominingWarehouseResult:
     """Write scan-derived metadata into a Parquet-backed Cytomining warehouse."""
 
@@ -115,7 +118,7 @@ def export_store_to_cytomining_warehouse(  # noqa: PLR0913
     chunk_index_table_name: str = "chunk_index",
     joined_table_name: str = "joined_profiles",
     profile_dataset_id: str | None = None,
-    mode: str = "overwrite",
+    mode: WriteMode = "overwrite",
 ) -> CytominingWarehouseResult:
     """Scan a store and export its metadata into a Cytomining warehouse."""
 
@@ -144,7 +147,7 @@ def export_catalog_to_cytomining_warehouse(  # noqa: PLR0913
     chunk_index_table_name: str | None = "chunk_index",
     joined_table_name: str = "joined_profiles",
     profile_dataset_id: str | None = None,
-    mode: str = "overwrite",
+    mode: WriteMode = "overwrite",
 ) -> CytominingWarehouseResult:
     """Materialize catalog-backed metadata into a Parquet Cytomining warehouse."""
 
@@ -238,7 +241,7 @@ def export_profiles_to_cytomining_warehouse(  # noqa: PLR0913
     source_type: str = "profiles",
     source_ref: str | None = None,
     alias_map: Mapping[str, tuple[str, ...] | list[str]] | None = None,
-    mode: str = "append",
+    mode: WriteMode = "append",
 ) -> CytominingWarehouseResult:
     """Write a Cytomining profile table into a Parquet-backed warehouse root."""
 
@@ -269,7 +272,7 @@ def export_table_to_cytomining_warehouse(  # noqa: PLR0913
     join_keys: list[str] | None = None,
     source_type: str | None = None,
     source_ref: str | None = None,
-    mode: str = "append",
+    mode: WriteMode = "append",
 ) -> CytominingWarehouseResult:
     """Write a generic table into a warehouse root and update the manifest."""
 
@@ -304,7 +307,7 @@ def _write_parquet_dataset(
     table: pa.Table,
     dataset_path: Path,
     *,
-    mode: str,
+    mode: WriteMode,
 ) -> None:
     if mode not in {"overwrite", "append"}:
         raise ValueError("mode must be either 'overwrite' or 'append'.")
@@ -398,7 +401,7 @@ def _normalize_profiles_table(
         if canonical == "dataset_id" and profile_dataset_id is not None:
             normalized = normalized.append_column(
                 canonical,
-                pa.array([profile_dataset_id] * normalized.num_rows),
+                pa.repeat(pa.scalar(profile_dataset_id), normalized.num_rows),
             )
 
     return normalized

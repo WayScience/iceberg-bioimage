@@ -39,7 +39,12 @@ import tifffile
 import zarr
 from pyiceberg.exceptions import NoSuchTableError
 
-from iceberg_bioimage import ingest_stores_to_warehouse, join_profiles_with_store, scan_store, summarize_store
+from iceberg_bioimage import (
+    ingest_stores_to_warehouse,
+    join_profiles_with_store,
+    scan_store,
+    summarize_store,
+)
 
 
 class DemoTable:
@@ -71,7 +76,11 @@ class DemoCatalog:
         self.created_namespaces.append(namespace)
 
     def list_tables(self, namespace: tuple[str, ...]) -> list[tuple[str, ...]]:
-        return [identifier for identifier in self.tables if identifier[:-1] == namespace]
+        return [
+            identifier
+            for identifier in self.tables
+            if identifier[:-1] == namespace
+        ]
 
 
 def warehouse_snapshot(catalog: DemoCatalog) -> dict[str, list[dict[str, object]]]:
@@ -91,7 +100,12 @@ tmpdir = Path(tempfile.mkdtemp(prefix="iceberg-bioimage-demo-"))
 zarr_path = tmpdir / "plate.zarr"
 root = zarr.open_group(zarr_path, mode="w", zarr_version=2)
 root.attrs["multiscales"] = [{"axes": ["c", "y", "x"], "datasets": [{"path": "0"}]}]
-root.create_array("0", data=np.arange(16, dtype=np.uint16).reshape(1, 4, 4), chunks=(1, 2, 2))
+root.create_dataset(
+    "0",
+    shape=(1, 4, 4),
+    data=np.arange(16, dtype=np.uint16).reshape(1, 4, 4),
+    chunks=(1, 2, 2),
+)
 
 tiff_path = tmpdir / "cells.ome.tiff"
 tifffile.imwrite(tiff_path, np.arange(24, dtype=np.uint8).reshape(2, 3, 4))
@@ -159,7 +173,9 @@ with warnings.catch_warnings(record=True) as caught:
 
 {
     "legacy_result": legacy_result.to_dict(),
-    "legacy_identifiers": sorted(".".join(identifier) for identifier in legacy_catalog.tables),
+    "legacy_identifiers": sorted(
+        ".".join(identifier) for identifier in legacy_catalog.tables
+    ),
     "warnings": [str(item.message) for item in caught],
 }
 
@@ -196,5 +212,6 @@ profiles = pa.table(
 )
 
 joined = join_profiles_with_store(str(zarr_path), profiles)
-joined.select(["dataset_id", "image_id", "plate_id", "well_id", "site_id", "cell_count"]).to_pydict()
-
+joined.select(
+    ["dataset_id", "image_id", "plate_id", "well_id", "site_id", "cell_count"]
+).to_pydict()
