@@ -75,9 +75,16 @@ jobs:
             docs/_build/html
       - name: Check notebook review pairs
         run: |
+          before="$(git status --porcelain -- docs/src/examples)"
           uv run --group notebooks --frozen \
             python -m jupytext --sync docs/src/examples/*.ipynb
-          git diff --exit-code docs/src/examples
+          after="$(git status --porcelain -- docs/src/examples)"
+          if [ "$before" != "$after" ]; then
+            echo "Notebook pairs are out of sync after jupytext sync."
+            echo "Commit the updated files."
+            git diff -- docs/src/examples
+            exit 1
+          fi
       - name: Run optional DuckDB integration tests
         run: |
           uv run --group dev --group duckdb --frozen \

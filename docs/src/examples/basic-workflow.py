@@ -67,6 +67,8 @@ class DemoCatalog:
         return self.tables[identifier]
 
     def create_table(self, identifier: tuple[str, ...], schema: object) -> DemoTable:
+        if identifier in self.tables:
+            raise ValueError(f"Table already exists: {identifier!r}")
         self.created_identifiers.append(identifier)
         table = DemoTable()
         self.tables[identifier] = table
@@ -91,121 +93,123 @@ def warehouse_snapshot(catalog: DemoCatalog) -> dict[str, list[dict[str, object]
     return snapshot
 
 
-# +
-tmpdir = Path(tempfile.mkdtemp(prefix="iceberg-bioimage-demo-"))
-
-zarr_path = tmpdir / "plate.zarr"
-root = zarr.open_group(zarr_path, mode="w", zarr_version=2)
-root.attrs["multiscales"] = [{"axes": ["c", "y", "x"], "datasets": [{"path": "0"}]}]
-root.create_dataset(
-    "0",
-    shape=(1, 4, 4),
-    data=np.arange(16, dtype=np.uint16).reshape(1, 4, 4),
-    chunks=(1, 2, 2),
-)
-
-tiff_path = tmpdir / "cells.ome.tiff"
-tifffile.imwrite(tiff_path, np.arange(24, dtype=np.uint8).reshape(2, 3, 4))
-
-zarr_summary = summarize_store(str(zarr_path)).to_dict()
-tiff_summary = summarize_store(str(tiff_path)).to_dict()
-
-{
-    "zarr_summary": zarr_summary,
-    "tiff_summary": tiff_summary,
-}
 # -
 
-# ## Preferred Cytotable namespace
-#
-# When you ingest into namespace `bioimage`, this project prefers the
-# Cytotable-compatible layout `bioimage.cytotable.*` for new warehouse tables.
-# The two canonical tables are:
-#
-# - `image_assets`: one row per discovered image asset
-# - `chunk_index`: one row per chunk when chunk metadata is available
-#
+with tempfile.TemporaryDirectory(prefix="iceberg-bioimage-demo-") as tmpdir_ctx:
+    tmpdir = Path(tmpdir_ctx)
 
-# +
-catalog = DemoCatalog()
-warehouse = ingest_stores_to_warehouse(
-    [str(zarr_path), str(tiff_path)],
-    catalog,
-    "bioimage",
-)
+    zarr_path = tmpdir / "plate.zarr"
+    root = zarr.open_group(zarr_path, mode="w", zarr_version=2)
+    root.attrs["multiscales"] = [{"axes": ["c", "y", "x"], "datasets": [{"path": "0"}]}]
+    root.create_dataset(
+        "0",
+        shape=(1, 4, 4),
+        data=np.arange(16, dtype=np.uint16).reshape(1, 4, 4),
+        chunks=(1, 2, 2),
+    )
 
-{
-    "warehouse_result": warehouse.to_dict(),
-    "created_namespaces": catalog.created_namespaces,
-    "created_identifiers": catalog.created_identifiers,
-    "warehouse_snapshot": warehouse_snapshot(catalog),
-}
-# -
+    tiff_path = tmpdir / "cells.ome.tiff"
+    tifffile.imwrite(tiff_path, np.arange(24, dtype=np.uint8).reshape(2, 3, 4))
 
-# ## Legacy namespace fallback
-#
-# Existing warehouses may already store tables directly under `bioimage.*`.
-# When those legacy tables already exist, the ingest path reuses them instead of
-# creating a second copy under `bioimage.cytotable.*`, and it emits a warning so
-# the layout difference is visible.
-#
+    zarr_summary = summarize_store(str(zarr_path)).to_dict()
+    tiff_summary = summarize_store(str(tiff_path)).to_dict()
 
-# +
-legacy_catalog = DemoCatalog(
-    tables={
-        ("bioimage", "image_assets"): DemoTable(),
-        ("bioimage", "chunk_index"): DemoTable(),
+    {
+        "zarr_summary": zarr_summary,
+        "tiff_summary": tiff_summary,
     }
-)
+    # -
 
-with warnings.catch_warnings(record=True) as caught:
-    warnings.simplefilter("always")
-    legacy_result = ingest_stores_to_warehouse(
-        [str(zarr_path)],
-        legacy_catalog,
+    # ## Preferred Cytotable namespace
+    #
+    # When you ingest into namespace `bioimage`, this project prefers the
+    # Cytotable-compatible layout `bioimage.cytotable.*` for new warehouse tables.
+    # The two canonical tables are:
+    #
+    # - `image_assets`: one row per discovered image asset
+    # - `chunk_index`: one row per chunk when chunk metadata is available
+    #
+
+    # +
+    catalog = DemoCatalog()
+    warehouse = ingest_stores_to_warehouse(
+        [str(zarr_path), str(tiff_path)],
+        catalog,
         "bioimage",
     )
 
-{
-    "legacy_result": legacy_result.to_dict(),
-    "legacy_identifiers": sorted(
-        ".".join(identifier) for identifier in legacy_catalog.tables
-    ),
-    "warnings": [str(item.message) for item in caught],
-}
-# -
-
-# ## Cytomining profile tables
-#
-# `pycytominer` and `coSMicQC` profile tables often use `Metadata_*` columns.
-# This project now normalizes common aliases like:
-#
-# - `Metadata_dataset_id -> dataset_id`
-# - `Metadata_ImageID -> image_id`
-# - `Metadata_Plate -> plate_id`
-# - `Metadata_Well -> well_id`
-# - `Metadata_Site -> site_id`
-#
-# That means profile tables from the Cytomining ecosystem can join to the
-# warehouse without manual renaming when those aliases are present.
-#
-
-# +
-zarr_scan = scan_store(str(zarr_path))
-zarr_asset = zarr_scan.image_assets[0]
-
-profiles = pa.table(
     {
-        "Metadata_dataset_id": ["plate"],
-        "Metadata_ImageID": [zarr_asset.image_id],
-        "Metadata_Plate": ["Plate-1"],
-        "Metadata_Well": ["A01"],
-        "Metadata_Site": ["1"],
-        "cell_count": [42],
+        "warehouse_result": warehouse.to_dict(),
+        "created_namespaces": catalog.created_namespaces,
+        "created_identifiers": catalog.created_identifiers,
+        "warehouse_snapshot": warehouse_snapshot(catalog),
     }
-)
+    # -
 
-joined = join_profiles_with_store(str(zarr_path), profiles)
-joined.select(
-    ["dataset_id", "image_id", "plate_id", "well_id", "site_id", "cell_count"]
-).to_pydict()
+    # ## Legacy namespace fallback
+    #
+    # Existing warehouses may already store tables directly under `bioimage.*`.
+    # When those legacy tables already exist, the ingest path reuses them instead of
+    # creating a second copy under `bioimage.cytotable.*`, and it emits a warning so
+    # the layout difference is visible.
+    #
+
+    # +
+    legacy_catalog = DemoCatalog(
+        tables={
+            ("bioimage", "image_assets"): DemoTable(),
+            ("bioimage", "chunk_index"): DemoTable(),
+        }
+    )
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        legacy_result = ingest_stores_to_warehouse(
+            [str(zarr_path)],
+            legacy_catalog,
+            "bioimage",
+        )
+
+    {
+        "legacy_result": legacy_result.to_dict(),
+        "legacy_identifiers": sorted(
+            ".".join(identifier) for identifier in legacy_catalog.tables
+        ),
+        "warnings": [str(item.message) for item in caught],
+    }
+    # -
+
+    # ## Cytomining profile tables
+    #
+    # `pycytominer` and `coSMicQC` profile tables often use `Metadata_*` columns.
+    # This project now normalizes common aliases like:
+    #
+    # - `Metadata_dataset_id -> dataset_id`
+    # - `Metadata_ImageID -> image_id`
+    # - `Metadata_Plate -> plate_id`
+    # - `Metadata_Well -> well_id`
+    # - `Metadata_Site -> site_id`
+    #
+    # That means profile tables from the Cytomining ecosystem can join to the
+    # warehouse without manual renaming when those aliases are present.
+    #
+
+    # +
+    zarr_scan = scan_store(str(zarr_path))
+    zarr_asset = zarr_scan.image_assets[0]
+
+    profiles = pa.table(
+        {
+            "Metadata_dataset_id": ["plate"],
+            "Metadata_ImageID": [zarr_asset.image_id],
+            "Metadata_Plate": ["Plate-1"],
+            "Metadata_Well": ["A01"],
+            "Metadata_Site": ["1"],
+            "cell_count": [42],
+        }
+    )
+
+    joined = join_profiles_with_store(str(zarr_path), profiles)
+    joined.select(
+        ["dataset_id", "image_id", "plate_id", "well_id", "site_id", "cell_count"]
+    ).to_pydict()
