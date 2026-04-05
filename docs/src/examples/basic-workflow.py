@@ -114,7 +114,6 @@ tiff_summary = summarize_store(str(tiff_path)).to_dict()
     "zarr_summary": zarr_summary,
     "tiff_summary": tiff_summary,
 }
-
 # -
 
 # ## Preferred Cytotable namespace
@@ -141,7 +140,6 @@ warehouse = ingest_stores_to_warehouse(
     "created_identifiers": catalog.created_identifiers,
     "warehouse_snapshot": warehouse_snapshot(catalog),
 }
-
 # -
 
 # ## Legacy namespace fallback
@@ -175,7 +173,6 @@ with warnings.catch_warnings(record=True) as caught:
     ),
     "warnings": [str(item.message) for item in caught],
 }
-
 # -
 
 # ## Cytomining profile tables
