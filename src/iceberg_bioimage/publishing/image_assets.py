@@ -3,15 +3,22 @@
 from __future__ import annotations
 
 import json
+import warnings
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Callable, Protocol
+from typing import Callable, Protocol, TypeVar
 
 import pyarrow as pa
-from pyiceberg.exceptions import NoSuchTableError
+from pyiceberg.exceptions import (
+    NamespaceAlreadyExistsError,
+    NoSuchNamespaceError,
+    NoSuchTableError,
+)
 
 from iceberg_bioimage.models.scan_result import ImageAsset, ScanResult
 from iceberg_bioimage.validation.contracts import raise_for_invalid_scan_result
+
+CYTOTABLE_NAMESPACE_SEGMENT = "cytotable"
 
 
 class SupportsAppend(Protocol):
@@ -19,6 +26,16 @@ class SupportsAppend(Protocol):
 
     def append(self, table: pa.Table) -> None:
         """Append a pyarrow table."""
+
+
+TTable = TypeVar("TTable")
+
+
+class SupportsLoadTable(Protocol[TTable]):
+    """Protocol for catalog objects that can load existing tables."""
+
+    def load_table(self, identifier: tuple[str, ...]) -> TTable:
+        """Load an existing table."""
 
 
 class SupportsCatalog(Protocol):
@@ -94,16 +111,32 @@ def _load_or_create_table(
     schema_builder: Callable[[], object] | None = None,
 ) -> SupportsAppend:
     catalog = _resolve_catalog(catalog_or_name)
-    identifier = (*_normalize_namespace(namespace), table_name)
+    requested_namespace = _normalize_namespace(namespace)
+    candidate_namespaces = _namespace_candidates(requested_namespace)
 
     try:
-        return catalog.load_table(identifier)
-    except NoSuchTableError:  # pragma: no cover - depends on active catalog backend
+        return _load_table_with_namespace_fallback(
+            catalog,
+            requested_namespace,
+            table_name,
+            operation="publishing",
+        )
+    except NoSuchTableError:
         pass
 
     build_schema = (
         _build_image_assets_schema if schema_builder is None else schema_builder
     )
+    preferred_namespace = candidate_namespaces[0]
+    _warn_for_namespace_resolution(
+        requested_namespace,
+        preferred_namespace,
+        table_name,
+        operation="publishing",
+        creating=True,
+    )
+    _ensure_namespace_exists(catalog, preferred_namespace)
+    identifier = (*preferred_namespace, table_name)
     return catalog.create_table(identifier, schema=build_schema())
 
 
@@ -196,7 +229,132 @@ def _normalize_namespace(namespace: str | Iterable[str]) -> tuple[str, ...]:
     if isinstance(namespace, str):
         return tuple(part for part in namespace.split(".") if part)
 
-    return tuple(namespace)
+    return tuple(part for part in namespace if part)
+
+
+def _namespace_candidates(
+    namespace: str | Iterable[str],
+) -> tuple[tuple[str, ...], ...]:
+    normalized_namespace = _normalize_namespace(namespace)
+    if _is_cytotable_namespace(normalized_namespace):
+        return (normalized_namespace,)
+
+    return ((*normalized_namespace, CYTOTABLE_NAMESPACE_SEGMENT), normalized_namespace)
+
+
+def _load_table_with_namespace_fallback(
+    catalog: SupportsLoadTable[TTable],
+    namespace: str | Iterable[str],
+    table_name: str,
+    *,
+    operation: str,
+) -> TTable:
+    requested_namespace = _normalize_namespace(namespace)
+
+    for resolved_namespace in _namespace_candidates(requested_namespace):
+        identifier = (*resolved_namespace, table_name)
+        try:
+            table = catalog.load_table(identifier)
+        except NoSuchTableError:
+            continue
+
+        _warn_for_namespace_resolution(
+            requested_namespace,
+            resolved_namespace,
+            table_name,
+            operation=operation,
+        )
+        return table
+
+    identifier = (*_namespace_candidates(requested_namespace)[0], table_name)
+    raise NoSuchTableError(f"Missing table: {identifier!r}")
+
+
+def _list_tables_with_namespace_fallback(
+    catalog: SupportsCatalog,
+    namespace: str | Iterable[str],
+) -> list[tuple[str, ...]]:
+    if not hasattr(catalog, "list_tables"):
+        raise TypeError("Catalog must provide a list_tables(namespace) method.")
+
+    requested_namespace = _normalize_namespace(namespace)
+    discovered: dict[str, tuple[str, ...]] = {}
+    warned_for_list = False
+
+    for resolved_namespace in _namespace_candidates(requested_namespace):
+        try:
+            identifiers = catalog.list_tables(resolved_namespace)
+        except NoSuchNamespaceError:
+            continue
+
+        if identifiers and not warned_for_list:
+            _warn_for_namespace_resolution(
+                requested_namespace,
+                resolved_namespace,
+                "catalog tables",
+                operation="listing",
+            )
+            warned_for_list = True
+        for identifier in identifiers:
+            discovered.setdefault(identifier[-1], identifier)
+
+    return [discovered[table_name] for table_name in sorted(discovered)]
+
+
+def _ensure_namespace_exists(
+    catalog: SupportsCatalog,
+    namespace: tuple[str, ...],
+) -> None:
+    if hasattr(catalog, "create_namespace_if_not_exists"):
+        catalog.create_namespace_if_not_exists(namespace)
+        return
+
+    if hasattr(catalog, "create_namespace"):
+        try:
+            catalog.create_namespace(namespace)
+        except NamespaceAlreadyExistsError:  # pragma: no cover - backend-specific
+            return
+
+
+def _is_cytotable_namespace(namespace: tuple[str, ...]) -> bool:
+    return bool(namespace) and namespace[-1] == CYTOTABLE_NAMESPACE_SEGMENT
+
+
+def _warn_for_namespace_resolution(
+    requested_namespace: tuple[str, ...],
+    resolved_namespace: tuple[str, ...],
+    table_name: str,
+    *,
+    operation: str,
+    creating: bool = False,
+) -> None:
+    if requested_namespace == resolved_namespace and _is_cytotable_namespace(
+        requested_namespace
+    ):
+        return
+
+    expected_namespace_parts = _namespace_candidates(requested_namespace)[0]
+    expected_namespace = ".".join(expected_namespace_parts)
+    resolved_namespace_name = ".".join(resolved_namespace)
+    expected_full = (
+        f"{expected_namespace}.{table_name}" if expected_namespace else table_name
+    )
+    resolved_full = (
+        f"{resolved_namespace_name}.{table_name}"
+        if resolved_namespace_name
+        else table_name
+    )
+    action = "Creating" if creating else "Using"
+    warnings.warn(
+        (
+            f"Namespace '{'.'.join(requested_namespace)}' does not match "
+            f"CytoTable's expected Iceberg namespace layout. {action} "
+            f"'{resolved_full}' during {operation}; "
+            f"CytoTable expects '{expected_full}'."
+        ),
+        UserWarning,
+        stacklevel=3,
+    )
 
 
 def _dataset_id(uri: str) -> str:

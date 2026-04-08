@@ -1,7 +1,11 @@
 ---
 name: tests
 
-'on': [push, pull_request]
+'on':
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
   pre_commit_checks:
@@ -59,12 +63,28 @@ jobs:
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78
       - name: Run Ruff
         run: uv run --group dev --frozen ruff check
+      - name: Check package build artifacts
+        run: |
+          uv build
+          uvx twine check dist/*
       - name: Build docs
         run: |
           uv run --group docs --frozen sphinx-build \
             -b html \
             docs/src \
             docs/_build/html
+      - name: Check notebook review pairs
+        run: |
+          before="$(git status --porcelain -- docs/src/examples)"
+          uv run --group notebooks --frozen \
+            python -m jupytext --sync docs/src/examples/*.ipynb
+          after="$(git status --porcelain -- docs/src/examples)"
+          if [ "$before" != "$after" ]; then
+            echo "Notebook pairs are out of sync after jupytext sync."
+            echo "Commit the updated files."
+            git diff -- docs/src/examples
+            exit 1
+          fi
       - name: Run optional DuckDB integration tests
         run: |
           uv run --group dev --group duckdb --frozen \

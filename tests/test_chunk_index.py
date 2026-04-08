@@ -109,15 +109,19 @@ def test_publish_chunk_index_creates_missing_table(
         _stub_schema,
     )
 
-    row_count = chunk_index_module.publish_chunk_index(
-        catalog=fake_catalog,
-        namespace="bioimage.dev",
-        table_name="chunk_index",
-        scan_result=scan_result,
-    )
+    with pytest.warns(UserWarning, match="CytoTable's expected Iceberg namespace"):
+        row_count = chunk_index_module.publish_chunk_index(
+            catalog=fake_catalog,
+            namespace="bioimage.dev",
+            table_name="chunk_index",
+            scan_result=scan_result,
+        )
 
     assert row_count == EXPECTED_CHUNK_ROW_COUNT
-    assert fake_catalog.created_identifiers == [("bioimage", "dev", "chunk_index")]
+    assert fake_catalog.created_namespaces == [("bioimage", "dev", "cytotable")]
+    assert fake_catalog.created_identifiers == [
+        ("bioimage", "dev", "cytotable", "chunk_index")
+    ]
     assert fake_catalog.table is not None
     assert len(fake_catalog.table.appends) == 1
 

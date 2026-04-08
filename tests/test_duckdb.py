@@ -108,6 +108,55 @@ def test_join_image_assets_with_profiles_and_chunks() -> None:
     }
 
 
+def test_join_image_assets_with_profiles_accepts_pycytominer_aliases() -> None:
+    image_assets = pa.table(
+        {
+            "dataset_id": ["ds-1"],
+            "image_id": ["img-1"],
+            "uri": ["data/example.zarr"],
+        }
+    )
+    profiles = pa.table(
+        {
+            "Metadata_dataset_id": ["ds-1"],
+            "Metadata_ImageID": ["img-1"],
+            "Metadata_Well": ["A01"],
+            "cell_count": [42],
+        }
+    )
+
+    result = join_image_assets_with_profiles(image_assets, profiles)
+
+    assert result.to_pydict()["dataset_id"] == ["ds-1"]
+    assert result.to_pydict()["image_id"] == ["img-1"]
+    assert result.to_pydict()["well_id"] == ["A01"]
+
+
+def test_join_image_assets_with_profiles_accepts_profile_dataset_override() -> None:
+    image_assets = pa.table(
+        {
+            "dataset_id": ["plate"],
+            "image_id": ["img-1"],
+            "uri": ["data/example.zarr"],
+        }
+    )
+    profiles = pa.table(
+        {
+            "Metadata_ImageID": ["img-1"],
+            "cell_count": [42],
+        }
+    )
+
+    result = join_image_assets_with_profiles(
+        image_assets,
+        profiles,
+        profile_dataset_id="plate",
+    )
+
+    assert result.to_pydict()["dataset_id"] == ["plate"]
+    assert result.to_pydict()["image_id"] == ["img-1"]
+
+
 def test_create_duckdb_connection() -> None:
     connection = create_duckdb_connection()
     result = connection.execute("SELECT 1 AS value").arrow().read_all()

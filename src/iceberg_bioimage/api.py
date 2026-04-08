@@ -19,6 +19,7 @@ from iceberg_bioimage.models.scan_result import (
     DatasetSummary,
     RegistrationResult,
     ScanResult,
+    WarehouseIngestResult,
 )
 from iceberg_bioimage.publishing.chunk_index import (
     publish_chunk_index,
@@ -85,6 +86,75 @@ def register_store(
     )
 
 
+def ingest_scan_results_to_warehouse(
+    scan_results: Sequence[ScanResult],
+    catalog: str | SupportsCatalog,
+    namespace: str | Sequence[str],
+    *,
+    image_assets_table: str = "image_assets",
+    chunk_index_table: str | None = "chunk_index",
+) -> WarehouseIngestResult:
+    """Publish many scanned datasets into a Cytotable-compatible warehouse."""
+
+    normalized_namespace = _normalize_namespace_parts(namespace)
+    datasets: list[RegistrationResult] = []
+    warnings: list[str] = []
+
+    for scan_result in scan_results:
+        image_assets_rows = publish_image_assets(
+            catalog,
+            normalized_namespace,
+            image_assets_table,
+            scan_result,
+        )
+        chunk_rows = 0
+        if chunk_index_table is not None:
+            chunk_rows = publish_chunk_index(
+                catalog,
+                normalized_namespace,
+                chunk_index_table,
+                scan_result,
+            )
+
+        datasets.append(
+            RegistrationResult(
+                source_uri=scan_result.source_uri,
+                image_assets_rows_published=image_assets_rows,
+                chunk_rows_published=chunk_rows,
+            )
+        )
+        warnings.extend(scan_result.warnings)
+
+    return WarehouseIngestResult(
+        catalog=catalog if isinstance(catalog, str) else type(catalog).__name__,
+        namespace=list(normalized_namespace),
+        image_assets_table=image_assets_table,
+        chunk_index_table=chunk_index_table,
+        datasets=datasets,
+        warnings=warnings,
+    )
+
+
+def ingest_stores_to_warehouse(
+    uris: Sequence[str],
+    catalog: str | SupportsCatalog,
+    namespace: str | Sequence[str],
+    *,
+    image_assets_table: str = "image_assets",
+    chunk_index_table: str | None = "chunk_index",
+) -> WarehouseIngestResult:
+    """Scan and publish many datasets into a Cytotable-compatible warehouse."""
+
+    scan_results = [scan_store(uri) for uri in uris]
+    return ingest_scan_results_to_warehouse(
+        scan_results,
+        catalog,
+        namespace,
+        image_assets_table=image_assets_table,
+        chunk_index_table=chunk_index_table,
+    )
+
+
 def summarize_scan_result(scan_result: ScanResult) -> DatasetSummary:
     """Build a concise user-facing summary from a scan result."""
 
@@ -142,6 +212,7 @@ def join_profiles_with_scan_result(
     profiles: MetadataSource,
     *,
     include_chunks: bool = False,
+    profile_dataset_id: str | None = None,
 ) -> pa.Table:
     """Join canonical image assets from a scan result to profile rows.
 
@@ -150,6 +221,15 @@ def join_profiles_with_scan_result(
     """
 
     validation = _validate_profiles(profiles)
+    if (
+        profile_dataset_id is not None
+        and "dataset_id" in validation.missing_required_columns
+    ):
+        validation.missing_required_columns = [
+            column
+            for column in validation.missing_required_columns
+            if column != "dataset_id"
+        ]
     if not validation.is_valid:
         raise ValueError(
             "Profiles do not satisfy the microscopy join contract: "
@@ -165,6 +245,7 @@ def join_profiles_with_scan_result(
         image_assets,
         profiles,
         chunk_index=chunk_index,
+        profile_dataset_id=profile_dataset_id,
     )
 
 
@@ -173,6 +254,7 @@ def join_profiles_with_store(
     profiles: MetadataSource,
     *,
     include_chunks: bool = False,
+    profile_dataset_id: str | None = None,
 ) -> pa.Table:
     """Scan a store and join its canonical image assets to profile rows.
 
@@ -184,6 +266,7 @@ def join_profiles_with_store(
         scan_store(uri),
         profiles,
         include_chunks=include_chunks,
+        profile_dataset_id=profile_dataset_id,
     )
 
 
@@ -197,3 +280,10 @@ def _validate_profiles(profiles: MetadataSource) -> ContractValidationResult:
         return validate_microscopy_profile_columns(columns)
 
     raise TypeError(f"Unsupported profile source type: {type(profiles)!r}")
+
+
+def _normalize_namespace_parts(namespace: str | Sequence[str]) -> tuple[str, ...]:
+    if isinstance(namespace, str):
+        return tuple(part for part in namespace.split(".") if part)
+
+    return tuple(part for part in namespace if part)

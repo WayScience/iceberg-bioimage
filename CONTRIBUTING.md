@@ -31,12 +31,21 @@ Run the same checks that are expected in CI:
 uv run pytest
 uv run ruff check
 uv run --group docs sphinx-build -b html docs/src docs/_build/html
+uv build
+uvx twine check dist/*
 ```
 
 Optional DuckDB integration checks:
 
 ```bash
 uv run --group duckdb pytest tests/test_duckdb.py
+```
+
+Notebook review artifacts:
+
+```bash
+uv run --group notebooks python -m jupytext --sync docs/src/examples/*.ipynb
+git diff --exit-code docs/src/examples
 ```
 
 If you use `pre-commit`, install the hooks and run them locally:

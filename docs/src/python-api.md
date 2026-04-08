@@ -52,6 +52,11 @@
    :members:
 ```
 
+```{eval-rst}
+.. automodule:: iceberg_bioimage.integrations.cytomining
+   :members:
+```
+
 ## Optional OME-Arrow Integration
 
 ```{eval-rst}

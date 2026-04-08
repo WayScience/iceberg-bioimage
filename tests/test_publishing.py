@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import json
 
+import pytest
+from pyiceberg.exceptions import NamespaceAlreadyExistsError
 from pytest import MonkeyPatch
 
 from iceberg_bioimage.models.scan_result import ImageAsset, ScanResult
 from iceberg_bioimage.publishing import image_assets as image_assets_module
-from tests.fakes import FakeCatalog
+from tests.fakes import FakeCatalog, FakeCreateNamespaceCatalog, FakeTable
 
 
 def _stub_schema() -> object:
@@ -71,14 +73,124 @@ def test_publish_image_assets_creates_missing_table(
         _stub_schema,
     )
 
-    row_count = image_assets_module.publish_image_assets(
-        catalog=fake_catalog,
-        namespace="bioimage.dev",
-        table_name="image_assets",
-        scan_result=scan_result,
-    )
+    with pytest.warns(UserWarning, match="CytoTable's expected Iceberg namespace"):
+        row_count = image_assets_module.publish_image_assets(
+            catalog=fake_catalog,
+            namespace="bioimage.dev",
+            table_name="image_assets",
+            scan_result=scan_result,
+        )
 
     assert row_count == 1
-    assert fake_catalog.created_identifiers == [("bioimage", "dev", "image_assets")]
+    assert fake_catalog.created_namespaces == [("bioimage", "dev", "cytotable")]
+    assert fake_catalog.created_identifiers == [
+        ("bioimage", "dev", "cytotable", "image_assets")
+    ]
     assert fake_catalog.table is not None
     assert len(fake_catalog.table.appends) == 1
+
+
+def test_publish_image_assets_uses_existing_legacy_table(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    scan_result = ScanResult(
+        source_uri="/tmp/experiment.zarr",
+        format_family="zarr",
+        image_assets=[
+            ImageAsset(
+                uri="/tmp/experiment.zarr",
+                shape=[10, 20],
+                dtype="uint16",
+            )
+        ],
+    )
+    legacy_table = FakeTable()
+    fake_catalog = FakeCatalog(tables={("bioimage", "image_assets"): legacy_table})
+
+    monkeypatch.setattr(
+        image_assets_module,
+        "_build_image_assets_schema",
+        _stub_schema,
+    )
+
+    with pytest.warns(UserWarning, match="Using 'bioimage.image_assets'"):
+        row_count = image_assets_module.publish_image_assets(
+            catalog=fake_catalog,
+            namespace="bioimage",
+            table_name="image_assets",
+            scan_result=scan_result,
+        )
+
+    assert row_count == 1
+    assert fake_catalog.created_identifiers == []
+    assert len(legacy_table.appends) == 1
+
+
+def test_publish_image_assets_create_namespace_fallback_suppresses_existing_error(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    class ExistingNamespaceCatalog(FakeCreateNamespaceCatalog):
+        def create_namespace(self, namespace: tuple[str, ...]) -> None:
+            raise NamespaceAlreadyExistsError(
+                f"Namespace already exists: {namespace!r}"
+            )
+
+    scan_result = ScanResult(
+        source_uri="/tmp/experiment.zarr",
+        format_family="zarr",
+        image_assets=[
+            ImageAsset(
+                uri="/tmp/experiment.zarr",
+                shape=[10, 20],
+                dtype="uint16",
+            )
+        ],
+    )
+    fake_catalog = ExistingNamespaceCatalog()
+
+    monkeypatch.setattr(
+        image_assets_module,
+        "_build_image_assets_schema",
+        _stub_schema,
+    )
+
+    with pytest.warns(UserWarning, match="CytoTable's expected Iceberg namespace"):
+        row_count = image_assets_module.publish_image_assets(
+            catalog=fake_catalog,
+            namespace="bioimage",
+            table_name="image_assets",
+            scan_result=scan_result,
+        )
+
+    assert row_count == 1
+    assert fake_catalog.created_identifiers == [
+        ("bioimage", "cytotable", "image_assets")
+    ]
+    assert fake_catalog.table is not None
+    assert len(fake_catalog.table.appends) == 1
+
+
+def test_ensure_namespace_exists_reraises_unexpected_create_namespace_errors() -> None:
+    class BrokenCatalog:
+        def create_namespace(self, namespace: tuple[str, ...]) -> None:
+            raise RuntimeError(f"boom: {namespace!r}")
+
+    with pytest.raises(RuntimeError, match="boom"):
+        image_assets_module._ensure_namespace_exists(
+            BrokenCatalog(),
+            ("bioimage", "cytotable"),
+        )
+
+
+def test_warn_for_namespace_resolution_avoids_leading_dot_for_empty_namespace() -> None:
+    with pytest.warns(UserWarning) as recorded:
+        image_assets_module._warn_for_namespace_resolution(
+            (),
+            (),
+            "image_assets",
+            operation="listing",
+        )
+
+    message = str(recorded[0].message)
+    assert "'image_assets' during listing" in message
+    assert "'.image_assets'" not in message
