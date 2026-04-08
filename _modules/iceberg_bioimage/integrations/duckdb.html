@@ -138,6 +138,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../cytomining.html">
+    Cytomining Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../examples/metadata-workflow.html">
     Metadata Workflow Example
   </a>
@@ -145,11 +152,28 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../workflow.html">
+  <a class="nav-link nav-internal" href="../../../examples/basic-workflow.html">
+    Warehouse Namespace Demo
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../workflow.html">
     Workflow
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -252,8 +276,22 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../cytomining.html">
+    Cytomining Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../examples/metadata-workflow.html">
     Metadata Workflow Example
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples/basic-workflow.html">
+    Warehouse Namespace Demo
   </a>
 </li>
 
@@ -367,6 +405,9 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">TypeAlias</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pa</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow.dataset</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ds</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.validation.contracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">resolve_microscopy_profile_columns</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">duckdb</span><span class="w"> </span><span class="kn">import</span> <span class="n">DuckDBPyConnection</span><span class="p">,</span> <span class="n">DuckDBPyRelation</span>
@@ -418,72 +459,82 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Query a metadata table from a Parquet path, Arrow table, or row list.&quot;&quot;&quot;</span>
 
     <span class="n">duckdb_connection</span><span class="p">,</span> <span class="n">owns_connection</span> <span class="o">=</span> <span class="n">_get_connection</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>
-    <span class="n">relation</span> <span class="o">=</span> <span class="n">_relation_for_source</span><span class="p">(</span><span class="n">duckdb_connection</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">relation</span> <span class="o">=</span> <span class="n">_relation_for_source</span><span class="p">(</span><span class="n">duckdb_connection</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">filters</span><span class="p">:</span>
-        <span class="n">relation</span> <span class="o">=</span> <span class="n">relation</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
-            <span class="n">_build_filter_expression</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">relation</span><span class="o">.</span><span class="n">columns</span><span class="p">),</span> <span class="n">filters</span><span class="p">)</span>
-        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">filters</span><span class="p">:</span>
+            <span class="n">relation</span> <span class="o">=</span> <span class="n">relation</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="n">_build_filter_expression</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">relation</span><span class="o">.</span><span class="n">columns</span><span class="p">),</span> <span class="n">filters</span><span class="p">)</span>
+            <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">columns</span><span class="p">:</span>
-        <span class="n">relation</span> <span class="o">=</span> <span class="n">relation</span><span class="o">.</span><span class="n">project</span><span class="p">(</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">columns</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">columns</span><span class="p">:</span>
+            <span class="n">relation</span> <span class="o">=</span> <span class="n">relation</span><span class="o">.</span><span class="n">project</span><span class="p">(</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">columns</span><span class="p">))</span>
 
-    <span class="n">result</span> <span class="o">=</span> <span class="n">_as_arrow_table</span><span class="p">(</span><span class="n">relation</span><span class="o">.</span><span class="n">arrow</span><span class="p">())</span>
-    <span class="k">if</span> <span class="n">owns_connection</span><span class="p">:</span>
-        <span class="n">duckdb_connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-
-    <span class="k">return</span> <span class="n">result</span></div>
+        <span class="k">return</span> <span class="n">_as_arrow_table</span><span class="p">(</span><span class="n">relation</span><span class="o">.</span><span class="n">arrow</span><span class="p">())</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">owns_connection</span><span class="p">:</span>
+            <span class="n">duckdb_connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
 
 
 <div class="viewcode-block" id="join_image_assets_with_profiles">
 <a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.join_image_assets_with_profiles">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">join_image_assets_with_profiles</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">join_image_assets_with_profiles</span><span class="p">(</span>  <span class="c1"># noqa: PLR0913</span>
     <span class="n">image_assets</span><span class="p">:</span> <span class="n">MetadataSource</span><span class="p">,</span>
     <span class="n">profiles</span><span class="p">:</span> <span class="n">MetadataSource</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">join_keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">DEFAULT_JOIN_KEYS</span><span class="p">,</span>
     <span class="n">chunk_index</span><span class="p">:</span> <span class="n">MetadataSource</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">connection</span><span class="p">:</span> <span class="n">DuckDBPyConnection</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">profile_dataset_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Join image metadata to a profile table using the canonical join keys.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Join image metadata to a profile table using the canonical join keys.</span>
+
+<span class="sd">    If ``profile_dataset_id`` is provided, that value is used to populate the</span>
+<span class="sd">    profile-side ``dataset_id`` when the profile input lacks one. When it is</span>
+<span class="sd">    None, the profile input is expected to carry ``dataset_id`` already.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">duckdb_connection</span><span class="p">,</span> <span class="n">owns_connection</span> <span class="o">=</span> <span class="n">_get_connection</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>
-    <span class="n">_register_source</span><span class="p">(</span><span class="n">duckdb_connection</span><span class="p">,</span> <span class="s2">&quot;image_assets&quot;</span><span class="p">,</span> <span class="n">image_assets</span><span class="p">)</span>
-    <span class="n">_register_source</span><span class="p">(</span><span class="n">duckdb_connection</span><span class="p">,</span> <span class="s2">&quot;profiles&quot;</span><span class="p">,</span> <span class="n">profiles</span><span class="p">)</span>
-
-    <span class="n">using_clause</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">join_keys</span><span class="p">)</span>
-    <span class="n">query</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s2">&quot;SELECT ia.*,&quot;</span><span class="p">,</span>
-        <span class="sa">f</span><span class="s2">&quot;       p.* EXCLUDE (</span><span class="si">{</span><span class="n">using_clause</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
-    <span class="p">]</span>
-
-    <span class="k">if</span> <span class="n">chunk_index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_register_source</span><span class="p">(</span><span class="n">duckdb_connection</span><span class="p">,</span> <span class="s2">&quot;chunk_index&quot;</span><span class="p">,</span> <span class="n">chunk_index</span><span class="p">)</span>
-        <span class="n">query</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="s2">&quot;     , &quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ci.</span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">CHUNK_INDEX_FIELDS</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_register_source</span><span class="p">(</span><span class="n">duckdb_connection</span><span class="p">,</span> <span class="s2">&quot;image_assets&quot;</span><span class="p">,</span> <span class="n">image_assets</span><span class="p">)</span>
+        <span class="n">_register_profiles_source</span><span class="p">(</span>
+            <span class="n">duckdb_connection</span><span class="p">,</span>
+            <span class="n">profiles</span><span class="p">,</span>
+            <span class="n">dataset_id</span><span class="o">=</span><span class="n">profile_dataset_id</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="n">query</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-        <span class="p">[</span>
-            <span class="s2">&quot;FROM image_assets AS ia&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;INNER JOIN profiles AS p USING (</span><span class="si">{</span><span class="n">using_clause</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
+        <span class="n">using_clause</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">join_keys</span><span class="p">)</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;SELECT ia.*,&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;       p.* EXCLUDE (</span><span class="si">{</span><span class="n">using_clause</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
         <span class="p">]</span>
-    <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">chunk_index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">query</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="s2">&quot;LEFT JOIN chunk_index AS ci &quot;</span>
-            <span class="s2">&quot;ON ia.dataset_id = ci.dataset_id &quot;</span>
-            <span class="s2">&quot;AND ia.image_id = ci.image_id &quot;</span>
-            <span class="s2">&quot;AND ia.array_path IS NOT DISTINCT FROM ci.array_path&quot;</span>
+        <span class="k">if</span> <span class="n">chunk_index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_register_source</span><span class="p">(</span><span class="n">duckdb_connection</span><span class="p">,</span> <span class="s2">&quot;chunk_index&quot;</span><span class="p">,</span> <span class="n">chunk_index</span><span class="p">)</span>
+            <span class="n">query</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="s2">&quot;     , &quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ci.</span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">CHUNK_INDEX_FIELDS</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">query</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="s2">&quot;FROM image_assets AS ia&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;INNER JOIN profiles AS p USING (</span><span class="si">{</span><span class="n">using_clause</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
+            <span class="p">]</span>
         <span class="p">)</span>
 
-    <span class="n">result</span> <span class="o">=</span> <span class="n">_as_arrow_table</span><span class="p">(</span><span class="n">duckdb_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">query</span><span class="p">))</span><span class="o">.</span><span class="n">arrow</span><span class="p">())</span>
-    <span class="k">if</span> <span class="n">owns_connection</span><span class="p">:</span>
-        <span class="n">duckdb_connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">chunk_index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">query</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="s2">&quot;LEFT JOIN chunk_index AS ci &quot;</span>
+                <span class="s2">&quot;ON ia.dataset_id = ci.dataset_id &quot;</span>
+                <span class="s2">&quot;AND ia.image_id = ci.image_id &quot;</span>
+                <span class="s2">&quot;AND ia.array_path IS NOT DISTINCT FROM ci.array_path&quot;</span>
+            <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">result</span></div>
+        <span class="k">return</span> <span class="n">_as_arrow_table</span><span class="p">(</span><span class="n">duckdb_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">query</span><span class="p">))</span><span class="o">.</span><span class="n">arrow</span><span class="p">())</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">owns_connection</span><span class="p">:</span>
+            <span class="n">duckdb_connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
 
 
@@ -513,16 +564,24 @@
     <span class="n">connection</span><span class="p">:</span> <span class="n">DuckDBPyConnection</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">source</span><span class="p">:</span> <span class="n">MetadataSource</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DuckDBPyRelation</span><span class="p">:</span>
+    <span class="n">relation</span> <span class="o">=</span> <span class="n">_relation_for_source</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+    <span class="n">relation</span><span class="o">.</span><span class="n">create_view</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">relation</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_register_profiles_source</span><span class="p">(</span>
+    <span class="n">connection</span><span class="p">:</span> <span class="n">DuckDBPyConnection</span><span class="p">,</span>
+    <span class="n">source</span><span class="p">:</span> <span class="n">MetadataSource</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">dataset_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
-        <span class="n">connection</span><span class="o">.</span><span class="n">from_parquet</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="p">))</span><span class="o">.</span><span class="n">create_view</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">return</span>
-
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-        <span class="n">connection</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_pylist</span><span class="p">(</span><span class="n">source</span><span class="p">))</span>
-        <span class="k">return</span>
-
-    <span class="n">connection</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+    <span class="n">relation</span> <span class="o">=</span> <span class="n">_register_source</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="s2">&quot;profiles_source&quot;</span><span class="p">,</span> <span class="n">source</span><span class="p">)</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="n">_columns_for_source</span><span class="p">(</span><span class="n">relation</span><span class="p">)</span>
+    <span class="n">projection</span> <span class="o">=</span> <span class="n">_profile_projection</span><span class="p">(</span><span class="n">columns</span><span class="p">,</span> <span class="n">dataset_id</span><span class="o">=</span><span class="n">dataset_id</span><span class="p">)</span>
+    <span class="n">connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;CREATE OR REPLACE VIEW profiles AS SELECT </span><span class="si">{</span><span class="n">projection</span><span class="si">}</span><span class="s2"> FROM profiles_source&quot;</span>
+    <span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_require_duckdb</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
@@ -535,6 +594,21 @@
         <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
 
     <span class="k">return</span> <span class="n">duckdb</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_columns_for_source</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="n">MetadataSource</span> <span class="o">|</span> <span class="n">DuckDBPyRelation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;columns&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">source</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_pylist</span><span class="p">(</span><span class="n">source</span><span class="p">)</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">dataset</span><span class="p">(</span><span class="n">source</span><span class="p">)</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">[]</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_as_arrow_table</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span> <span class="o">|</span> <span class="n">pa</span><span class="o">.</span><span class="n">RecordBatchReader</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="p">:</span>
@@ -588,6 +662,39 @@
         <span class="k">return</span> <span class="s2">&quot;&#39;&quot;</span> <span class="o">+</span> <span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;&#39;&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;&#39;&quot;</span>
 
     <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_profile_projection</span><span class="p">(</span>
+    <span class="n">columns</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">dataset_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">projection</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;profiles_source.*&quot;</span><span class="p">]</span>
+    <span class="n">resolved</span> <span class="o">=</span> <span class="n">resolve_microscopy_profile_columns</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">columns</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="s2">&quot;dataset_id&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">:</span>
+        <span class="n">dataset_source</span> <span class="o">=</span> <span class="n">resolved</span><span class="p">[</span><span class="s2">&quot;dataset_id&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">dataset_source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">projection</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_quote_identifier</span><span class="p">(</span><span class="n">dataset_source</span><span class="p">)</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;AS </span><span class="si">{</span><span class="n">_quote_identifier</span><span class="p">(</span><span class="s1">&#39;dataset_id&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">dataset_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">projection</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_quote_literal</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">)</span><span class="si">}</span><span class="s2"> AS </span><span class="si">{</span><span class="n">_quote_identifier</span><span class="p">(</span><span class="s1">&#39;dataset_id&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">canonical</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;image_id&quot;</span><span class="p">,</span> <span class="s2">&quot;plate_id&quot;</span><span class="p">,</span> <span class="s2">&quot;well_id&quot;</span><span class="p">,</span> <span class="s2">&quot;site_id&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">canonical</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">resolved</span><span class="p">[</span><span class="n">canonical</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">source</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">projection</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_quote_identifier</span><span class="p">(</span><span class="n">source</span><span class="p">)</span><span class="si">}</span><span class="s2"> AS </span><span class="si">{</span><span class="n">_quote_identifier</span><span class="p">(</span><span class="n">canonical</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">projection</span><span class="p">)</span>
 </pre></div>
 
                 </article>

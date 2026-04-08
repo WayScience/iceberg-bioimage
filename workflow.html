@@ -46,7 +46,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'workflow';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Metadata Workflow Example" href="examples/metadata-workflow.html" />
+    <link rel="prev" title="Warehouse Namespace Demo" href="examples/basic-workflow.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="" />
@@ -140,18 +140,42 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="cytomining.html">
+    Cytomining Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="examples/metadata-workflow.html">
     Metadata Workflow Example
   </a>
 </li>
 
 
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="#">
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples/basic-workflow.html">
+    Warehouse Namespace Demo
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
     Workflow
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -252,8 +276,22 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="cytomining.html">
+    Cytomining Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="examples/metadata-workflow.html">
     Metadata Workflow Example
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples/basic-workflow.html">
+    Warehouse Namespace Demo
   </a>
 </li>
 
@@ -373,6 +411,8 @@
 <li><p>Summarizing scan results into ergonomic <code class="docutils literal notranslate"><span class="pre">DatasetSummary</span></code> objects</p></li>
 <li><p>Publishing canonical <code class="docutils literal notranslate"><span class="pre">image_assets</span></code> rows to Iceberg with PyIceberg</p></li>
 <li><p>Publishing canonical <code class="docutils literal notranslate"><span class="pre">chunk_index</span></code> rows for chunked assets</p></li>
+<li><p>Ingesting one or more existing datasets into Cytotable-compatible warehouses</p></li>
+<li><p>Exporting Parquet Cytomining warehouse roots for <code class="docutils literal notranslate"><span class="pre">pycytominer</span></code>-style workflows</p></li>
 <li><p>Validating profile-table schemas against the microscopy join contract</p></li>
 <li><p>Joining scanned image metadata to profile tables through a high-level API</p></li>
 <li><p>Optional DuckDB query helpers over canonical metadata tables</p></li>
@@ -423,6 +463,8 @@ metadata without taking on execution-engine responsibilities.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>iceberg-bioimage<span class="w"> </span>scan<span class="w"> </span>data/experiment.zarr
 iceberg-bioimage<span class="w"> </span>summarize<span class="w"> </span>data/experiment.zarr
 iceberg-bioimage<span class="w"> </span>register<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage<span class="w"> </span>data/experiment.zarr
+iceberg-bioimage<span class="w"> </span>ingest<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage<span class="w"> </span>data/a.zarr<span class="w"> </span>data/b.zarr
+iceberg-bioimage<span class="w"> </span>export-cytomining<span class="w"> </span>--warehouse-root<span class="w"> </span>warehouse-root<span class="w"> </span>data/experiment.zarr
 iceberg-bioimage<span class="w"> </span>register<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage<span class="w"> </span>--publish-chunks<span class="w"> </span>data/experiment.zarr
 iceberg-bioimage<span class="w"> </span>publish-chunks<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage<span class="w"> </span>data/experiment.zarr
 iceberg-bioimage<span class="w"> </span>validate-contract<span class="w"> </span>data/cells.parquet
@@ -438,6 +480,8 @@ iceberg-bioimage<span class="w"> </span>join-profiles<span class="w"> </span>dat
 <li><p><code class="docutils literal notranslate"><span class="pre">examples/synthetic_workflow.py</span></code>: self-contained local synthetic workflow</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">docs/src/examples/metadata-workflow.ipynb</span></code>: summary and join workflow in a
 notebook</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs/src/examples/basic-workflow.ipynb</span></code>: simple TIFF/Zarr warehouse
+ingestion and namespace demo for Cytomining-style metadata</p></li>
 </ul>
 </section>
 </section>
@@ -453,12 +497,12 @@ notebook</p></li>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="examples/metadata-workflow.html"
+       href="examples/basic-workflow.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Metadata Workflow Example</p>
+        <p class="prev-next-title">Warehouse Namespace Demo</p>
       </div>
     </a>
 </div>

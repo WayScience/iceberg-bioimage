@@ -138,6 +138,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../cytomining.html">
+    Cytomining Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../examples/metadata-workflow.html">
     Metadata Workflow Example
   </a>
@@ -145,11 +152,28 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../workflow.html">
+  <a class="nav-link nav-internal" href="../../../examples/basic-workflow.html">
+    Warehouse Namespace Demo
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../workflow.html">
     Workflow
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -252,8 +276,22 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../cytomining.html">
+    Cytomining Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../examples/metadata-workflow.html">
     Metadata Workflow Example
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples/basic-workflow.html">
+    Warehouse Namespace Demo
   </a>
 </li>
 
@@ -546,6 +584,202 @@
 <a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.RegistrationResult.to_json">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">json_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>  <span class="c1"># noqa: ANN401</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize the registration result to JSON.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="o">**</span><span class="n">json_kwargs</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="WarehouseIngestResult">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.WarehouseIngestResult">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WarehouseIngestResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Serializable result for a multi-dataset warehouse ingestion workflow.&quot;&quot;&quot;</span>
+
+    <span class="n">catalog</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">namespace</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">image_assets_table</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">chunk_index_table</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">datasets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">RegistrationResult</span><span class="p">]</span>
+    <span class="n">warnings</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dataset_count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the number of ingested datasets.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">datasets</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">image_assets_rows_published</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the total number of published image-assets rows.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">image_assets_rows_published</span> <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasets</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">chunk_rows_published</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the total number of published chunk-index rows.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">chunk_rows_published</span> <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasets</span><span class="p">)</span>
+
+<div class="viewcode-block" id="WarehouseIngestResult.to_dict">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.WarehouseIngestResult.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a JSON-serializable representation.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;catalog&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">catalog</span><span class="p">,</span>
+            <span class="s2">&quot;namespace&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">namespace</span><span class="p">),</span>
+            <span class="s2">&quot;image_assets_table&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_assets_table</span><span class="p">,</span>
+            <span class="s2">&quot;chunk_index_table&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_index_table</span><span class="p">,</span>
+            <span class="s2">&quot;dataset_count&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset_count</span><span class="p">,</span>
+            <span class="s2">&quot;image_assets_rows_published&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_assets_rows_published</span><span class="p">,</span>
+            <span class="s2">&quot;chunk_rows_published&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_rows_published</span><span class="p">,</span>
+            <span class="s2">&quot;datasets&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">dataset</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">datasets</span><span class="p">],</span>
+            <span class="s2">&quot;warnings&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">warnings</span><span class="p">),</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="WarehouseIngestResult.to_json">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.WarehouseIngestResult.to_json">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">json_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>  <span class="c1"># noqa: ANN401</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize the warehouse ingestion result to JSON.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="o">**</span><span class="n">json_kwargs</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CytominingWarehouseResult">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.CytominingWarehouseResult">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CytominingWarehouseResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Serializable result for exporting Parquet-backed Cytomining warehouses.&quot;&quot;&quot;</span>
+
+    <span class="n">warehouse_root</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">tables_written</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">row_counts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+    <span class="n">manifest_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="CytominingWarehouseResult.to_dict">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.CytominingWarehouseResult.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a JSON-serializable representation.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;warehouse_root&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">warehouse_root</span><span class="p">,</span>
+            <span class="s2">&quot;tables_written&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tables_written</span><span class="p">),</span>
+            <span class="s2">&quot;row_counts&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">row_counts</span><span class="p">),</span>
+            <span class="s2">&quot;manifest_path&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">manifest_path</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="CytominingWarehouseResult.to_json">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.CytominingWarehouseResult.to_json">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">json_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>  <span class="c1"># noqa: ANN401</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize the Cytomining warehouse export result to JSON.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="o">**</span><span class="n">json_kwargs</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="WarehouseTableManifestEntry">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.WarehouseTableManifestEntry">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WarehouseTableManifestEntry</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Serializable metadata for one table in a warehouse manifest.&quot;&quot;&quot;</span>
+
+    <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">role</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="nb">format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;parquet&quot;</span>
+    <span class="n">join_keys</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">source_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">source_ref</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">row_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+
+<div class="viewcode-block" id="WarehouseTableManifestEntry.to_dict">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.WarehouseTableManifestEntry.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a JSON-serializable representation.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;table_name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_name</span><span class="p">,</span>
+            <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">role</span><span class="p">,</span>
+            <span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
+            <span class="s2">&quot;join_keys&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">join_keys</span><span class="p">),</span>
+            <span class="s2">&quot;source_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_type</span><span class="p">,</span>
+            <span class="s2">&quot;source_ref&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_ref</span><span class="p">,</span>
+            <span class="s2">&quot;row_count&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">row_count</span><span class="p">,</span>
+            <span class="s2">&quot;columns&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">),</span>
+        <span class="p">}</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="WarehouseManifest">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.WarehouseManifest">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WarehouseManifest</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Serializable manifest describing tables stored in a warehouse root.&quot;&quot;&quot;</span>
+
+    <span class="n">warehouse_root</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">tables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">WarehouseTableManifestEntry</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+
+<div class="viewcode-block" id="WarehouseManifest.to_dict">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.WarehouseManifest.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a JSON-serializable representation.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;warehouse_root&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">warehouse_root</span><span class="p">,</span>
+            <span class="s2">&quot;tables&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">table</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">table</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tables</span><span class="p">],</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="WarehouseManifest.to_json">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.WarehouseManifest.to_json">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">json_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>  <span class="c1"># noqa: ANN401</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize the warehouse manifest to JSON.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="o">**</span><span class="n">json_kwargs</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="WarehouseValidationResult">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.WarehouseValidationResult">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WarehouseValidationResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Serializable result for validating a warehouse manifest and layout.&quot;&quot;&quot;</span>
+
+    <span class="n">warehouse_root</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">errors</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">warnings</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return whether the warehouse passed validation.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">errors</span>
+
+<div class="viewcode-block" id="WarehouseValidationResult.to_dict">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.WarehouseValidationResult.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a JSON-serializable representation.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;warehouse_root&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">warehouse_root</span><span class="p">,</span>
+            <span class="s2">&quot;errors&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">errors</span><span class="p">),</span>
+            <span class="s2">&quot;warnings&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">warnings</span><span class="p">),</span>
+            <span class="s2">&quot;is_valid&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_valid</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="WarehouseValidationResult.to_json">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.WarehouseValidationResult.to_json">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">json_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>  <span class="c1"># noqa: ANN401</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize the warehouse validation result to JSON.&quot;&quot;&quot;</span>
 
         <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="o">**</span><span class="n">json_kwargs</span><span class="p">)</span></div>
 </div>

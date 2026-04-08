@@ -140,6 +140,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="cytomining.html">
+    Cytomining Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="examples/metadata-workflow.html">
     Metadata Workflow Example
   </a>
@@ -147,11 +154,28 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="workflow.html">
+  <a class="nav-link nav-internal" href="examples/basic-workflow.html">
+    Warehouse Namespace Demo
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="workflow.html">
     Workflow
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -254,8 +278,22 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="cytomining.html">
+    Cytomining Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="examples/metadata-workflow.html">
     Metadata Workflow Example
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples/basic-workflow.html">
+    Warehouse Namespace Demo
   </a>
 </li>
 
@@ -335,10 +373,11 @@
   <!-- include contents from the root readme -->
 <section id="iceberg-bioimage">
 <h1>iceberg-bioimage<a class="headerlink" href="#iceberg-bioimage" title="Link to this heading">#</a></h1>
-<p><code class="docutils literal notranslate"><span class="pre">iceberg-bioimage</span></code> is a format-agnostic Python package for cataloging bioimaging data with Apache Iceberg as the metadata layer.</p>
+<p><code class="docutils literal notranslate"><span class="pre">iceberg-bioimage</span></code> is a format-agnostic Python package for cataloging bioimaging data with Apache Iceberg and exporting Cytomining-compatible warehouse layouts.</p>
 <p>Core idea:</p>
 <ul class="simple">
 <li><p>Iceberg is the control plane for cataloging, schemas, joins, and snapshots.</p></li>
+<li><p>Cytomining-compatible Parquet warehouses are a first-class export target.</p></li>
 <li><p>Zarr and OME-TIFF remain the data plane.</p></li>
 <li><p>Adapters normalize each format into a pure-Python <code class="docutils literal notranslate"><span class="pre">ScanResult</span></code>.</p></li>
 <li><p>Execution stays in external tools such as DuckDB, xarray, and tifffile.</p></li>
@@ -387,13 +426,19 @@ forward-facing integrations can coexist in the same environment</p></li>
 <section id="quickstart">
 <h2>Quickstart<a class="headerlink" href="#quickstart" title="Link to this heading">#</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">export_store_to_cytomining_warehouse</span><span class="p">,</span>
+    <span class="n">ingest_stores_to_warehouse</span><span class="p">,</span>
     <span class="n">join_profiles_with_store</span><span class="p">,</span>
     <span class="n">register_store</span><span class="p">,</span>
     <span class="n">summarize_store</span><span class="p">,</span>
     <span class="n">validate_microscopy_profile_table</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="n">registration</span> <span class="o">=</span> <span class="n">register_store</span><span class="p">(</span><span class="s2">&quot;data/experiment.zarr&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="s2">&quot;bioimage&quot;</span><span class="p">)</span>
+<span class="n">registration</span> <span class="o">=</span> <span class="n">register_store</span><span class="p">(</span>
+    <span class="s2">&quot;data/experiment.zarr&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;bioimage.cytotable&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">registration</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
 
 <span class="n">summary</span> <span class="o">=</span> <span class="n">summarize_store</span><span class="p">(</span><span class="s2">&quot;data/experiment.zarr&quot;</span><span class="p">)</span>
@@ -406,13 +451,30 @@ forward-facing integrations can coexist in the same environment</p></li>
 <span class="c1">#   pip install &#39;iceberg-bioimage[duckdb]&#39;</span>
 <span class="n">joined</span> <span class="o">=</span> <span class="n">join_profiles_with_store</span><span class="p">(</span><span class="s2">&quot;data/experiment.zarr&quot;</span><span class="p">,</span> <span class="s2">&quot;data/cells.parquet&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">joined</span><span class="o">.</span><span class="n">num_rows</span><span class="p">)</span>
+
+<span class="n">warehouse</span> <span class="o">=</span> <span class="n">ingest_stores_to_warehouse</span><span class="p">(</span>
+    <span class="p">[</span><span class="s2">&quot;data/experiment-a.zarr&quot;</span><span class="p">,</span> <span class="s2">&quot;data/experiment-b.zarr&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;bioimage.cytotable&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">warehouse</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+
+<span class="n">cytomining_export</span> <span class="o">=</span> <span class="n">export_store_to_cytomining_warehouse</span><span class="p">(</span>
+    <span class="s2">&quot;data/experiment-a.zarr&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;warehouse-root&quot;</span><span class="p">,</span>
+    <span class="n">profiles</span><span class="o">=</span><span class="s2">&quot;data/cells.parquet&quot;</span><span class="p">,</span>
+    <span class="n">profile_dataset_id</span><span class="o">=</span><span class="s2">&quot;experiment-a&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">cytomining_export</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
 </pre></div>
 </div>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>iceberg-bioimage<span class="w"> </span>scan<span class="w"> </span>data/experiment.zarr
 iceberg-bioimage<span class="w"> </span>summarize<span class="w"> </span>data/experiment.zarr
-iceberg-bioimage<span class="w"> </span>register<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage<span class="w"> </span>data/experiment.zarr
-iceberg-bioimage<span class="w"> </span>publish-chunks<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage<span class="w"> </span>data/experiment.zarr
-iceberg-bioimage<span class="w"> </span>register<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage<span class="w"> </span>--publish-chunks<span class="w"> </span>data/experiment.zarr
+iceberg-bioimage<span class="w"> </span>register<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage.cytotable<span class="w"> </span>data/experiment.zarr
+iceberg-bioimage<span class="w"> </span>ingest<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage.cytotable<span class="w"> </span>data/experiment-a.zarr<span class="w"> </span>data/experiment-b.zarr
+iceberg-bioimage<span class="w"> </span>export-cytomining<span class="w"> </span>--warehouse-root<span class="w"> </span>warehouse-root<span class="w"> </span>data/experiment.zarr
+iceberg-bioimage<span class="w"> </span>publish-chunks<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage.cytotable<span class="w"> </span>data/experiment.zarr
+iceberg-bioimage<span class="w"> </span>register<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage.cytotable<span class="w"> </span>--publish-chunks<span class="w"> </span>data/experiment.zarr
 iceberg-bioimage<span class="w"> </span>validate-contract<span class="w"> </span>data/cells.parquet
 iceberg-bioimage<span class="w"> </span>join-profiles<span class="w"> </span>data/experiment.zarr<span class="w"> </span>data/cells.parquet<span class="w"> </span>--output<span class="w"> </span>joined.parquet
 </pre></div>
@@ -430,7 +492,11 @@ pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;
 </section>
 <section id="duckdb-helpers">
 <h2>DuckDB helpers<a class="headerlink" href="#duckdb-helpers" title="Link to this heading">#</a></h2>
-<p>DuckDB is supported as an optional integration layer, not as a required engine.</p>
+<p>DuckDB is supported as an optional integration layer, not as a required engine.
+The join helpers also accept common <code class="docutils literal notranslate"><span class="pre">pycytominer</span></code> and <code class="docutils literal notranslate"><span class="pre">coSMicQC</span></code>-style
+<code class="docutils literal notranslate"><span class="pre">Metadata_*</span></code> aliases for <code class="docutils literal notranslate"><span class="pre">dataset_id</span></code>, <code class="docutils literal notranslate"><span class="pre">image_id</span></code>, <code class="docutils literal notranslate"><span class="pre">plate_id</span></code>, <code class="docutils literal notranslate"><span class="pre">well_id</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">site_id</span></code>. If a profile table is missing <code class="docutils literal notranslate"><span class="pre">dataset_id</span></code> but all rows belong to
+one dataset, pass <code class="docutils literal notranslate"><span class="pre">profile_dataset_id=...</span></code> to the high-level join helpers.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pa</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">join_image_assets_with_profiles</span><span class="p">,</span> <span class="n">query_metadata_table</span>
@@ -459,6 +525,36 @@ pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;
 </pre></div>
 </div>
 <p>Install the optional integration with <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span> <span class="pre">--group</span> <span class="pre">duckdb</span></code>.</p>
+</section>
+<section id="cytomining-warehouse-export">
+<h2>Cytomining warehouse export<a class="headerlink" href="#cytomining-warehouse-export" title="Link to this heading">#</a></h2>
+<p>This project now treats Cytomining interoperability as a primary workflow.
+Besides publishing canonical metadata to Iceberg, it can materialize a
+Parquet-backed warehouse root that tools like <code class="docutils literal notranslate"><span class="pre">pycytominer</span></code> can consume
+directly.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">export_store_to_cytomining_warehouse</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">export_store_to_cytomining_warehouse</span><span class="p">(</span>
+    <span class="s2">&quot;data/experiment.zarr&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;warehouse-root&quot;</span><span class="p">,</span>
+    <span class="n">profiles</span><span class="o">=</span><span class="s2">&quot;data/profiles.parquet&quot;</span><span class="p">,</span>
+    <span class="n">profile_dataset_id</span><span class="o">=</span><span class="s2">&quot;experiment&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>This writes one or more of:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">image_assets/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">chunk_index/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">joined_profiles/</span></code></p></li>
+</ul>
+<p>It can also append downstream Cytomining tables into the same warehouse root,
+for example:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pycytominer_profiles/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cosmicqc_profiles/</span></code></p></li>
+</ul>
 </section>
 <section id="ome-arrow-helpers">
 <h2>OME-Arrow helpers<a class="headerlink" href="#ome-arrow-helpers" title="Link to this heading">#</a></h2>
@@ -501,7 +597,7 @@ catalog and join them to analysis outputs directly:</p>
 
 <span class="n">joined</span> <span class="o">=</span> <span class="n">join_catalog_image_assets_with_profiles</span><span class="p">(</span>
     <span class="s2">&quot;default&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;bioimage&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;bioimage.cytotable&quot;</span><span class="p">,</span>
     <span class="n">profiles</span><span class="p">,</span>
     <span class="n">chunk_index_table</span><span class="o">=</span><span class="s2">&quot;chunk_index&quot;</span><span class="p">,</span>
 <span class="p">)</span>
@@ -514,6 +610,8 @@ catalog and join them to analysis outputs directly:</p>
 <li><p>Scan Zarr and OME-TIFF stores into canonical <code class="docutils literal notranslate"><span class="pre">ScanResult</span></code> objects</p></li>
 <li><p>Summarize scanned datasets into user-facing <code class="docutils literal notranslate"><span class="pre">DatasetSummary</span></code> objects</p></li>
 <li><p>Publish <code class="docutils literal notranslate"><span class="pre">image_assets</span></code> and <code class="docutils literal notranslate"><span class="pre">chunk_index</span></code> metadata tables with PyIceberg</p></li>
+<li><p>Ingest one or more existing datasets into Cytotable-compatible Iceberg warehouses</p></li>
+<li><p>Export new or existing datasets into Cytomining-compatible Parquet warehouses</p></li>
 <li><p>Validate profile tables against the microscopy join contract</p></li>
 <li><p>Join scanned image metadata to profile tables through a simple top-level API</p></li>
 <li><p>Query canonical metadata through optional DuckDB helpers</p></li>
@@ -522,11 +620,12 @@ catalog and join them to analysis outputs directly:</p>
 </section>
 <section id="design-note">
 <h2>Design note<a class="headerlink" href="#design-note" title="Link to this heading">#</a></h2>
-<p>After reviewing the current <code class="docutils literal notranslate"><span class="pre">CytoTable</span></code> and <code class="docutils literal notranslate"><span class="pre">ome-arrow</span></code> codebases, this package
-keeps CytoTable’s Iceberg warehouse writer out of scope while now exposing
-OME-Arrow as an optional companion integration. The core package still focuses
-on metadata scanning, publishing, validation, and joins; OME-Arrow remains the
-right place for Arrow-native image payload handling and lazy image access.</p>
+<p>After reviewing the current <code class="docutils literal notranslate"><span class="pre">CytoTable</span></code>, <code class="docutils literal notranslate"><span class="pre">pycytominer</span></code>, and <code class="docutils literal notranslate"><span class="pre">ome-arrow</span></code>
+codebases, this package now treats Cytomining-compatible warehouse generation
+as one of its main jobs. The core package focuses on metadata scanning,
+publishing, Cytomining warehouse export, validation, and joins; OME-Arrow
+remains the right place for Arrow-native image payload handling and lazy image
+access.</p>
 <div class="toctree-wrapper compound">
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
@@ -534,19 +633,33 @@ right place for Arrow-native image payload handling and lazy image access.</p>
 <li class="toctree-l2"><a class="reference internal" href="python-api.html#module-iceberg_bioimage">Top-level API</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.CatalogScanOptions"><code class="docutils literal notranslate"><span class="pre">CatalogScanOptions</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.ContractValidationResult"><code class="docutils literal notranslate"><span class="pre">ContractValidationResult</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.CytominingWarehouseResult"><code class="docutils literal notranslate"><span class="pre">CytominingWarehouseResult</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.DatasetSummary"><code class="docutils literal notranslate"><span class="pre">DatasetSummary</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.ImageAsset"><code class="docutils literal notranslate"><span class="pre">ImageAsset</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.RegistrationResult"><code class="docutils literal notranslate"><span class="pre">RegistrationResult</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.ScanResult"><code class="docutils literal notranslate"><span class="pre">ScanResult</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.WarehouseIngestResult"><code class="docutils literal notranslate"><span class="pre">WarehouseIngestResult</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.WarehouseManifest"><code class="docutils literal notranslate"><span class="pre">WarehouseManifest</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.WarehouseTableManifestEntry"><code class="docutils literal notranslate"><span class="pre">WarehouseTableManifestEntry</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.WarehouseValidationResult"><code class="docutils literal notranslate"><span class="pre">WarehouseValidationResult</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.catalog_table_to_arrow"><code class="docutils literal notranslate"><span class="pre">catalog_table_to_arrow()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.create_duckdb_connection"><code class="docutils literal notranslate"><span class="pre">create_duckdb_connection()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.create_ome_arrow"><code class="docutils literal notranslate"><span class="pre">create_ome_arrow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.export_catalog_to_cytomining_warehouse"><code class="docutils literal notranslate"><span class="pre">export_catalog_to_cytomining_warehouse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.export_profiles_to_cytomining_warehouse"><code class="docutils literal notranslate"><span class="pre">export_profiles_to_cytomining_warehouse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.export_scan_result_to_cytomining_warehouse"><code class="docutils literal notranslate"><span class="pre">export_scan_result_to_cytomining_warehouse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.export_store_to_cytomining_warehouse"><code class="docutils literal notranslate"><span class="pre">export_store_to_cytomining_warehouse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.export_table_to_cytomining_warehouse"><code class="docutils literal notranslate"><span class="pre">export_table_to_cytomining_warehouse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.ingest_scan_results_to_warehouse"><code class="docutils literal notranslate"><span class="pre">ingest_scan_results_to_warehouse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.ingest_stores_to_warehouse"><code class="docutils literal notranslate"><span class="pre">ingest_stores_to_warehouse()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.join_catalog_image_assets_with_profiles"><code class="docutils literal notranslate"><span class="pre">join_catalog_image_assets_with_profiles()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.join_image_assets_with_profiles"><code class="docutils literal notranslate"><span class="pre">join_image_assets_with_profiles()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.join_profiles_with_scan_result"><code class="docutils literal notranslate"><span class="pre">join_profiles_with_scan_result()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.join_profiles_with_store"><code class="docutils literal notranslate"><span class="pre">join_profiles_with_store()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.list_catalog_tables"><code class="docutils literal notranslate"><span class="pre">list_catalog_tables()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.load_catalog_table"><code class="docutils literal notranslate"><span class="pre">load_catalog_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.load_profile_column_aliases"><code class="docutils literal notranslate"><span class="pre">load_profile_column_aliases()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.load_warehouse_manifest"><code class="docutils literal notranslate"><span class="pre">load_warehouse_manifest()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publish_chunk_index"><code class="docutils literal notranslate"><span class="pre">publish_chunk_index()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publish_image_assets"><code class="docutils literal notranslate"><span class="pre">publish_image_assets()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.query_metadata_table"><code class="docutils literal notranslate"><span class="pre">query_metadata_table()</span></code></a></li>
@@ -557,9 +670,12 @@ right place for Arrow-native image payload handling and lazy image access.</p>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.summarize_store"><code class="docutils literal notranslate"><span class="pre">summarize_store()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.validate_microscopy_profile_columns"><code class="docutils literal notranslate"><span class="pre">validate_microscopy_profile_columns()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.validate_microscopy_profile_table"><code class="docutils literal notranslate"><span class="pre">validate_microscopy_profile_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.validate_warehouse_manifest"><code class="docutils literal notranslate"><span class="pre">validate_warehouse_manifest()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="python-api.html#module-iceberg_bioimage.api">Scan API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.api.ingest_scan_results_to_warehouse"><code class="docutils literal notranslate"><span class="pre">ingest_scan_results_to_warehouse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.api.ingest_stores_to_warehouse"><code class="docutils literal notranslate"><span class="pre">ingest_stores_to_warehouse()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.api.join_profiles_with_scan_result"><code class="docutils literal notranslate"><span class="pre">join_profiles_with_scan_result()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.api.join_profiles_with_store"><code class="docutils literal notranslate"><span class="pre">join_profiles_with_store()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.api.register_store"><code class="docutils literal notranslate"><span class="pre">register_store()</span></code></a></li>
@@ -570,15 +686,21 @@ right place for Arrow-native image payload handling and lazy image access.</p>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="python-api.html#module-iceberg_bioimage.models.scan_result">Models</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.models.scan_result.ContractValidationResult"><code class="docutils literal notranslate"><span class="pre">ContractValidationResult</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.models.scan_result.CytominingWarehouseResult"><code class="docutils literal notranslate"><span class="pre">CytominingWarehouseResult</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.models.scan_result.DatasetSummary"><code class="docutils literal notranslate"><span class="pre">DatasetSummary</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.models.scan_result.ImageAsset"><code class="docutils literal notranslate"><span class="pre">ImageAsset</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.models.scan_result.RegistrationResult"><code class="docutils literal notranslate"><span class="pre">RegistrationResult</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.models.scan_result.ScanResult"><code class="docutils literal notranslate"><span class="pre">ScanResult</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseIngestResult"><code class="docutils literal notranslate"><span class="pre">WarehouseIngestResult</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseManifest"><code class="docutils literal notranslate"><span class="pre">WarehouseManifest</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseTableManifestEntry"><code class="docutils literal notranslate"><span class="pre">WarehouseTableManifestEntry</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseValidationResult"><code class="docutils literal notranslate"><span class="pre">WarehouseValidationResult</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="python-api.html#module-iceberg_bioimage.publishing.image_assets">Publishing</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publishing.image_assets.SupportsAppend"><code class="docutils literal notranslate"><span class="pre">SupportsAppend</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publishing.image_assets.SupportsCatalog"><code class="docutils literal notranslate"><span class="pre">SupportsCatalog</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publishing.image_assets.SupportsLoadTable"><code class="docutils literal notranslate"><span class="pre">SupportsLoadTable</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publishing.image_assets.publish_image_assets"><code class="docutils literal notranslate"><span class="pre">publish_image_assets()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publishing.image_assets.scan_result_to_rows"><code class="docutils literal notranslate"><span class="pre">scan_result_to_rows()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publishing.chunk_index.publish_chunk_index"><code class="docutils literal notranslate"><span class="pre">publish_chunk_index()</span></code></a></li>
@@ -586,10 +708,14 @@ right place for Arrow-native image payload handling and lazy image access.</p>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="python-api.html#module-iceberg_bioimage.validation.contracts">Validation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.validation.contracts.load_profile_column_aliases"><code class="docutils literal notranslate"><span class="pre">load_profile_column_aliases()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.validation.contracts.profile_column_aliases"><code class="docutils literal notranslate"><span class="pre">profile_column_aliases()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.validation.contracts.raise_for_invalid_scan_result"><code class="docutils literal notranslate"><span class="pre">raise_for_invalid_scan_result()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.validation.contracts.resolve_microscopy_profile_columns"><code class="docutils literal notranslate"><span class="pre">resolve_microscopy_profile_columns()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.validation.contracts.validate_microscopy_profile_columns"><code class="docutils literal notranslate"><span class="pre">validate_microscopy_profile_columns()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.validation.contracts.validate_microscopy_profile_table"><code class="docutils literal notranslate"><span class="pre">validate_microscopy_profile_table()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.validation.contracts.validate_scan_result"><code class="docutils literal notranslate"><span class="pre">validate_scan_result()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.validation.contracts.validate_warehouse_manifest"><code class="docutils literal notranslate"><span class="pre">validate_warehouse_manifest()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="python-api.html#module-iceberg_bioimage.integrations.duckdb">Optional DuckDB Integration</a><ul>
@@ -604,6 +730,12 @@ right place for Arrow-native image payload handling and lazy image access.</p>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.integrations.catalog.join_catalog_image_assets_with_profiles"><code class="docutils literal notranslate"><span class="pre">join_catalog_image_assets_with_profiles()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.integrations.catalog.list_catalog_tables"><code class="docutils literal notranslate"><span class="pre">list_catalog_tables()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.integrations.catalog.load_catalog_table"><code class="docutils literal notranslate"><span class="pre">load_catalog_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.integrations.cytomining.export_catalog_to_cytomining_warehouse"><code class="docutils literal notranslate"><span class="pre">export_catalog_to_cytomining_warehouse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.integrations.cytomining.export_profiles_to_cytomining_warehouse"><code class="docutils literal notranslate"><span class="pre">export_profiles_to_cytomining_warehouse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.integrations.cytomining.export_scan_result_to_cytomining_warehouse"><code class="docutils literal notranslate"><span class="pre">export_scan_result_to_cytomining_warehouse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.integrations.cytomining.export_store_to_cytomining_warehouse"><code class="docutils literal notranslate"><span class="pre">export_store_to_cytomining_warehouse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.integrations.cytomining.export_table_to_cytomining_warehouse"><code class="docutils literal notranslate"><span class="pre">export_table_to_cytomining_warehouse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.integrations.cytomining.load_warehouse_manifest"><code class="docutils literal notranslate"><span class="pre">load_warehouse_manifest()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="python-api.html#module-iceberg_bioimage.integrations.ome_arrow">Optional OME-Arrow Integration</a><ul>
@@ -620,10 +752,22 @@ right place for Arrow-native image payload handling and lazy image access.</p>
 <li class="toctree-l2"><a class="reference internal" href="duckdb.html#catalog-backed-example">Catalog-backed example</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="cytomining.html">Cytomining Workflow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cytomining.html#warehouse-layout">Warehouse layout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cytomining.html#export-from-image-stores">Export From Image Stores</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cytomining.html#export-from-existing-iceberg-metadata">Export From Existing Iceberg Metadata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cytomining.html#existing-warehouse-roots">Existing Warehouse Roots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cytomining.html#examplehuman-to-cytomining-workflow">ExampleHuman To Cytomining Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cytomining.html#generic-table-export">Generic Table Export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cytomining.html#cytomining-metadata-compatibility">Cytomining Metadata Compatibility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cytomining.html#ome-arrow-and-other-columns">OME-Arrow and Other Columns</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="examples/metadata-workflow.html">Metadata Workflow Example</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="examples/metadata-workflow.html#optional-ome-arrow-path">Optional OME-Arrow path</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="examples/basic-workflow.html">Warehouse Namespace Demo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="workflow.html">Workflow</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="workflow.html#current-scope">Current scope</a></li>
 <li class="toctree-l2"><a class="reference internal" href="workflow.html#zarr-v2-and-v3">Zarr v2 and v3</a></li>

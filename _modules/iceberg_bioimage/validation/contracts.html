@@ -138,6 +138,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../cytomining.html">
+    Cytomining Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../examples/metadata-workflow.html">
     Metadata Workflow Example
   </a>
@@ -145,11 +152,28 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="../../../workflow.html">
+  <a class="nav-link nav-internal" href="../../../examples/basic-workflow.html">
+    Warehouse Namespace Demo
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../workflow.html">
     Workflow
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -252,8 +276,22 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../cytomining.html">
+    Cytomining Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../examples/metadata-workflow.html">
     Metadata Workflow Example
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples/basic-workflow.html">
+    Warehouse Namespace Demo
   </a>
 </li>
 
@@ -362,6 +400,9 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">tomllib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">json</span><span class="w"> </span><span class="kn">import</span> <span class="n">JSONDecodeError</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow.dataset</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ds</span>
@@ -369,10 +410,45 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.models.scan_result</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">ContractValidationResult</span><span class="p">,</span>
     <span class="n">ScanResult</span><span class="p">,</span>
+    <span class="n">WarehouseValidationResult</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">MICROSCOPY_REQUIRED_JOIN_KEYS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;dataset_id&quot;</span><span class="p">,</span> <span class="s2">&quot;image_id&quot;</span><span class="p">)</span>
 <span class="n">MICROSCOPY_RECOMMENDED_JOIN_KEYS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;plate_id&quot;</span><span class="p">,</span> <span class="s2">&quot;well_id&quot;</span><span class="p">,</span> <span class="s2">&quot;site_id&quot;</span><span class="p">)</span>
+<span class="n">MICROSCOPY_PROFILE_COLUMN_ALIASES</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;dataset_id&quot;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">&quot;Metadata_dataset_id&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Metadata_DatasetID&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Metadata_DatasetId&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Metadata_dataset&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Metadata_Source&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Metadata_source&quot;</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s2">&quot;image_id&quot;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">&quot;Metadata_image_id&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Metadata_ImageID&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Metadata_ImageId&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Metadata_image&quot;</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s2">&quot;plate_id&quot;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">&quot;Metadata_Plate&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Image_Metadata_Plate&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Metadata_plate&quot;</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s2">&quot;well_id&quot;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">&quot;Metadata_Well&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Image_Metadata_Well&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Metadata_well&quot;</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="s2">&quot;site_id&quot;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">&quot;Metadata_Site&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Image_Metadata_Site&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Metadata_SiteNumber&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Metadata_Field&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Metadata_FOV&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Metadata_site&quot;</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">}</span>
 
 
 <div class="viewcode-block" id="validate_scan_result">
@@ -416,22 +492,27 @@
     <span class="n">columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;profile_table&quot;</span><span class="p">,</span>
+    <span class="n">alias_map</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ContractValidationResult</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate a schema against the microscopy join contract.&quot;&quot;&quot;</span>
 
     <span class="n">present_columns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span>
+    <span class="n">resolved_columns</span> <span class="o">=</span> <span class="n">resolve_microscopy_profile_columns</span><span class="p">(</span>
+        <span class="n">present_columns</span><span class="p">,</span>
+        <span class="n">alias_map</span><span class="o">=</span><span class="n">alias_map</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="n">missing_required</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">column</span>
         <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">MICROSCOPY_REQUIRED_JOIN_KEYS</span>
-        <span class="k">if</span> <span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">present_columns</span>
+        <span class="k">if</span> <span class="n">resolved_columns</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span>
     <span class="p">]</span>
     <span class="n">missing_recommended</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">column</span>
         <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">MICROSCOPY_RECOMMENDED_JOIN_KEYS</span>
-        <span class="k">if</span> <span class="n">column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">present_columns</span>
+        <span class="k">if</span> <span class="n">resolved_columns</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span>
     <span class="p">]</span>
 
-    <span class="n">warnings</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">warnings</span> <span class="o">=</span> <span class="n">_profile_contract_warnings</span><span class="p">(</span><span class="n">resolved_columns</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">missing_recommended</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="s2">&quot;Recommended microscopy join keys are missing: &quot;</span>
@@ -473,6 +554,131 @@
         <span class="n">target</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)),</span>
     <span class="p">)</span></div>
 
+
+
+<div class="viewcode-block" id="resolve_microscopy_profile_columns">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.resolve_microscopy_profile_columns">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">resolve_microscopy_profile_columns</span><span class="p">(</span>
+    <span class="n">columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">alias_map</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve canonical microscopy columns from a schema with known aliases.&quot;&quot;&quot;</span>
+
+    <span class="n">present_columns</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span>
+    <span class="n">resolved</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">aliases</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">canonical</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">known_aliases</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">canonical</span><span class="p">,</span> <span class="n">known_aliases</span> <span class="ow">in</span> <span class="n">MICROSCOPY_PROFILE_COLUMN_ALIASES</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">alias_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">canonical</span><span class="p">,</span> <span class="n">custom_aliases</span> <span class="ow">in</span> <span class="n">alias_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">aliases</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">canonical</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">custom_aliases</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="p">(</span>
+        <span class="o">*</span><span class="n">MICROSCOPY_REQUIRED_JOIN_KEYS</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">MICROSCOPY_RECOMMENDED_JOIN_KEYS</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">present_columns</span><span class="p">:</span>
+            <span class="n">resolved</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">column</span>
+            <span class="k">continue</span>
+
+        <span class="n">resolved</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">alias</span> <span class="k">for</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">aliases</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="p">())</span> <span class="k">if</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">present_columns</span><span class="p">),</span>
+            <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">resolved</span></div>
+
+
+
+<div class="viewcode-block" id="profile_column_aliases">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.profile_column_aliases">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">profile_column_aliases</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the supported microscopy profile column aliases.&quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">MICROSCOPY_PROFILE_COLUMN_ALIASES</span></div>
+
+
+
+<div class="viewcode-block" id="load_profile_column_aliases">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.load_profile_column_aliases">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_profile_column_aliases</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load microscopy profile column aliases from a TOML file.&quot;&quot;&quot;</span>
+
+    <span class="n">payload</span> <span class="o">=</span> <span class="n">tomllib</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
+    <span class="n">alias_section</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;microscopy&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;aliases&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="n">canonical</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">alias</span><span class="p">)</span> <span class="k">for</span> <span class="n">alias</span> <span class="ow">in</span> <span class="n">aliases</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">canonical</span><span class="p">,</span> <span class="n">aliases</span> <span class="ow">in</span> <span class="n">alias_section</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="validate_warehouse_manifest">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.validate_warehouse_manifest">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_warehouse_manifest</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">WarehouseValidationResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate a manifest-backed warehouse root.&quot;&quot;&quot;</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.integrations.cytomining</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_warehouse_manifest</span>
+
+    <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">WarehouseValidationResult</span><span class="p">(</span><span class="n">warehouse_root</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+    <span class="n">manifest_path</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;warehouse_manifest.json&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">manifest_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;warehouse_manifest.json is missing.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">manifest</span> <span class="o">=</span> <span class="n">load_warehouse_manifest</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="n">JSONDecodeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid warehouse_manifest.json: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="n">seen_table_names</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">table</span> <span class="ow">in</span> <span class="n">manifest</span><span class="o">.</span><span class="n">tables</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">table</span><span class="o">.</span><span class="n">table_name</span> <span class="ow">in</span> <span class="n">seen_table_names</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Duplicate table_name in manifest: </span><span class="si">{</span><span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="n">seen_table_names</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="p">)</span>
+
+        <span class="n">dataset_path</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="n">table</span><span class="o">.</span><span class="n">table_name</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dataset_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Manifest table path does not exist: </span><span class="si">{</span><span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="k">if</span> <span class="n">table</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;image_assets&quot;</span><span class="p">,</span> <span class="s2">&quot;joined_profiles&quot;</span><span class="p">}</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">table</span><span class="o">.</span><span class="n">join_keys</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Manifest table </span><span class="si">{</span><span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="si">}</span><span class="s2"> must declare join_keys.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">table</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Manifest table </span><span class="si">{</span><span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="si">}</span><span class="s2"> does not record columns.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_profile_contract_warnings</span><span class="p">(</span><span class="n">resolved_columns</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="n">warnings</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">aliased_columns</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">canonical</span><span class="si">}</span><span class="s2">&lt;-</span><span class="si">{</span><span class="n">resolved</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">for</span> <span class="n">canonical</span><span class="p">,</span> <span class="n">resolved</span> <span class="ow">in</span> <span class="n">resolved_columns</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">resolved</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">canonical</span> <span class="o">!=</span> <span class="n">resolved</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="n">aliased_columns</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="s2">&quot;Microscopy join keys will require alias normalization: &quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">aliased_columns</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">warnings</span>
 </pre></div>
 
                 </article>

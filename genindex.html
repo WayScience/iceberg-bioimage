@@ -138,6 +138,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="cytomining.html">
+    Cytomining Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="examples/metadata-workflow.html">
     Metadata Workflow Example
   </a>
@@ -145,11 +152,28 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="workflow.html">
+  <a class="nav-link nav-internal" href="examples/basic-workflow.html">
+    Warehouse Namespace Demo
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="workflow.html">
     Workflow
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -252,8 +276,22 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="cytomining.html">
+    Cytomining Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="examples/metadata-workflow.html">
     Metadata Workflow Example
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples/basic-workflow.html">
+    Warehouse Namespace Demo
   </a>
 </li>
 
@@ -337,6 +375,7 @@
  <a href="#A"><strong>A</strong></a>
  | <a href="#C"><strong>C</strong></a>
  | <a href="#D"><strong>D</strong></a>
+ | <a href="#E"><strong>E</strong></a>
  | <a href="#I"><strong>I</strong></a>
  | <a href="#J"><strong>J</strong></a>
  | <a href="#L"><strong>L</strong></a>
@@ -347,6 +386,7 @@
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
  | <a href="#V"><strong>V</strong></a>
+ | <a href="#W"><strong>W</strong></a>
  
 </div>
 <h2 id="A">A</h2>
@@ -372,6 +412,12 @@
         <li><a href="python-api.html#iceberg_bioimage.integrations.catalog.CatalogScanOptions">(class in iceberg_bioimage.integrations.catalog)</a>
 </li>
       </ul></li>
+      <li><a href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseIngestResult.chunk_rows_published">chunk_rows_published (iceberg_bioimage.models.scan_result.WarehouseIngestResult property)</a>
+
+      <ul>
+        <li><a href="python-api.html#iceberg_bioimage.WarehouseIngestResult.chunk_rows_published">(iceberg_bioimage.WarehouseIngestResult property)</a>
+</li>
+      </ul></li>
       <li><a href="python-api.html#iceberg_bioimage.ContractValidationResult">ContractValidationResult (class in iceberg_bioimage)</a>
 
       <ul>
@@ -394,16 +440,68 @@
       </ul></li>
       <li><a href="python-api.html#iceberg_bioimage.publishing.image_assets.SupportsCatalog.create_table">create_table() (iceberg_bioimage.publishing.image_assets.SupportsCatalog method)</a>
 </li>
+      <li><a href="python-api.html#iceberg_bioimage.CytominingWarehouseResult">CytominingWarehouseResult (class in iceberg_bioimage)</a>
+
+      <ul>
+        <li><a href="python-api.html#iceberg_bioimage.models.scan_result.CytominingWarehouseResult">(class in iceberg_bioimage.models.scan_result)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseIngestResult.dataset_count">dataset_count (iceberg_bioimage.models.scan_result.WarehouseIngestResult property)</a>
+
+      <ul>
+        <li><a href="python-api.html#iceberg_bioimage.WarehouseIngestResult.dataset_count">(iceberg_bioimage.WarehouseIngestResult property)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python-api.html#iceberg_bioimage.DatasetSummary">DatasetSummary (class in iceberg_bioimage)</a>
 
       <ul>
         <li><a href="python-api.html#iceberg_bioimage.models.scan_result.DatasetSummary">(class in iceberg_bioimage.models.scan_result)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python-api.html#iceberg_bioimage.export_catalog_to_cytomining_warehouse">export_catalog_to_cytomining_warehouse() (in module iceberg_bioimage)</a>
+
+      <ul>
+        <li><a href="python-api.html#iceberg_bioimage.integrations.cytomining.export_catalog_to_cytomining_warehouse">(in module iceberg_bioimage.integrations.cytomining)</a>
+</li>
+      </ul></li>
+      <li><a href="python-api.html#iceberg_bioimage.export_profiles_to_cytomining_warehouse">export_profiles_to_cytomining_warehouse() (in module iceberg_bioimage)</a>
+
+      <ul>
+        <li><a href="python-api.html#iceberg_bioimage.integrations.cytomining.export_profiles_to_cytomining_warehouse">(in module iceberg_bioimage.integrations.cytomining)</a>
+</li>
+      </ul></li>
+      <li><a href="python-api.html#iceberg_bioimage.export_scan_result_to_cytomining_warehouse">export_scan_result_to_cytomining_warehouse() (in module iceberg_bioimage)</a>
+
+      <ul>
+        <li><a href="python-api.html#iceberg_bioimage.integrations.cytomining.export_scan_result_to_cytomining_warehouse">(in module iceberg_bioimage.integrations.cytomining)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python-api.html#iceberg_bioimage.export_store_to_cytomining_warehouse">export_store_to_cytomining_warehouse() (in module iceberg_bioimage)</a>
+
+      <ul>
+        <li><a href="python-api.html#iceberg_bioimage.integrations.cytomining.export_store_to_cytomining_warehouse">(in module iceberg_bioimage.integrations.cytomining)</a>
+</li>
+      </ul></li>
+      <li><a href="python-api.html#iceberg_bioimage.export_table_to_cytomining_warehouse">export_table_to_cytomining_warehouse() (in module iceberg_bioimage)</a>
+
+      <ul>
+        <li><a href="python-api.html#iceberg_bioimage.integrations.cytomining.export_table_to_cytomining_warehouse">(in module iceberg_bioimage.integrations.cytomining)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -434,6 +532,13 @@
 </li>
       </ul></li>
       <li>
+    iceberg_bioimage.integrations.cytomining
+
+      <ul>
+        <li><a href="python-api.html#module-iceberg_bioimage.integrations.cytomining">module</a>
+</li>
+      </ul></li>
+      <li>
     iceberg_bioimage.integrations.duckdb
 
       <ul>
@@ -454,8 +559,6 @@
         <li><a href="python-api.html#module-iceberg_bioimage.models.scan_result">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     iceberg_bioimage.publishing.chunk_index
 
@@ -463,6 +566,8 @@
         <li><a href="python-api.html#module-iceberg_bioimage.publishing.chunk_index">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     iceberg_bioimage.publishing.image_assets
 
@@ -477,16 +582,38 @@
         <li><a href="python-api.html#module-iceberg_bioimage.validation.contracts">module</a>
 </li>
       </ul></li>
+      <li><a href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseIngestResult.image_assets_rows_published">image_assets_rows_published (iceberg_bioimage.models.scan_result.WarehouseIngestResult property)</a>
+
+      <ul>
+        <li><a href="python-api.html#iceberg_bioimage.WarehouseIngestResult.image_assets_rows_published">(iceberg_bioimage.WarehouseIngestResult property)</a>
+</li>
+      </ul></li>
       <li><a href="python-api.html#iceberg_bioimage.ImageAsset">ImageAsset (class in iceberg_bioimage)</a>
 
       <ul>
         <li><a href="python-api.html#iceberg_bioimage.models.scan_result.ImageAsset">(class in iceberg_bioimage.models.scan_result)</a>
 </li>
       </ul></li>
+      <li><a href="python-api.html#iceberg_bioimage.ingest_scan_results_to_warehouse">ingest_scan_results_to_warehouse() (in module iceberg_bioimage)</a>
+
+      <ul>
+        <li><a href="python-api.html#iceberg_bioimage.api.ingest_scan_results_to_warehouse">(in module iceberg_bioimage.api)</a>
+</li>
+      </ul></li>
+      <li><a href="python-api.html#iceberg_bioimage.ingest_stores_to_warehouse">ingest_stores_to_warehouse() (in module iceberg_bioimage)</a>
+
+      <ul>
+        <li><a href="python-api.html#iceberg_bioimage.api.ingest_stores_to_warehouse">(in module iceberg_bioimage.api)</a>
+</li>
+      </ul></li>
       <li><a href="python-api.html#iceberg_bioimage.ContractValidationResult.is_valid">is_valid (iceberg_bioimage.ContractValidationResult property)</a>
 
       <ul>
         <li><a href="python-api.html#iceberg_bioimage.models.scan_result.ContractValidationResult.is_valid">(iceberg_bioimage.models.scan_result.ContractValidationResult property)</a>
+</li>
+        <li><a href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseValidationResult.is_valid">(iceberg_bioimage.models.scan_result.WarehouseValidationResult property)</a>
+</li>
+        <li><a href="python-api.html#iceberg_bioimage.WarehouseValidationResult.is_valid">(iceberg_bioimage.WarehouseValidationResult property)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -535,18 +662,32 @@
       </ul></li>
       <li><a href="python-api.html#iceberg_bioimage.integrations.catalog.SupportsScanCatalog.list_tables">list_tables() (iceberg_bioimage.integrations.catalog.SupportsScanCatalog method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python-api.html#iceberg_bioimage.load_catalog_table">load_catalog_table() (in module iceberg_bioimage)</a>
 
       <ul>
         <li><a href="python-api.html#iceberg_bioimage.integrations.catalog.load_catalog_table">(in module iceberg_bioimage.integrations.catalog)</a>
 </li>
       </ul></li>
+      <li><a href="python-api.html#iceberg_bioimage.load_profile_column_aliases">load_profile_column_aliases() (in module iceberg_bioimage)</a>
+
+      <ul>
+        <li><a href="python-api.html#iceberg_bioimage.validation.contracts.load_profile_column_aliases">(in module iceberg_bioimage.validation.contracts)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python-api.html#iceberg_bioimage.integrations.catalog.SupportsScanCatalog.load_table">load_table() (iceberg_bioimage.integrations.catalog.SupportsScanCatalog method)</a>
 
       <ul>
         <li><a href="python-api.html#iceberg_bioimage.publishing.image_assets.SupportsCatalog.load_table">(iceberg_bioimage.publishing.image_assets.SupportsCatalog method)</a>
+</li>
+        <li><a href="python-api.html#iceberg_bioimage.publishing.image_assets.SupportsLoadTable.load_table">(iceberg_bioimage.publishing.image_assets.SupportsLoadTable method)</a>
+</li>
+      </ul></li>
+      <li><a href="python-api.html#iceberg_bioimage.load_warehouse_manifest">load_warehouse_manifest() (in module iceberg_bioimage)</a>
+
+      <ul>
+        <li><a href="python-api.html#iceberg_bioimage.integrations.cytomining.load_warehouse_manifest">(in module iceberg_bioimage.integrations.cytomining)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -564,6 +705,8 @@
         <li><a href="python-api.html#module-iceberg_bioimage.api">iceberg_bioimage.api</a>
 </li>
         <li><a href="python-api.html#module-iceberg_bioimage.integrations.catalog">iceberg_bioimage.integrations.catalog</a>
+</li>
+        <li><a href="python-api.html#module-iceberg_bioimage.integrations.cytomining">iceberg_bioimage.integrations.cytomining</a>
 </li>
         <li><a href="python-api.html#module-iceberg_bioimage.integrations.duckdb">iceberg_bioimage.integrations.duckdb</a>
 </li>
@@ -584,6 +727,8 @@
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python-api.html#iceberg_bioimage.validation.contracts.profile_column_aliases">profile_column_aliases() (in module iceberg_bioimage.validation.contracts)</a>
+</li>
       <li><a href="python-api.html#iceberg_bioimage.publish_chunk_index">publish_chunk_index() (in module iceberg_bioimage)</a>
 
       <ul>
@@ -632,6 +777,8 @@
         <li><a href="python-api.html#iceberg_bioimage.models.scan_result.RegistrationResult">(class in iceberg_bioimage.models.scan_result)</a>
 </li>
       </ul></li>
+      <li><a href="python-api.html#iceberg_bioimage.validation.contracts.resolve_microscopy_profile_columns">resolve_microscopy_profile_columns() (in module iceberg_bioimage.validation.contracts)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -684,6 +831,8 @@
 </li>
       <li><a href="python-api.html#iceberg_bioimage.integrations.catalog.SupportsIcebergTable">SupportsIcebergTable (class in iceberg_bioimage.integrations.catalog)</a>
 </li>
+      <li><a href="python-api.html#iceberg_bioimage.publishing.image_assets.SupportsLoadTable">SupportsLoadTable (class in iceberg_bioimage.publishing.image_assets)</a>
+</li>
       <li><a href="python-api.html#iceberg_bioimage.integrations.catalog.SupportsScanCatalog">SupportsScanCatalog (class in iceberg_bioimage.integrations.catalog)</a>
 </li>
   </ul></td>
@@ -697,11 +846,15 @@
       <li><a href="python-api.html#iceberg_bioimage.ContractValidationResult.to_dict">to_dict() (iceberg_bioimage.ContractValidationResult method)</a>
 
       <ul>
+        <li><a href="python-api.html#iceberg_bioimage.CytominingWarehouseResult.to_dict">(iceberg_bioimage.CytominingWarehouseResult method)</a>
+</li>
         <li><a href="python-api.html#iceberg_bioimage.DatasetSummary.to_dict">(iceberg_bioimage.DatasetSummary method)</a>
 </li>
         <li><a href="python-api.html#iceberg_bioimage.ImageAsset.to_dict">(iceberg_bioimage.ImageAsset method)</a>
 </li>
         <li><a href="python-api.html#iceberg_bioimage.models.scan_result.ContractValidationResult.to_dict">(iceberg_bioimage.models.scan_result.ContractValidationResult method)</a>
+</li>
+        <li><a href="python-api.html#iceberg_bioimage.models.scan_result.CytominingWarehouseResult.to_dict">(iceberg_bioimage.models.scan_result.CytominingWarehouseResult method)</a>
 </li>
         <li><a href="python-api.html#iceberg_bioimage.models.scan_result.DatasetSummary.to_dict">(iceberg_bioimage.models.scan_result.DatasetSummary method)</a>
 </li>
@@ -711,9 +864,25 @@
 </li>
         <li><a href="python-api.html#iceberg_bioimage.models.scan_result.ScanResult.to_dict">(iceberg_bioimage.models.scan_result.ScanResult method)</a>
 </li>
+        <li><a href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseIngestResult.to_dict">(iceberg_bioimage.models.scan_result.WarehouseIngestResult method)</a>
+</li>
+        <li><a href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseManifest.to_dict">(iceberg_bioimage.models.scan_result.WarehouseManifest method)</a>
+</li>
+        <li><a href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseTableManifestEntry.to_dict">(iceberg_bioimage.models.scan_result.WarehouseTableManifestEntry method)</a>
+</li>
+        <li><a href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseValidationResult.to_dict">(iceberg_bioimage.models.scan_result.WarehouseValidationResult method)</a>
+</li>
         <li><a href="python-api.html#iceberg_bioimage.RegistrationResult.to_dict">(iceberg_bioimage.RegistrationResult method)</a>
 </li>
         <li><a href="python-api.html#iceberg_bioimage.ScanResult.to_dict">(iceberg_bioimage.ScanResult method)</a>
+</li>
+        <li><a href="python-api.html#iceberg_bioimage.WarehouseIngestResult.to_dict">(iceberg_bioimage.WarehouseIngestResult method)</a>
+</li>
+        <li><a href="python-api.html#iceberg_bioimage.WarehouseManifest.to_dict">(iceberg_bioimage.WarehouseManifest method)</a>
+</li>
+        <li><a href="python-api.html#iceberg_bioimage.WarehouseTableManifestEntry.to_dict">(iceberg_bioimage.WarehouseTableManifestEntry method)</a>
+</li>
+        <li><a href="python-api.html#iceberg_bioimage.WarehouseValidationResult.to_dict">(iceberg_bioimage.WarehouseValidationResult method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -721,9 +890,13 @@
       <li><a href="python-api.html#iceberg_bioimage.ContractValidationResult.to_json">to_json() (iceberg_bioimage.ContractValidationResult method)</a>
 
       <ul>
+        <li><a href="python-api.html#iceberg_bioimage.CytominingWarehouseResult.to_json">(iceberg_bioimage.CytominingWarehouseResult method)</a>
+</li>
         <li><a href="python-api.html#iceberg_bioimage.DatasetSummary.to_json">(iceberg_bioimage.DatasetSummary method)</a>
 </li>
         <li><a href="python-api.html#iceberg_bioimage.models.scan_result.ContractValidationResult.to_json">(iceberg_bioimage.models.scan_result.ContractValidationResult method)</a>
+</li>
+        <li><a href="python-api.html#iceberg_bioimage.models.scan_result.CytominingWarehouseResult.to_json">(iceberg_bioimage.models.scan_result.CytominingWarehouseResult method)</a>
 </li>
         <li><a href="python-api.html#iceberg_bioimage.models.scan_result.DatasetSummary.to_json">(iceberg_bioimage.models.scan_result.DatasetSummary method)</a>
 </li>
@@ -731,9 +904,21 @@
 </li>
         <li><a href="python-api.html#iceberg_bioimage.models.scan_result.ScanResult.to_json">(iceberg_bioimage.models.scan_result.ScanResult method)</a>
 </li>
+        <li><a href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseIngestResult.to_json">(iceberg_bioimage.models.scan_result.WarehouseIngestResult method)</a>
+</li>
+        <li><a href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseManifest.to_json">(iceberg_bioimage.models.scan_result.WarehouseManifest method)</a>
+</li>
+        <li><a href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseValidationResult.to_json">(iceberg_bioimage.models.scan_result.WarehouseValidationResult method)</a>
+</li>
         <li><a href="python-api.html#iceberg_bioimage.RegistrationResult.to_json">(iceberg_bioimage.RegistrationResult method)</a>
 </li>
         <li><a href="python-api.html#iceberg_bioimage.ScanResult.to_json">(iceberg_bioimage.ScanResult method)</a>
+</li>
+        <li><a href="python-api.html#iceberg_bioimage.WarehouseIngestResult.to_json">(iceberg_bioimage.WarehouseIngestResult method)</a>
+</li>
+        <li><a href="python-api.html#iceberg_bioimage.WarehouseManifest.to_json">(iceberg_bioimage.WarehouseManifest method)</a>
+</li>
+        <li><a href="python-api.html#iceberg_bioimage.WarehouseValidationResult.to_json">(iceberg_bioimage.WarehouseValidationResult method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -748,16 +933,54 @@
         <li><a href="python-api.html#iceberg_bioimage.validation.contracts.validate_microscopy_profile_columns">(in module iceberg_bioimage.validation.contracts)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python-api.html#iceberg_bioimage.validate_microscopy_profile_table">validate_microscopy_profile_table() (in module iceberg_bioimage)</a>
 
       <ul>
         <li><a href="python-api.html#iceberg_bioimage.validation.contracts.validate_microscopy_profile_table">(in module iceberg_bioimage.validation.contracts)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="python-api.html#iceberg_bioimage.validation.contracts.validate_scan_result">validate_scan_result() (in module iceberg_bioimage.validation.contracts)</a>
 </li>
+      <li><a href="python-api.html#iceberg_bioimage.validate_warehouse_manifest">validate_warehouse_manifest() (in module iceberg_bioimage)</a>
+
+      <ul>
+        <li><a href="python-api.html#iceberg_bioimage.validation.contracts.validate_warehouse_manifest">(in module iceberg_bioimage.validation.contracts)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python-api.html#iceberg_bioimage.WarehouseIngestResult">WarehouseIngestResult (class in iceberg_bioimage)</a>
+
+      <ul>
+        <li><a href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseIngestResult">(class in iceberg_bioimage.models.scan_result)</a>
+</li>
+      </ul></li>
+      <li><a href="python-api.html#iceberg_bioimage.WarehouseManifest">WarehouseManifest (class in iceberg_bioimage)</a>
+
+      <ul>
+        <li><a href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseManifest">(class in iceberg_bioimage.models.scan_result)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="python-api.html#iceberg_bioimage.WarehouseTableManifestEntry">WarehouseTableManifestEntry (class in iceberg_bioimage)</a>
+
+      <ul>
+        <li><a href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseTableManifestEntry">(class in iceberg_bioimage.models.scan_result)</a>
+</li>
+      </ul></li>
+      <li><a href="python-api.html#iceberg_bioimage.WarehouseValidationResult">WarehouseValidationResult (class in iceberg_bioimage)</a>
+
+      <ul>
+        <li><a href="python-api.html#iceberg_bioimage.models.scan_result.WarehouseValidationResult">(class in iceberg_bioimage.models.scan_result)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 

@@ -8,6 +8,8 @@ The library currently supports:
 - Summarizing scan results into ergonomic `DatasetSummary` objects
 - Publishing canonical `image_assets` rows to Iceberg with PyIceberg
 - Publishing canonical `chunk_index` rows for chunked assets
+- Ingesting one or more existing datasets into Cytotable-compatible warehouses
+- Exporting Parquet Cytomining warehouse roots for `pycytominer`-style workflows
 - Validating profile-table schemas against the microscopy join contract
 - Joining scanned image metadata to profile tables through a high-level API
 - Optional DuckDB query helpers over canonical metadata tables
@@ -60,6 +62,8 @@ metadata without taking on execution-engine responsibilities.
 iceberg-bioimage scan data/experiment.zarr
 iceberg-bioimage summarize data/experiment.zarr
 iceberg-bioimage register --catalog default --namespace bioimage data/experiment.zarr
+iceberg-bioimage ingest --catalog default --namespace bioimage data/a.zarr data/b.zarr
+iceberg-bioimage export-cytomining --warehouse-root warehouse-root data/experiment.zarr
 iceberg-bioimage register --catalog default --namespace bioimage --publish-chunks data/experiment.zarr
 iceberg-bioimage publish-chunks --catalog default --namespace bioimage data/experiment.zarr
 iceberg-bioimage validate-contract data/cells.parquet
@@ -73,3 +77,5 @@ iceberg-bioimage join-profiles data/experiment.zarr data/cells.parquet --output 
 - `examples/synthetic_workflow.py`: self-contained local synthetic workflow
 - `docs/src/examples/metadata-workflow.ipynb`: summary and join workflow in a
   notebook
+- `docs/src/examples/basic-workflow.ipynb`: simple TIFF/Zarr warehouse
+  ingestion and namespace demo for Cytomining-style metadata

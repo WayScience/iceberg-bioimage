@@ -1,0 +1,719 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Cytomining Workflow &#8212; iceberg-bioimage  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=662f399a" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'cytomining';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Metadata Workflow Example" href="examples/metadata-workflow.html" />
+    <link rel="prev" title="DuckDB Integration" href="duckdb.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">iceberg-bioimage</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="python-api.html">
+    Python API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="duckdb.html">
+    DuckDB Integration
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Cytomining Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples/metadata-workflow.html">
+    Metadata Workflow Example
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples/basic-workflow.html">
+    Warehouse Namespace Demo
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="workflow.html">
+    Workflow
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/d33bs/iceberg-bioimage" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="python-api.html">
+    Python API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="duckdb.html">
+    DuckDB Integration
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Cytomining Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples/metadata-workflow.html">
+    Metadata Workflow Example
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples/basic-workflow.html">
+    Warehouse Namespace Demo
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="workflow.html">
+    Workflow
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/d33bs/iceberg-bioimage" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Cytomining Workflow</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="cytomining-workflow">
+<h1>Cytomining Workflow<a class="headerlink" href="#cytomining-workflow" title="Link to this heading">#</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">iceberg-bioimage</span></code> now treats Cytomining interoperability as a primary
+workflow, not a side integration.</p>
+<p>The package supports two common paths:</p>
+<ol class="arabic simple">
+<li><p>Create a Cytomining-compatible Parquet warehouse root directly from image
+stores such as Zarr or OME-TIFF.</p></li>
+<li><p>Materialize a Cytomining-compatible Parquet warehouse root from existing
+Iceberg metadata tables.</p></li>
+</ol>
+<p>These exports are designed to be useful to tools like <code class="docutils literal notranslate"><span class="pre">pycytominer</span></code> while
+keeping image scanning, metadata canonicalization, and namespace handling in
+this repository.</p>
+<p>Each warehouse root also carries a <code class="docutils literal notranslate"><span class="pre">warehouse_manifest.json</span></code> file so appended
+tables are described by role, join keys, provenance, and columns rather than
+only by directory name.</p>
+<section id="warehouse-layout">
+<h2>Warehouse layout<a class="headerlink" href="#warehouse-layout" title="Link to this heading">#</a></h2>
+<p>The Parquet warehouse root can contain:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">image_assets/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">chunk_index/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">joined_profiles/</span></code></p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">image_assets</span></code> is the base metadata table.</p>
+<p><code class="docutils literal notranslate"><span class="pre">chunk_index</span></code> is optional and only contains rows for chunked assets.</p>
+<p><code class="docutils literal notranslate"><span class="pre">joined_profiles</span></code> is optional and is written when a profile table is provided.</p>
+</section>
+<section id="export-from-image-stores">
+<h2>Export From Image Stores<a class="headerlink" href="#export-from-image-stores" title="Link to this heading">#</a></h2>
+<p>Use this when a Cytomining project starts from raw image data and wants a
+Parquet warehouse root immediately:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">export_store_to_cytomining_warehouse</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">export_store_to_cytomining_warehouse</span><span class="p">(</span>
+    <span class="s2">&quot;data/experiment.zarr&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;warehouse-root&quot;</span><span class="p">,</span>
+    <span class="n">profiles</span><span class="o">=</span><span class="s2">&quot;data/profiles.parquet&quot;</span><span class="p">,</span>
+    <span class="n">profile_dataset_id</span><span class="o">=</span><span class="s2">&quot;experiment&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>CLI:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>iceberg-bioimage<span class="w"> </span>export-cytomining<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--warehouse-root<span class="w"> </span>warehouse-root<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--profiles<span class="w"> </span>data/profiles.parquet<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--profile-dataset-id<span class="w"> </span>experiment<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>data/experiment.zarr
+</pre></div>
+</div>
+</section>
+<section id="export-from-existing-iceberg-metadata">
+<h2>Export From Existing Iceberg Metadata<a class="headerlink" href="#export-from-existing-iceberg-metadata" title="Link to this heading">#</a></h2>
+<p>Use this when a project already has <code class="docutils literal notranslate"><span class="pre">image_assets</span></code> and <code class="docutils literal notranslate"><span class="pre">chunk_index</span></code> in an
+Iceberg catalog and wants a Cytomining warehouse root for downstream tools:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">export_catalog_to_cytomining_warehouse</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">export_catalog_to_cytomining_warehouse</span><span class="p">(</span>
+    <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;bioimage&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;warehouse-root&quot;</span><span class="p">,</span>
+    <span class="n">profiles</span><span class="o">=</span><span class="s2">&quot;data/profiles.parquet&quot;</span><span class="p">,</span>
+    <span class="n">profile_dataset_id</span><span class="o">=</span><span class="s2">&quot;experiment&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>CLI:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>iceberg-bioimage<span class="w"> </span>export-cytomining-catalog<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--catalog<span class="w"> </span>default<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--namespace<span class="w"> </span>bioimage<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--warehouse-root<span class="w"> </span>warehouse-root<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--profiles<span class="w"> </span>data/profiles.parquet<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--profile-dataset-id<span class="w"> </span>experiment
+</pre></div>
+</div>
+</section>
+<section id="existing-warehouse-roots">
+<h2>Existing Warehouse Roots<a class="headerlink" href="#existing-warehouse-roots" title="Link to this heading">#</a></h2>
+<p>Both export helpers support:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">mode=&quot;overwrite&quot;</span></code> for creating or replacing tables</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mode=&quot;append&quot;</span></code> for adding additional Parquet parts to an existing warehouse</p></li>
+</ul>
+<p>That makes it possible to incrementally add datasets from multiple assays or
+plates into the same Cytomining-oriented warehouse root.</p>
+</section>
+<section id="examplehuman-to-cytomining-workflow">
+<h2>ExampleHuman To Cytomining Workflow<a class="headerlink" href="#examplehuman-to-cytomining-workflow" title="Link to this heading">#</a></h2>
+<p>One useful pattern for Cytomining projects is:</p>
+<ol class="arabic simple">
+<li><p>use <code class="docutils literal notranslate"><span class="pre">CytoTable</span></code> to convert ExampleHuman-style measurement outputs into an
+Iceberg-backed warehouse</p></li>
+<li><p>use <code class="docutils literal notranslate"><span class="pre">iceberg-bioimage</span></code> to materialize that metadata into a Cytomining
+Parquet warehouse root</p></li>
+<li><p>append downstream <code class="docutils literal notranslate"><span class="pre">pycytominer</span></code> outputs as named warehouse tables</p></li>
+<li><p>append downstream <code class="docutils literal notranslate"><span class="pre">coSMicQC</span></code> outputs as named warehouse tables</p></li>
+</ol>
+<p>That looks like:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1. External step: build or update the CytoTable/Iceberg warehouse</span>
+<span class="c1">#    from ExampleHuman measurement outputs.</span>
+
+<span class="c1"># 2. Export the Iceberg-backed metadata into a Cytomining warehouse root.</span>
+iceberg-bioimage<span class="w"> </span>export-cytomining-catalog<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--catalog<span class="w"> </span>default<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--namespace<span class="w"> </span>bioimage<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--warehouse-root<span class="w"> </span>warehouse-root<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--profiles<span class="w"> </span>data/examplehuman_profiles.parquet<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--profile-dataset-id<span class="w"> </span>ExampleHuman
+
+<span class="c1"># 3. Append a pycytominer output table.</span>
+iceberg-bioimage<span class="w"> </span>export-cytomining-profiles<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--warehouse-root<span class="w"> </span>warehouse-root<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--table-name<span class="w"> </span>pycytominer_profiles<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--profile-dataset-id<span class="w"> </span>ExampleHuman<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>data/pycytominer_output.parquet
+
+<span class="c1"># 4. Append a coSMicQC output table.</span>
+iceberg-bioimage<span class="w"> </span>export-cytomining-profiles<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--warehouse-root<span class="w"> </span>warehouse-root<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--table-name<span class="w"> </span>cosmicqc_profiles<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--profile-dataset-id<span class="w"> </span>ExampleHuman<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>data/cosmicqc_output.parquet
+</pre></div>
+</div>
+<p>After those steps, the same warehouse root can contain:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">image_assets/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">chunk_index/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">joined_profiles/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pycytominer_profiles/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cosmicqc_profiles/</span></code></p></li>
+</ul>
+<p>This keeps the image metadata and downstream Cytomining analysis outputs in one
+portable Parquet layout.</p>
+</section>
+<section id="generic-table-export">
+<h2>Generic Table Export<a class="headerlink" href="#generic-table-export" title="Link to this heading">#</a></h2>
+<p>For Cytomining projects with outputs that do not fit one narrow static
+convention, use the generic table export API and record the table role in the
+manifest:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pa</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">export_table_to_cytomining_warehouse</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">export_table_to_cytomining_warehouse</span><span class="p">(</span>
+    <span class="n">pa</span><span class="o">.</span><span class="n">table</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;dataset_id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;ExampleHuman&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;image_id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;ExampleHuman:0&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;embedding_0&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">],</span>
+            <span class="s2">&quot;embedding_1&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">],</span>
+        <span class="p">}</span>
+    <span class="p">),</span>
+    <span class="s2">&quot;warehouse-root&quot;</span><span class="p">,</span>
+    <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;embeddings&quot;</span><span class="p">,</span>
+    <span class="n">role</span><span class="o">=</span><span class="s2">&quot;embeddings&quot;</span><span class="p">,</span>
+    <span class="n">join_keys</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;dataset_id&quot;</span><span class="p">,</span> <span class="s2">&quot;image_id&quot;</span><span class="p">],</span>
+    <span class="n">source_type</span><span class="o">=</span><span class="s2">&quot;custom&quot;</span><span class="p">,</span>
+    <span class="n">source_ref</span><span class="o">=</span><span class="s2">&quot;my-embedding-pipeline&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>This is the intended scaling path for additional Cytomining outputs such as:</p>
+<ul class="simple">
+<li><p>embeddings</p></li>
+<li><p>QC summaries</p></li>
+<li><p>annotations</p></li>
+<li><p>segmentation metrics</p></li>
+<li><p>experiment-level reports</p></li>
+</ul>
+</section>
+<section id="cytomining-metadata-compatibility">
+<h2>Cytomining Metadata Compatibility<a class="headerlink" href="#cytomining-metadata-compatibility" title="Link to this heading">#</a></h2>
+<p>Profile-table compatibility is designed for common Cytomining conventions.</p>
+<p>The join and export paths recognize aliases such as:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Metadata_dataset_id</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Metadata_ImageID</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Metadata_Plate</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Metadata_Well</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Metadata_Site</span></code></p></li>
+</ul>
+<p>If a profile table does not include <code class="docutils literal notranslate"><span class="pre">dataset_id</span></code> but all rows belong to a
+single dataset, pass <code class="docutils literal notranslate"><span class="pre">profile_dataset_id</span></code>.</p>
+<p>If your project uses custom column names, load aliases from TOML and pass them
+into the profile export path:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[microscopy.aliases]</span>
+<span class="n">dataset_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;ProjectID&quot;</span><span class="p">]</span>
+<span class="n">image_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;ImageKey&quot;</span><span class="p">]</span>
+<span class="n">well_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;WellName&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">export_profiles_to_cytomining_warehouse</span><span class="p">,</span>
+    <span class="n">load_profile_column_aliases</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">aliases</span> <span class="o">=</span> <span class="n">load_profile_column_aliases</span><span class="p">(</span><span class="s2">&quot;aliases.toml&quot;</span><span class="p">)</span>
+<span class="n">export_profiles_to_cytomining_warehouse</span><span class="p">(</span>
+    <span class="s2">&quot;data/custom_profiles.parquet&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;warehouse-root&quot;</span><span class="p">,</span>
+    <span class="n">table_name</span><span class="o">=</span><span class="s2">&quot;custom_profiles&quot;</span><span class="p">,</span>
+    <span class="n">alias_map</span><span class="o">=</span><span class="n">aliases</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="ome-arrow-and-other-columns">
+<h2>OME-Arrow and Other Columns<a class="headerlink" href="#ome-arrow-and-other-columns" title="Link to this heading">#</a></h2>
+<p>This repository does not try to reinterpret arbitrary non-tabular payload
+columns. If a profile table or joined output includes OME-Arrow payload-related
+columns, they are preserved in the Parquet export as long as the join keys and
+the analyzable feature columns remain valid.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="duckdb.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">DuckDB Integration</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="examples/metadata-workflow.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Metadata Workflow Example</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2024, DBMI Community.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__center">
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

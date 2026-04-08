@@ -46,7 +46,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'duckdb';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Metadata Workflow Example" href="examples/metadata-workflow.html" />
+    <link rel="next" title="Cytomining Workflow" href="cytomining.html" />
     <link rel="prev" title="Python API" href="python-api.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -141,6 +141,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="cytomining.html">
+    Cytomining Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="examples/metadata-workflow.html">
     Metadata Workflow Example
   </a>
@@ -148,11 +155,28 @@
 
 
 <li class="nav-item ">
-  <a class="nav-link nav-internal" href="workflow.html">
+  <a class="nav-link nav-internal" href="examples/basic-workflow.html">
+    Warehouse Namespace Demo
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="workflow.html">
     Workflow
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -253,8 +277,22 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="cytomining.html">
+    Cytomining Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="examples/metadata-workflow.html">
     Metadata Workflow Example
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples/basic-workflow.html">
+    Warehouse Namespace Demo
   </a>
 </li>
 
@@ -367,8 +405,8 @@
   <section id="duckdb-integration">
 <h1>DuckDB Integration<a class="headerlink" href="#duckdb-integration" title="Link to this heading">#</a></h1>
 <p>DuckDB is the first supported query integration for <code class="docutils literal notranslate"><span class="pre">iceberg-bioimage</span></code>, but it
-is intentionally optional. The core package still focuses on scanning,
-canonicalization, validation, and publishing.</p>
+is intentionally optional. The core package focuses on scanning,
+canonicalization, Cytomining warehouse export, validation, and publishing.</p>
 <section id="install">
 <h2>Install<a class="headerlink" href="#install" title="Link to this heading">#</a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>sync<span class="w"> </span>--group<span class="w"> </span>duckdb
@@ -389,6 +427,13 @@ canonicalization, validation, and publishing.</p>
 form. Catalog-backed helpers use PyIceberg to materialize canonical metadata
 tables into Arrow before querying. None of these helpers replace catalog
 management, storage access, or image IO.</p>
+<p>For Cytomining workflows, a common pattern is:</p>
+<ol class="arabic simple">
+<li><p>export <code class="docutils literal notranslate"><span class="pre">image_assets</span></code>, optional <code class="docutils literal notranslate"><span class="pre">chunk_index</span></code>, and optional <code class="docutils literal notranslate"><span class="pre">joined_profiles</span></code>
+into a Parquet warehouse root</p></li>
+<li><p>use <code class="docutils literal notranslate"><span class="pre">pycytominer</span></code> to load those Parquet datasets directly</p></li>
+<li><p>use DuckDB helpers here when you want lightweight SQL over the same metadata</p></li>
+</ol>
 </section>
 <section id="example">
 <h2>Example<a class="headerlink" href="#example" title="Link to this heading">#</a></h2>
@@ -463,11 +508,11 @@ management, storage access, or image IO.</p>
       </div>
     </a>
     <a class="right-next"
-       href="examples/metadata-workflow.html"
+       href="cytomining.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Metadata Workflow Example</p>
+        <p class="prev-next-title">Cytomining Workflow</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
