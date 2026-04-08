@@ -56,7 +56,9 @@ def test_export_scan_result_to_cytomining_warehouse(tmp_path: Path) -> None:
         "images.chunk_index": 4,
     }
     assert result.manifest_path == str(warehouse_root / "warehouse_manifest.json")
-    assert ds.dataset(warehouse_root / "images" / "image_assets").to_table().num_rows == 1
+    assert (
+        ds.dataset(warehouse_root / "images" / "image_assets").to_table().num_rows == 1
+    )
     assert (
         ds.dataset(warehouse_root / "images" / "chunk_index").to_table().num_rows
         == EXPECTED_CHUNK_ROWS
