@@ -126,6 +126,20 @@
   <ul class="bd-navbar-elements navbar-nav">
     
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting-started.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="catalog-setup.html">
+    Catalog Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="python-api.html">
     Python API
   </a>
@@ -145,20 +159,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="examples/metadata-workflow.html">
-    Metadata Workflow Example
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="examples/basic-workflow.html">
-    Warehouse Namespace Demo
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -167,6 +167,20 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="examples/metadata-workflow.html">
+    Metadata Workflow Example
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="examples/basic-workflow.html">
+    Warehouse Namespace Demo
+  </a>
+</li>
+
+
 <li class=" current active">
   <a class="nav-link dropdown-item nav-internal" href="#">
     Workflow
@@ -261,6 +275,20 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting-started.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="catalog-setup.html">
+    Catalog Setup
+  </a>
+</li>
+
+
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="python-api.html">
     Python API
@@ -405,7 +433,7 @@
 <h1>Workflow<a class="headerlink" href="#workflow" title="Link to this heading">#</a></h1>
 <section id="current-scope">
 <h2>Current scope<a class="headerlink" href="#current-scope" title="Link to this heading">#</a></h2>
-<p>The library currently supports:</p>
+<p>The library supports:</p>
 <ul class="simple">
 <li><p>Scanning Zarr and OME-TIFF stores into canonical <code class="docutils literal notranslate"><span class="pre">ScanResult</span></code> objects</p></li>
 <li><p>Summarizing scan results into ergonomic <code class="docutils literal notranslate"><span class="pre">DatasetSummary</span></code> objects</p></li>
@@ -425,6 +453,7 @@ publishing so other query engines can be added later without reshaping the
 core package.</p>
 <p>Chunk index publishing is intentionally metadata-only. Assets without chunking
 metadata simply produce zero <code class="docutils literal notranslate"><span class="pre">chunk_index</span></code> rows.</p>
+<p>For install/setup flow and a path chooser, see <a class="reference internal" href="getting-started.html"><span class="std std-doc">Getting Started</span></a>.</p>
 </section>
 <section id="zarr-v2-and-v3">
 <h2>Zarr v2 and v3<a class="headerlink" href="#zarr-v2-and-v3" title="Link to this heading">#</a></h2>
@@ -435,7 +464,7 @@ metadata simply produce zero <code class="docutils literal notranslate"><span cl
 <li><p>Local Zarr v3 stores are scanned from <code class="docutils literal notranslate"><span class="pre">zarr.json</span></code> metadata</p></li>
 <li><p>Summaries expose the detected storage variant so users can inspect mixed
 catalogs without learning separate APIs</p></li>
-<li><p>The package dependency range now permits both Zarr 2 and Zarr 3 runtimes.</p></li>
+<li><p>The package dependency range permits both Zarr 2 and Zarr 3 runtimes.</p></li>
 <li><p>Optional integrations such as OME-Arrow can coexist with the core scanner.</p></li>
 </ul>
 <p>This keeps the package approachable while the wider ecosystem continues to
@@ -462,11 +491,11 @@ metadata without taking on execution-engine responsibilities.</p>
 <h2>CLI examples<a class="headerlink" href="#cli-examples" title="Link to this heading">#</a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>iceberg-bioimage<span class="w"> </span>scan<span class="w"> </span>data/experiment.zarr
 iceberg-bioimage<span class="w"> </span>summarize<span class="w"> </span>data/experiment.zarr
-iceberg-bioimage<span class="w"> </span>register<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage<span class="w"> </span>data/experiment.zarr
-iceberg-bioimage<span class="w"> </span>ingest<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage<span class="w"> </span>data/a.zarr<span class="w"> </span>data/b.zarr
+iceberg-bioimage<span class="w"> </span>register<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage.cytotable<span class="w"> </span>data/experiment.zarr
+iceberg-bioimage<span class="w"> </span>ingest<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage.cytotable<span class="w"> </span>data/a.zarr<span class="w"> </span>data/b.zarr
 iceberg-bioimage<span class="w"> </span>export-cytomining<span class="w"> </span>--warehouse-root<span class="w"> </span>warehouse-root<span class="w"> </span>data/experiment.zarr
-iceberg-bioimage<span class="w"> </span>register<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage<span class="w"> </span>--publish-chunks<span class="w"> </span>data/experiment.zarr
-iceberg-bioimage<span class="w"> </span>publish-chunks<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage<span class="w"> </span>data/experiment.zarr
+iceberg-bioimage<span class="w"> </span>register<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage.cytotable<span class="w"> </span>--publish-chunks<span class="w"> </span>data/experiment.zarr
+iceberg-bioimage<span class="w"> </span>publish-chunks<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage.cytotable<span class="w"> </span>data/experiment.zarr
 iceberg-bioimage<span class="w"> </span>validate-contract<span class="w"> </span>data/cells.parquet
 iceberg-bioimage<span class="w"> </span>join-profiles<span class="w"> </span>data/experiment.zarr<span class="w"> </span>data/cells.parquet<span class="w"> </span>--output<span class="w"> </span>joined.parquet
 </pre></div>

@@ -1,7 +1,6 @@
 # Cytomining Workflow
 
-`iceberg-bioimage` now treats Cytomining interoperability as a primary
-workflow, not a side integration.
+`iceberg-bioimage` treats Cytomining interoperability as a primary workflow.
 
 The package supports two common paths:
 
@@ -69,7 +68,7 @@ from iceberg_bioimage import export_catalog_to_cytomining_warehouse
 
 result = export_catalog_to_cytomining_warehouse(
     "default",
-    "bioimage",
+    "bioimage.cytotable",
     "warehouse-root",
     profiles="data/profiles.parquet",
     profile_dataset_id="experiment",
@@ -82,7 +81,7 @@ CLI:
 ```bash
 iceberg-bioimage export-cytomining-catalog \
   --catalog default \
-  --namespace bioimage \
+  --namespace bioimage.cytotable \
   --warehouse-root warehouse-root \
   --profiles data/profiles.parquet \
   --profile-dataset-id experiment
@@ -92,10 +91,13 @@ iceberg-bioimage export-cytomining-catalog \
 
 Both export helpers support:
 
-- `mode="overwrite"` for creating or replacing tables
+- `mode="overwrite"` for replacing target tables
 - `mode="append"` for adding additional Parquet parts to an existing warehouse
 
-That makes it possible to incrementally add datasets from multiple assays or
+`mode="overwrite"` is table-scoped and does not remove unrelated table
+directories in the same warehouse root.
+
+This makes it possible to incrementally add datasets from multiple assays or
 plates into the same Cytomining-oriented warehouse root.
 
 ## ExampleHuman To Cytomining Workflow
@@ -118,7 +120,7 @@ That looks like:
 # 2. Export the Iceberg-backed metadata into a Cytomining warehouse root.
 iceberg-bioimage export-cytomining-catalog \
   --catalog default \
-  --namespace bioimage \
+  --namespace bioimage.cytotable \
   --warehouse-root warehouse-root \
   --profiles data/examplehuman_profiles.parquet \
   --profile-dataset-id ExampleHuman

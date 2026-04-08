@@ -127,6 +127,20 @@
   <ul class="bd-navbar-elements navbar-nav">
     
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting-started.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="catalog-setup.html">
+    Catalog Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="python-api.html">
     Python API
   </a>
@@ -146,20 +160,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="examples/metadata-workflow.html">
-    Metadata Workflow Example
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="examples/basic-workflow.html">
-    Warehouse Namespace Demo
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -168,6 +168,20 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="examples/metadata-workflow.html">
+    Metadata Workflow Example
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="examples/basic-workflow.html">
+    Warehouse Namespace Demo
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="workflow.html">
     Workflow
@@ -262,6 +276,20 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting-started.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="catalog-setup.html">
+    Catalog Setup
+  </a>
+</li>
+
+
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="python-api.html">
     Python API
@@ -412,6 +440,7 @@ canonicalization, Cytomining warehouse export, validation, and publishing.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>sync<span class="w"> </span>--group<span class="w"> </span>duckdb
 </pre></div>
 </div>
+<p>For install alternatives and first-run workflow selection, see <a class="reference internal" href="getting-started.html"><span class="std std-doc">Getting Started</span></a>.</p>
 </section>
 <section id="supported-helper-functions">
 <h2>Supported helper functions<a class="headerlink" href="#supported-helper-functions" title="Link to this heading">#</a></h2>
@@ -478,7 +507,7 @@ into a Parquet warehouse root</p></li>
 
 <span class="n">joined</span> <span class="o">=</span> <span class="n">join_catalog_image_assets_with_profiles</span><span class="p">(</span>
     <span class="s2">&quot;default&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;bioimage&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;bioimage.cytotable&quot;</span><span class="p">,</span>
     <span class="n">profiles</span><span class="p">,</span>
     <span class="n">chunk_index_table</span><span class="o">=</span><span class="s2">&quot;chunk_index&quot;</span><span class="p">,</span>
 <span class="p">)</span>

@@ -127,6 +127,20 @@
   <ul class="bd-navbar-elements navbar-nav">
     
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting-started.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="catalog-setup.html">
+    Catalog Setup
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="python-api.html">
     Python API
   </a>
@@ -146,20 +160,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="examples/metadata-workflow.html">
-    Metadata Workflow Example
-  </a>
-</li>
-
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="examples/basic-workflow.html">
-    Warehouse Namespace Demo
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -168,6 +168,20 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="examples/metadata-workflow.html">
+    Metadata Workflow Example
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="examples/basic-workflow.html">
+    Warehouse Namespace Demo
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="workflow.html">
     Workflow
@@ -262,6 +276,20 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting-started.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="catalog-setup.html">
+    Catalog Setup
+  </a>
+</li>
+
+
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="python-api.html">
     Python API
@@ -404,8 +432,7 @@
                   
   <section id="cytomining-workflow">
 <h1>Cytomining Workflow<a class="headerlink" href="#cytomining-workflow" title="Link to this heading">#</a></h1>
-<p><code class="docutils literal notranslate"><span class="pre">iceberg-bioimage</span></code> now treats Cytomining interoperability as a primary
-workflow, not a side integration.</p>
+<p><code class="docutils literal notranslate"><span class="pre">iceberg-bioimage</span></code> treats Cytomining interoperability as a primary workflow.</p>
 <p>The package supports two common paths:</p>
 <ol class="arabic simple">
 <li><p>Create a Cytomining-compatible Parquet warehouse root directly from image
@@ -463,7 +490,7 @@ Iceberg catalog and wants a Cytomining warehouse root for downstream tools:</p>
 
 <span class="n">result</span> <span class="o">=</span> <span class="n">export_catalog_to_cytomining_warehouse</span><span class="p">(</span>
     <span class="s2">&quot;default&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;bioimage&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;bioimage.cytotable&quot;</span><span class="p">,</span>
     <span class="s2">&quot;warehouse-root&quot;</span><span class="p">,</span>
     <span class="n">profiles</span><span class="o">=</span><span class="s2">&quot;data/profiles.parquet&quot;</span><span class="p">,</span>
     <span class="n">profile_dataset_id</span><span class="o">=</span><span class="s2">&quot;experiment&quot;</span><span class="p">,</span>
@@ -474,7 +501,7 @@ Iceberg catalog and wants a Cytomining warehouse root for downstream tools:</p>
 <p>CLI:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>iceberg-bioimage<span class="w"> </span>export-cytomining-catalog<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--catalog<span class="w"> </span>default<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--namespace<span class="w"> </span>bioimage<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--namespace<span class="w"> </span>bioimage.cytotable<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--warehouse-root<span class="w"> </span>warehouse-root<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--profiles<span class="w"> </span>data/profiles.parquet<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--profile-dataset-id<span class="w"> </span>experiment
@@ -485,10 +512,12 @@ Iceberg catalog and wants a Cytomining warehouse root for downstream tools:</p>
 <h2>Existing Warehouse Roots<a class="headerlink" href="#existing-warehouse-roots" title="Link to this heading">#</a></h2>
 <p>Both export helpers support:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">mode=&quot;overwrite&quot;</span></code> for creating or replacing tables</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mode=&quot;overwrite&quot;</span></code> for replacing target tables</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">mode=&quot;append&quot;</span></code> for adding additional Parquet parts to an existing warehouse</p></li>
 </ul>
-<p>That makes it possible to incrementally add datasets from multiple assays or
+<p><code class="docutils literal notranslate"><span class="pre">mode=&quot;overwrite&quot;</span></code> is table-scoped and does not remove unrelated table
+directories in the same warehouse root.</p>
+<p>This makes it possible to incrementally add datasets from multiple assays or
 plates into the same Cytomining-oriented warehouse root.</p>
 </section>
 <section id="examplehuman-to-cytomining-workflow">
@@ -509,7 +538,7 @@ Parquet warehouse root</p></li>
 <span class="c1"># 2. Export the Iceberg-backed metadata into a Cytomining warehouse root.</span>
 iceberg-bioimage<span class="w"> </span>export-cytomining-catalog<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--catalog<span class="w"> </span>default<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--namespace<span class="w"> </span>bioimage<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--namespace<span class="w"> </span>bioimage.cytotable<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--warehouse-root<span class="w"> </span>warehouse-root<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--profiles<span class="w"> </span>data/examplehuman_profiles.parquet<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--profile-dataset-id<span class="w"> </span>ExampleHuman

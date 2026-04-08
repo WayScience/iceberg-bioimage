@@ -12,6 +12,8 @@ relative-images:
 caption: 'Contents:'
 maxdepth: 3
 ---
+getting-started
+catalog-setup
 python-api
 duckdb
 cytomining
