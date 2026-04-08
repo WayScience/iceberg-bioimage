@@ -16,6 +16,8 @@ from iceberg_bioimage.api import (
     summarize_store,
 )
 from iceberg_bioimage.integrations.cytomining import (
+    DEFAULT_CHUNK_INDEX_TABLE,
+    DEFAULT_IMAGE_ASSETS_TABLE,
     export_catalog_to_cytomining_warehouse,
     export_profiles_to_cytomining_warehouse,
     export_store_to_cytomining_warehouse,
@@ -134,11 +136,11 @@ def build_parser() -> argparse.ArgumentParser:
     cytomining_catalog_parser.add_argument("--profiles")
     cytomining_catalog_parser.add_argument(
         "--image-assets-table",
-        default="image_assets",
+        default=DEFAULT_IMAGE_ASSETS_TABLE,
     )
     cytomining_catalog_parser.add_argument(
         "--chunk-index-table",
-        default="chunk_index",
+        default=DEFAULT_CHUNK_INDEX_TABLE,
     )
     cytomining_catalog_parser.add_argument(
         "--skip-chunks",

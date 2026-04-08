@@ -185,15 +185,15 @@ print(result.to_dict())
 
 This writes one or more of:
 
-- `image_assets/`
-- `chunk_index/`
-- `joined_profiles/`
+- `images/image_assets/`
+- `images/chunk_index/`
+- `profiles/joined_profiles/`
 
 It can also append downstream Cytomining tables into the same warehouse root,
-for example:
+typically in the `profiles` namespace, for example:
 
-- `pycytominer_profiles/`
-- `cosmicqc_profiles/`
+- `profiles/pycytominer_profiles/`
+- `profiles/cosmicqc_profiles/`
 
 ## OME-Arrow helpers
 

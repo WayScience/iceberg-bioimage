@@ -248,9 +248,9 @@ def test_export_cytomining_cli(
         *,
         profiles: str | None = None,
         include_chunks: bool = True,
-        image_assets_table_name: str = "image_assets",
-        chunk_index_table_name: str = "chunk_index",
-        joined_table_name: str = "joined_profiles",
+        image_assets_table_name: str = "images.image_assets",
+        chunk_index_table_name: str = "images.chunk_index",
+        joined_table_name: str = "profiles.joined_profiles",
         profile_dataset_id: str | None = None,
         mode: str = "overwrite",
     ) -> object:
@@ -258,17 +258,23 @@ def test_export_cytomining_cli(
         assert warehouse_root == "warehouse-root"
         assert profiles == "data/profiles.parquet"
         assert include_chunks is True
-        assert image_assets_table_name == "image_assets"
-        assert chunk_index_table_name == "chunk_index"
-        assert joined_table_name == "joined_profiles"
+        assert image_assets_table_name == "images.image_assets"
+        assert chunk_index_table_name == "images.chunk_index"
+        assert joined_table_name == "profiles.joined_profiles"
         assert profile_dataset_id == "plate"
         assert mode == "append"
         return SimpleNamespace(
             to_json=lambda **kwargs: cli_module.json.dumps(
                 {
                     "warehouse_root": warehouse_root,
-                    "tables_written": ["image_assets", "joined_profiles"],
-                    "row_counts": {"image_assets": 1, "joined_profiles": 1},
+                    "tables_written": [
+                        "images.image_assets",
+                        "profiles.joined_profiles",
+                    ],
+                    "row_counts": {
+                        "images.image_assets": 1,
+                        "profiles.joined_profiles": 1,
+                    },
                 },
                 **kwargs,
             )
@@ -310,9 +316,9 @@ def test_export_cytomining_catalog_cli(
         warehouse_root: str,
         *,
         profiles: str | None = None,
-        image_assets_table_name: str = "image_assets",
-        chunk_index_table_name: str | None = "chunk_index",
-        joined_table_name: str = "joined_profiles",
+        image_assets_table_name: str = "images.image_assets",
+        chunk_index_table_name: str | None = "images.chunk_index",
+        joined_table_name: str = "profiles.joined_profiles",
         profile_dataset_id: str | None = None,
         mode: str = "overwrite",
     ) -> object:
@@ -322,7 +328,7 @@ def test_export_cytomining_catalog_cli(
         assert profiles == "data/profiles.parquet"
         assert image_assets_table_name == "custom_image_assets"
         assert chunk_index_table_name is None
-        assert joined_table_name == "joined_profiles"
+        assert joined_table_name == "profiles.joined_profiles"
         assert profile_dataset_id == "plate"
         assert mode == "append"
         return SimpleNamespace(

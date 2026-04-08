@@ -50,15 +50,15 @@ def test_export_scan_result_to_cytomining_warehouse(tmp_path: Path) -> None:
     )
 
     assert result.warehouse_root == str(warehouse_root)
-    assert result.tables_written == ["image_assets", "chunk_index"]
+    assert result.tables_written == ["images.image_assets", "images.chunk_index"]
     assert result.row_counts == {
-        "image_assets": 1,
-        "chunk_index": 4,
+        "images.image_assets": 1,
+        "images.chunk_index": 4,
     }
     assert result.manifest_path == str(warehouse_root / "warehouse_manifest.json")
-    assert ds.dataset(warehouse_root / "image_assets").to_table().num_rows == 1
+    assert ds.dataset(warehouse_root / "images" / "image_assets").to_table().num_rows == 1
     assert (
-        ds.dataset(warehouse_root / "chunk_index").to_table().num_rows
+        ds.dataset(warehouse_root / "images" / "chunk_index").to_table().num_rows
         == EXPECTED_CHUNK_ROWS
     )
 
@@ -83,10 +83,12 @@ def test_export_store_to_cytomining_warehouse_with_pycytominer_fixture(
     )
 
     assert result.row_counts == {
-        "image_assets": 1,
-        "joined_profiles": 1,
+        "images.image_assets": 1,
+        "profiles.joined_profiles": 1,
     }
-    joined_profiles = ds.dataset(warehouse_root / "joined_profiles").to_table()
+    joined_profiles = ds.dataset(
+        warehouse_root / "profiles" / "joined_profiles"
+    ).to_table()
     assert joined_profiles.to_pydict()["image_id"] == ["plate:0"]
     assert joined_profiles.to_pydict()["AreaShape_Area"] == [101.5]
 
@@ -153,8 +155,10 @@ def test_export_store_to_cytomining_warehouse_appends_to_existing_root(
         mode="append",
     )
 
-    image_assets = ds.dataset(warehouse_root / "image_assets").to_table()
-    joined_profiles = ds.dataset(warehouse_root / "joined_profiles").to_table()
+    image_assets = ds.dataset(warehouse_root / "images" / "image_assets").to_table()
+    joined_profiles = ds.dataset(
+        warehouse_root / "profiles" / "joined_profiles"
+    ).to_table()
     assert sorted(image_assets.to_pydict()["dataset_id"]) == ["cells", "plate"]
     assert sorted(joined_profiles.to_pydict()["cell_count"]) == [10, 20]
 
@@ -182,11 +186,15 @@ def test_export_profiles_to_cytomining_warehouse_appends_named_tables(
         mode="append",
     )
 
-    assert pycytominer_result.row_counts == {"pycytominer_profiles": 1}
-    assert cosmicqc_result.row_counts == {"cosmicqc_profiles": 1}
+    assert pycytominer_result.row_counts == {"profiles.pycytominer_profiles": 1}
+    assert cosmicqc_result.row_counts == {"profiles.cosmicqc_profiles": 1}
 
-    pycytominer_table = ds.dataset(warehouse_root / "pycytominer_profiles").to_table()
-    cosmicqc_table = ds.dataset(warehouse_root / "cosmicqc_profiles").to_table()
+    pycytominer_table = ds.dataset(
+        warehouse_root / "profiles" / "pycytominer_profiles"
+    ).to_table()
+    cosmicqc_table = ds.dataset(
+        warehouse_root / "profiles" / "cosmicqc_profiles"
+    ).to_table()
 
     assert pycytominer_table.to_pydict()["dataset_id"] == ["plate"]
     assert pycytominer_table.to_pydict()["image_id"] == ["plate:0"]
@@ -197,11 +205,11 @@ def test_export_profiles_to_cytomining_warehouse_appends_named_tables(
     manifest = load_warehouse_manifest(warehouse_root)
     manifest_tables = {table.table_name: table for table in manifest.tables}
     assert sorted(manifest_tables) == [
-        "cosmicqc_profiles",
-        "pycytominer_profiles",
+        "profiles.cosmicqc_profiles",
+        "profiles.pycytominer_profiles",
     ]
-    assert manifest_tables["pycytominer_profiles"].role == "profiles"
-    assert manifest_tables["cosmicqc_profiles"].row_count == 1
+    assert manifest_tables["profiles.pycytominer_profiles"].role == "profiles"
+    assert manifest_tables["profiles.cosmicqc_profiles"].row_count == 1
 
     validation = validate_warehouse_manifest(warehouse_root)
     assert validation.is_valid is True

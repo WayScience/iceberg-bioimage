@@ -223,7 +223,7 @@ def validate_warehouse_manifest(path: str | Path) -> WarehouseValidationResult:
             continue
         seen_table_names.add(table.table_name)
 
-        dataset_path = root / table.table_name
+        dataset_path = root.joinpath(*table.table_name.split("."))
         if not dataset_path.exists():
             result.errors.append(
                 f"Manifest table path does not exist: {table.table_name}"

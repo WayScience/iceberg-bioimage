@@ -26,6 +26,11 @@ from iceberg_bioimage.publishing.image_assets import scan_result_to_rows
 from iceberg_bioimage.validation.contracts import resolve_microscopy_profile_columns
 
 WriteMode = Literal["overwrite", "append"]
+DEFAULT_PROFILE_NAMESPACE = "profiles"
+DEFAULT_IMAGE_NAMESPACE = "images"
+DEFAULT_JOINED_PROFILES_TABLE = f"{DEFAULT_PROFILE_NAMESPACE}.joined_profiles"
+DEFAULT_IMAGE_ASSETS_TABLE = f"{DEFAULT_IMAGE_NAMESPACE}.image_assets"
+DEFAULT_CHUNK_INDEX_TABLE = f"{DEFAULT_IMAGE_NAMESPACE}.chunk_index"
 
 
 def export_scan_result_to_cytomining_warehouse(  # noqa: PLR0913
@@ -34,9 +39,9 @@ def export_scan_result_to_cytomining_warehouse(  # noqa: PLR0913
     *,
     profiles: MetadataSource | None = None,
     include_chunks: bool = True,
-    image_assets_table_name: str = "image_assets",
-    chunk_index_table_name: str = "chunk_index",
-    joined_table_name: str = "joined_profiles",
+    image_assets_table_name: str = DEFAULT_IMAGE_ASSETS_TABLE,
+    chunk_index_table_name: str = DEFAULT_CHUNK_INDEX_TABLE,
+    joined_table_name: str = DEFAULT_JOINED_PROFILES_TABLE,
     profile_dataset_id: str | None = None,
     mode: WriteMode = "overwrite",
 ) -> CytominingWarehouseResult:
@@ -114,9 +119,9 @@ def export_store_to_cytomining_warehouse(  # noqa: PLR0913
     *,
     profiles: MetadataSource | None = None,
     include_chunks: bool = True,
-    image_assets_table_name: str = "image_assets",
-    chunk_index_table_name: str = "chunk_index",
-    joined_table_name: str = "joined_profiles",
+    image_assets_table_name: str = DEFAULT_IMAGE_ASSETS_TABLE,
+    chunk_index_table_name: str = DEFAULT_CHUNK_INDEX_TABLE,
+    joined_table_name: str = DEFAULT_JOINED_PROFILES_TABLE,
     profile_dataset_id: str | None = None,
     mode: WriteMode = "overwrite",
 ) -> CytominingWarehouseResult:
@@ -143,9 +148,9 @@ def export_catalog_to_cytomining_warehouse(  # noqa: PLR0913
     warehouse_root: str | Path,
     *,
     profiles: MetadataSource | None = None,
-    image_assets_table_name: str = "image_assets",
-    chunk_index_table_name: str | None = "chunk_index",
-    joined_table_name: str = "joined_profiles",
+    image_assets_table_name: str = DEFAULT_IMAGE_ASSETS_TABLE,
+    chunk_index_table_name: str | None = DEFAULT_CHUNK_INDEX_TABLE,
+    joined_table_name: str = DEFAULT_JOINED_PROFILES_TABLE,
     profile_dataset_id: str | None = None,
     mode: WriteMode = "overwrite",
 ) -> CytominingWarehouseResult:
@@ -260,6 +265,7 @@ def export_profiles_to_cytomining_warehouse(  # noqa: PLR0913
         source_type=source_type,
         source_ref=source_ref if source_ref is not None else str(profiles),
         mode=mode,
+        default_namespace=DEFAULT_PROFILE_NAMESPACE,
     )
 
 
@@ -273,11 +279,16 @@ def export_table_to_cytomining_warehouse(  # noqa: PLR0913
     source_type: str | None = None,
     source_ref: str | None = None,
     mode: WriteMode = "append",
+    default_namespace: str | None = None,
 ) -> CytominingWarehouseResult:
     """Write a generic table into a warehouse root and update the manifest."""
 
     root = Path(warehouse_root)
-    dataset_path = root / table_name
+    normalized_table_name, dataset_path = _resolve_table_layout(
+        root,
+        table_name,
+        default_namespace=default_namespace,
+    )
     _write_parquet_dataset(
         table,
         dataset_path,
@@ -286,7 +297,7 @@ def export_table_to_cytomining_warehouse(  # noqa: PLR0913
     manifest_path = _update_manifest(
         root,
         WarehouseTableManifestEntry(
-            table_name=table_name,
+            table_name=normalized_table_name,
             role=role,
             join_keys=[] if join_keys is None else join_keys,
             source_type=source_type,
@@ -297,10 +308,31 @@ def export_table_to_cytomining_warehouse(  # noqa: PLR0913
     )
     return CytominingWarehouseResult(
         warehouse_root=str(root),
-        tables_written=[table_name],
-        row_counts={table_name: table.num_rows},
+        tables_written=[normalized_table_name],
+        row_counts={normalized_table_name: table.num_rows},
         manifest_path=str(manifest_path),
     )
+
+
+def _resolve_table_layout(
+    warehouse_root: Path,
+    table_name: str,
+    *,
+    default_namespace: str | None = None,
+) -> tuple[str, Path]:
+    normalized = table_name.strip()
+    if not normalized:
+        raise ValueError("table_name must not be empty.")
+
+    if "." in normalized:
+        parts = [part for part in normalized.split(".") if part]
+    elif default_namespace is not None:
+        parts = [default_namespace, normalized]
+    else:
+        parts = [normalized]
+
+    normalized_name = ".".join(parts)
+    return normalized_name, warehouse_root.joinpath(*parts)
 
 
 def _write_parquet_dataset(
