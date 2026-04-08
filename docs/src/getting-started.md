@@ -4,12 +4,12 @@
 
 Use this table to pick the first workflow:
 
-| Goal | Use this path | Requires catalog config |
-| --- | --- | --- |
-| Build a Cytomining Parquet warehouse from image files | `export-cytomining` / `export_store_to_cytomining_warehouse` | No |
-| Validate profile schemas and join keys | `validate-contract` / `validate_microscopy_profile_table` | No |
-| Publish canonical metadata to Iceberg tables | `register`, `ingest`, `publish-chunks` | Yes |
-| Read canonical metadata from Iceberg and export to Parquet warehouse | `export-cytomining-catalog` | Yes |
+| Goal                                                                 | Use this path                                                | Requires catalog config |
+| -------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------- |
+| Build a Cytomining Parquet warehouse from image files                | `export-cytomining` / `export_store_to_cytomining_warehouse` | No                      |
+| Validate profile schemas and join keys                               | `validate-contract` / `validate_microscopy_profile_table`    | No                      |
+| Publish canonical metadata to Iceberg tables                         | `register`, `ingest`, `publish-chunks`                       | Yes                     |
+| Read canonical metadata from Iceberg and export to Parquet warehouse | `export-cytomining-catalog`                                  | Yes                     |
 
 ## Install
 
