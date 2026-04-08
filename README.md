@@ -54,7 +54,7 @@ both local Zarr v2 stores and local Zarr v3 metadata stores.
 - Local Zarr v3 stores are scanned from `zarr.json` metadata without requiring
   a separate API
 - Summaries report the storage variant as `zarr-v2` or `zarr-v3`
-- The base package allows either Zarr 2 or Zarr 3 runtimes so optional
+- The base package allows either Zarr 2 or Zarr 3 runtimes so that optional
   forward-facing integrations can coexist in the same environment
 
 ## Quickstart
