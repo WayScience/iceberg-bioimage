@@ -36,6 +36,15 @@ Optional integration groups:
 - `duckdb` for query helpers and examples
 - `ome-arrow` for Arrow-native tabular image payloads and lazy image access
 
+## Start Here
+
+- If you want a catalog-free first run, start with Cytomining export:
+  `iceberg-bioimage export-cytomining --warehouse-root warehouse-root data/experiment.zarr`
+- If you want Iceberg-backed publishing, configure a PyIceberg catalog first.
+- For step-by-step setup, see:
+  - `docs/src/getting-started.md`
+  - `docs/src/catalog-setup.md`
+
 ## Zarr support
 
 `iceberg-bioimage` keeps the user-facing API simple: use `scan_store(...)` for
@@ -45,7 +54,7 @@ both local Zarr v2 stores and local Zarr v3 metadata stores.
 - Local Zarr v3 stores are scanned from `zarr.json` metadata without requiring
   a separate API
 - Summaries report the storage variant as `zarr-v2` or `zarr-v3`
-- The base package now allows either Zarr 2 or Zarr 3 runtimes so optional
+- The base package allows either Zarr 2 or Zarr 3 runtimes so that optional
   forward-facing integrations can coexist in the same environment
 
 ## Quickstart
@@ -157,7 +166,7 @@ Install the optional integration with `uv sync --group duckdb`.
 
 ## Cytomining warehouse export
 
-This project now treats Cytomining interoperability as a primary workflow.
+The package supports Cytomining interoperability as a primary workflow.
 Besides publishing canonical metadata to Iceberg, it can materialize a
 Parquet-backed warehouse root that tools like `pycytominer` can consume
 directly.
@@ -251,11 +260,18 @@ joined = join_catalog_image_assets_with_profiles(
 - Query canonical metadata through optional DuckDB helpers
 - Load catalog-backed metadata tables into Arrow for downstream joins
 
+## Troubleshooting
+
+- `DuckDB helpers require the optional duckdb dependency group`:
+  install with `pip install 'iceberg-bioimage[duckdb]'` or `uv sync --group duckdb`.
+- `Profiles do not satisfy the microscopy join contract`:
+  run `iceberg-bioimage validate-contract ...` and pass
+  `--profile-dataset-id` when `dataset_id` is missing but implied.
+- `Missing table: ...` for catalog-backed paths:
+  verify catalog configuration, namespace, and table names.
+
 ## Design note
 
-After reviewing the current `CytoTable`, `pycytominer`, and `ome-arrow`
-codebases, this package now treats Cytomining-compatible warehouse generation
-as one of its main jobs. The core package focuses on metadata scanning,
-publishing, Cytomining warehouse export, validation, and joins; OME-Arrow
-remains the right place for Arrow-native image payload handling and lazy image
-access.
+The package focuses on metadata scanning, publishing, Cytomining warehouse
+export, validation, and joins. OME-Arrow remains the place for Arrow-native
+image payload handling and lazy image access.

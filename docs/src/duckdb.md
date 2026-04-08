@@ -10,6 +10,8 @@ canonicalization, Cytomining warehouse export, validation, and publishing.
 uv sync --group duckdb
 ```
 
+For install alternatives and first-run workflow selection, see [Getting Started](getting-started.md).
+
 ## Supported helper functions
 
 - `create_duckdb_connection`
@@ -75,7 +77,7 @@ profiles = pa.table(
 
 joined = join_catalog_image_assets_with_profiles(
     "default",
-    "bioimage",
+    "bioimage.cytotable",
     profiles,
     chunk_index_table="chunk_index",
 )

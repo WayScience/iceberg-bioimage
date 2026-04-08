@@ -31,6 +31,7 @@ jobs:
         run: |
           mkdir pages
           touch pages/.nojekyll
+          MYST_NB_EXECUTION_MODE=off \
           uv run --group docs --frozen sphinx-build \
             -b html \
             docs/src \

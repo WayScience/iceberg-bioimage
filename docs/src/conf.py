@@ -10,6 +10,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+import os
 import pathlib
 import sys
 
@@ -85,3 +86,8 @@ autodoc_preserve_defaults = True
 
 # enable anchor creation
 myst_heading_anchors = 3
+
+# Keep docs builds reliable in restricted environments (CI sandboxes, remote
+# runners) where Jupyter kernel startup may be blocked. Set
+# `MYST_NB_EXECUTION_MODE=auto` to opt into notebook execution.
+nb_execution_mode = os.getenv("MYST_NB_EXECUTION_MODE", "off")
