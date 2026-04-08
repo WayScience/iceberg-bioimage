@@ -2,7 +2,7 @@
 
 ## Current scope
 
-The library currently supports:
+The library supports:
 
 - Scanning Zarr and OME-TIFF stores into canonical `ScanResult` objects
 - Summarizing scan results into ergonomic `DatasetSummary` objects
@@ -24,6 +24,8 @@ core package.
 Chunk index publishing is intentionally metadata-only. Assets without chunking
 metadata simply produce zero `chunk_index` rows.
 
+For install/setup flow and a path chooser, see [Getting Started](getting-started.md).
+
 ## Zarr v2 and v3
 
 The package intentionally keeps one scan entry point for `.zarr` paths:
@@ -33,7 +35,7 @@ The package intentionally keeps one scan entry point for `.zarr` paths:
 - Local Zarr v3 stores are scanned from `zarr.json` metadata
 - Summaries expose the detected storage variant so users can inspect mixed
   catalogs without learning separate APIs
-- The package dependency range now permits both Zarr 2 and Zarr 3 runtimes.
+- The package dependency range permits both Zarr 2 and Zarr 3 runtimes.
 - Optional integrations such as OME-Arrow can coexist with the core scanner.
 
 This keeps the package approachable while the wider ecosystem continues to
@@ -61,11 +63,11 @@ metadata without taking on execution-engine responsibilities.
 ```bash
 iceberg-bioimage scan data/experiment.zarr
 iceberg-bioimage summarize data/experiment.zarr
-iceberg-bioimage register --catalog default --namespace bioimage data/experiment.zarr
-iceberg-bioimage ingest --catalog default --namespace bioimage data/a.zarr data/b.zarr
+iceberg-bioimage register --catalog default --namespace bioimage.cytotable data/experiment.zarr
+iceberg-bioimage ingest --catalog default --namespace bioimage.cytotable data/a.zarr data/b.zarr
 iceberg-bioimage export-cytomining --warehouse-root warehouse-root data/experiment.zarr
-iceberg-bioimage register --catalog default --namespace bioimage --publish-chunks data/experiment.zarr
-iceberg-bioimage publish-chunks --catalog default --namespace bioimage data/experiment.zarr
+iceberg-bioimage register --catalog default --namespace bioimage.cytotable --publish-chunks data/experiment.zarr
+iceberg-bioimage publish-chunks --catalog default --namespace bioimage.cytotable data/experiment.zarr
 iceberg-bioimage validate-contract data/cells.parquet
 iceberg-bioimage join-profiles data/experiment.zarr data/cells.parquet --output joined.parquet
 ```

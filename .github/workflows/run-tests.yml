@@ -69,6 +69,7 @@ jobs:
           uvx twine check dist/*
       - name: Build docs
         run: |
+          MYST_NB_EXECUTION_MODE=off \
           uv run --group docs --frozen sphinx-build \
             -b html \
             docs/src \

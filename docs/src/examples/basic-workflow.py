@@ -182,7 +182,7 @@ with tempfile.TemporaryDirectory(prefix="iceberg-bioimage-demo-") as tmpdir_ctx:
     # ## Cytomining profile tables
     #
     # `pycytominer` and `coSMicQC` profile tables often use `Metadata_*` columns.
-    # This project now normalizes common aliases like:
+    # The join and export paths normalize common aliases like:
     #
     # - `Metadata_dataset_id -> dataset_id`
     # - `Metadata_ImageID -> image_id`
