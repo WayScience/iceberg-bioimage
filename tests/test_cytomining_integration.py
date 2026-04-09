@@ -421,3 +421,30 @@ def test_catalog_table_leaf_name_strips_and_validates() -> None:
 
     with pytest.raises(ValueError, match="illegal leaf segment"):
         _catalog_table_leaf_name("images.image assets")
+
+
+def test_export_table_to_cytomining_warehouse_normalizes_stale_spec_version(
+    tmp_path: Path,
+) -> None:
+    warehouse_root = tmp_path / "warehouse"
+    warehouse_root.mkdir(parents=True, exist_ok=True)
+    (warehouse_root / "warehouse_manifest.json").write_text(
+        """
+{
+  "warehouse_root": "stale-root",
+  "warehouse_spec_version": "0.9.0",
+  "tables": []
+}
+""".strip()
+    )
+
+    export_table_to_cytomining_warehouse(
+        pa.table({"dataset_id": ["plate"], "image_id": ["plate:0"]}),
+        warehouse_root,
+        table_name="profiles.joined_profiles",
+        role="joined_profiles",
+        join_keys=["dataset_id", "image_id"],
+    )
+
+    manifest = load_warehouse_manifest(warehouse_root)
+    assert manifest.warehouse_spec_version == DEFAULT_WAREHOUSE_SPEC_VERSION

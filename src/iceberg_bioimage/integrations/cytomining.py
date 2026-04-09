@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import shutil
 import uuid
@@ -34,6 +35,7 @@ DEFAULT_IMAGE_ASSETS_TABLE = f"{DEFAULT_IMAGE_NAMESPACE}.image_assets"
 DEFAULT_CHUNK_INDEX_TABLE = f"{DEFAULT_IMAGE_NAMESPACE}.chunk_index"
 DEFAULT_WAREHOUSE_SPEC_VERSION = "1.0.0"
 _TABLE_NAME_SEGMENT_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
+logger = logging.getLogger(__name__)
 
 
 def export_scan_result_to_cytomining_warehouse(  # noqa: PLR0913
@@ -443,7 +445,13 @@ def _update_manifest(
 ) -> Path:
     manifest = load_warehouse_manifest(warehouse_root)
     manifest.warehouse_root = str(warehouse_root)
-    if manifest.warehouse_spec_version is None:
+    if manifest.warehouse_spec_version != DEFAULT_WAREHOUSE_SPEC_VERSION:
+        if manifest.warehouse_spec_version is not None:
+            logger.warning(
+                "Normalizing warehouse_spec_version from %s to %s",
+                manifest.warehouse_spec_version,
+                DEFAULT_WAREHOUSE_SPEC_VERSION,
+            )
         manifest.warehouse_spec_version = DEFAULT_WAREHOUSE_SPEC_VERSION
     manifest.tables = [
         table for table in manifest.tables if table.table_name != entry.table_name
