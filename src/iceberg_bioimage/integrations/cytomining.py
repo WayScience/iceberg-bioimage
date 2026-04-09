@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import uuid
 from collections.abc import Mapping
@@ -31,6 +32,7 @@ DEFAULT_IMAGE_NAMESPACE = "images"
 DEFAULT_JOINED_PROFILES_TABLE = f"{DEFAULT_PROFILE_NAMESPACE}.joined_profiles"
 DEFAULT_IMAGE_ASSETS_TABLE = f"{DEFAULT_IMAGE_NAMESPACE}.image_assets"
 DEFAULT_CHUNK_INDEX_TABLE = f"{DEFAULT_IMAGE_NAMESPACE}.chunk_index"
+_TABLE_NAME_SEGMENT_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 
 
 def export_scan_result_to_cytomining_warehouse(  # noqa: PLR0913
@@ -320,19 +322,42 @@ def _resolve_table_layout(
     *,
     default_namespace: str | None = None,
 ) -> tuple[str, Path]:
+    normalized_name, parts = _normalize_table_identifier(
+        table_name,
+        default_namespace=default_namespace,
+    )
+    return normalized_name, warehouse_root.joinpath(*parts)
+
+
+def _normalize_table_identifier(
+    table_name: str,
+    *,
+    default_namespace: str | None = None,
+) -> tuple[str, tuple[str, ...]]:
     normalized = table_name.strip()
     if not normalized:
         raise ValueError("table_name must not be empty.")
 
-    if "." in normalized:
-        parts = [part for part in normalized.split(".") if part]
-    elif default_namespace is not None:
-        parts = [default_namespace, normalized]
-    else:
-        parts = [normalized]
+    parts = [part.strip() for part in normalized.split(".")]
+    if any(part == "" for part in parts):
+        raise ValueError("malformed table_name: empty segment")
 
-    normalized_name = ".".join(parts)
-    return normalized_name, warehouse_root.joinpath(*parts)
+    if "." not in normalized and default_namespace is not None:
+        namespace = default_namespace.strip()
+        if namespace:
+            namespace_parts = [part.strip() for part in namespace.split(".")]
+            if any(part == "" for part in namespace_parts):
+                raise ValueError("malformed default_namespace: empty segment")
+            parts = [*namespace_parts, *parts]
+
+    illegal = next(
+        (part for part in parts if _TABLE_NAME_SEGMENT_PATTERN.fullmatch(part) is None),
+        None,
+    )
+    if illegal is not None:
+        raise ValueError(f"malformed table_name: illegal segment {illegal!r}")
+
+    return ".".join(parts), tuple(parts)
 
 
 def _write_parquet_dataset(

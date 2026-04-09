@@ -335,10 +335,13 @@ def test_export_cytomining_catalog_cli(
             to_json=lambda **kwargs: cli_module.json.dumps(
                 {
                     "warehouse_root": warehouse_root,
-                    "tables_written": ["custom_image_assets", "joined_profiles"],
+                    "tables_written": [
+                        "custom_image_assets",
+                        "profiles.joined_profiles",
+                    ],
                     "row_counts": {
                         "custom_image_assets": 1,
-                        "joined_profiles": 1,
+                        "profiles.joined_profiles": 1,
                     },
                 },
                 **kwargs,

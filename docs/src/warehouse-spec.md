@@ -188,14 +188,10 @@ conventions in this document can be treated as a profile layered on that core.
 1. Warehouse roots **MUST** include `warehouse_manifest.json`.
 1. Manifest entries **MUST** record table identifier as the canonical dotted
    name (`<namespace>.<table>`).
-1. Manifest entries **MUST** include:
-   - `table_name`
-   - `role`
-   - `format`
-   - `join_keys`
-   - `columns`
-1. Manifest table names **MUST** be unique within one manifest.
-1. Manifest metadata **MUST** include enough information for a reader to
+1. Manifest entries **MUST** include the following fields: `table_name`,
+   `role`, `format`, `join_keys`, and `columns`.
+1. Table names **MUST** be unique within a manifest.
+1. Metadata **MUST** include enough information for a reader to
    determine role, grain, and conformance profile compatibility without
    inspecting table contents.
 

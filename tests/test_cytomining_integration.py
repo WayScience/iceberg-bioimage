@@ -247,3 +247,48 @@ def test_export_table_to_cytomining_warehouse_supports_custom_role(
     assert embeddings_entry.role == "embeddings"
     assert embeddings_entry.join_keys == ["dataset_id", "image_id"]
     assert embeddings_entry.source_ref == "unit-test"
+
+
+def test_export_table_to_cytomining_warehouse_normalizes_table_identifier(
+    tmp_path: Path,
+) -> None:
+    warehouse_root = tmp_path / "warehouse"
+    result = export_table_to_cytomining_warehouse(
+        pa.table(
+            {
+                "dataset_id": ["plate"],
+                "image_id": ["plate:0"],
+            }
+        ),
+        warehouse_root,
+        table_name=" profiles . joined_profiles ",
+        role="joined_profiles",
+        join_keys=["dataset_id", "image_id"],
+    )
+
+    assert result.tables_written == ["profiles.joined_profiles"]
+    assert result.row_counts == {"profiles.joined_profiles": 1}
+    assert (
+        ds.dataset(warehouse_root / "profiles" / "joined_profiles").to_table().num_rows
+        == 1
+    )
+
+
+def test_export_table_to_cytomining_warehouse_rejects_empty_table_name_segment(
+    tmp_path: Path,
+) -> None:
+    warehouse_root = tmp_path / "warehouse"
+
+    with pytest.raises(ValueError, match="malformed table_name: empty segment"):
+        export_table_to_cytomining_warehouse(
+            pa.table(
+                {
+                    "dataset_id": ["plate"],
+                    "image_id": ["plate:0"],
+                }
+            ),
+            warehouse_root,
+            table_name="profiles..joined_profiles",
+            role="joined_profiles",
+            join_keys=["dataset_id", "image_id"],
+        )
