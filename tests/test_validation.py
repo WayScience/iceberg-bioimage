@@ -130,6 +130,5 @@ def test_validate_warehouse_manifest_requires_spec_version(tmp_path: Path) -> No
 
     assert result.is_valid is False
     assert (
-        "warehouse_manifest.json must declare warehouse_spec_version."
-        in result.errors
+        "warehouse_manifest.json must declare warehouse_spec_version." in result.errors
     )

@@ -209,7 +209,10 @@ def export_catalog_to_cytomining_warehouse(  # noqa: PLR0913
     row_counts.update(image_assets_result.row_counts)
     manifest_path = image_assets_result.manifest_path
 
-    if chunk_index_table_name is not None and resolved_catalog_chunk_index_table is not None:
+    if (
+        chunk_index_table_name is not None
+        and resolved_catalog_chunk_index_table is not None
+    ):
         chunk_index = catalog_table_to_arrow(
             catalog,
             namespace,
