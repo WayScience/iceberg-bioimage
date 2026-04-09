@@ -19,6 +19,7 @@ from iceberg_bioimage import (
 )
 from iceberg_bioimage.integrations.cytomining import (
     DEFAULT_WAREHOUSE_SPEC_VERSION,
+    _catalog_table_leaf_name,
     export_scan_result_to_cytomining_warehouse,
     load_warehouse_manifest,
 )
@@ -409,3 +410,14 @@ def test_export_catalog_to_cytomining_warehouse_supports_explicit_catalog_names(
 
     assert read_tables == ["image_assets_v2"]
     assert result.tables_written == ["images.custom_image_assets"]
+
+
+def test_catalog_table_leaf_name_strips_and_validates() -> None:
+    assert _catalog_table_leaf_name(" images.image_assets ") == "image_assets"
+    assert _catalog_table_leaf_name("image_assets") == "image_assets"
+
+    with pytest.raises(ValueError, match="empty leaf segment"):
+        _catalog_table_leaf_name("images.")
+
+    with pytest.raises(ValueError, match="illegal leaf segment"):
+        _catalog_table_leaf_name("images.image assets")

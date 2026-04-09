@@ -175,14 +175,14 @@ def export_catalog_to_cytomining_warehouse(  # noqa: PLR0913
     resolved_catalog_image_assets_table = (
         _catalog_table_leaf_name(image_assets_table_name)
         if catalog_image_assets_table_name is None
-        else catalog_image_assets_table_name
+        else _catalog_table_leaf_name(catalog_image_assets_table_name)
     )
     resolved_catalog_chunk_index_table = None
     if chunk_index_table_name is not None:
         resolved_catalog_chunk_index_table = (
             _catalog_table_leaf_name(chunk_index_table_name)
             if catalog_chunk_index_table_name is None
-            else catalog_chunk_index_table_name
+            else _catalog_table_leaf_name(catalog_chunk_index_table_name)
         )
 
     image_assets = catalog_table_to_arrow(
@@ -510,4 +510,16 @@ def _catalog_source_ref(
 
 
 def _catalog_table_leaf_name(table_identifier: str) -> str:
-    return table_identifier.rsplit(".", maxsplit=1)[-1]
+    leaf = table_identifier.rsplit(".", maxsplit=1)[-1].strip()
+    if not leaf:
+        raise ValueError("malformed catalog table identifier: empty leaf segment")
+    if "." in leaf:
+        raise ValueError(
+            "malformed catalog table identifier: leaf must not contain '.'"
+        )
+    if _TABLE_NAME_SEGMENT_PATTERN.fullmatch(leaf) is None:
+        raise ValueError(
+            f"malformed catalog table identifier: illegal leaf segment {leaf!r}"
+        )
+
+    return leaf
