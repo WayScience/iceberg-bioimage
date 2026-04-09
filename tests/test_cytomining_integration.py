@@ -418,6 +418,8 @@ def test_catalog_table_leaf_name_strips_and_validates() -> None:
 
     with pytest.raises(ValueError, match="empty leaf segment"):
         _catalog_table_leaf_name("images.")
+    with pytest.raises(ValueError, match="empty leaf segment"):
+        _catalog_table_leaf_name(".image_assets")
 
     with pytest.raises(ValueError, match="illegal leaf segment"):
         _catalog_table_leaf_name("images.image assets")
@@ -448,3 +450,42 @@ def test_export_table_to_cytomining_warehouse_normalizes_stale_spec_version(
 
     manifest = load_warehouse_manifest(warehouse_root)
     assert manifest.warehouse_spec_version == DEFAULT_WAREHOUSE_SPEC_VERSION
+
+
+def test_export_table_to_cytomining_warehouse_normalizes_legacy_manifest_table_names(
+    tmp_path: Path,
+) -> None:
+    warehouse_root = tmp_path / "warehouse"
+    warehouse_root.mkdir(parents=True, exist_ok=True)
+    (warehouse_root / "warehouse_manifest.json").write_text(
+        """
+{
+  "warehouse_root": "stale-root",
+  "warehouse_spec_version": "0.9.0",
+  "tables": [
+    {
+      "table_name": "image_assets",
+      "role": "image_assets",
+      "format": "parquet",
+      "join_keys": ["dataset_id", "image_id"],
+      "columns": ["dataset_id", "image_id"]
+    }
+  ]
+}
+""".strip()
+    )
+
+    export_table_to_cytomining_warehouse(
+        pa.table({"dataset_id": ["plate"], "image_id": ["plate:0"]}),
+        warehouse_root,
+        table_name="profiles.joined_profiles",
+        role="joined_profiles",
+        join_keys=["dataset_id", "image_id"],
+    )
+
+    manifest = load_warehouse_manifest(warehouse_root)
+    assert manifest.warehouse_spec_version == DEFAULT_WAREHOUSE_SPEC_VERSION
+    assert sorted(table.table_name for table in manifest.tables) == [
+        "images.image_assets",
+        "profiles.joined_profiles",
+    ]

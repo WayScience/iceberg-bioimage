@@ -275,7 +275,7 @@ def export_profiles_to_cytomining_warehouse(  # noqa: PLR0913
     profiles: MetadataSource,
     warehouse_root: str | Path,
     *,
-    table_name: str = "profiles",
+    table_name: str = f"{DEFAULT_PROFILE_NAMESPACE}.profiles",
     role: str = "profiles",
     profile_dataset_id: str | None = None,
     join_keys: list[str] | None = None,
@@ -445,6 +445,7 @@ def _update_manifest(
 ) -> Path:
     manifest = load_warehouse_manifest(warehouse_root)
     manifest.warehouse_root = str(warehouse_root)
+    manifest.tables = [_normalize_legacy_manifest_entry(table) for table in manifest.tables]
     if manifest.warehouse_spec_version != DEFAULT_WAREHOUSE_SPEC_VERSION:
         if manifest.warehouse_spec_version is not None:
             logger.warning(
@@ -518,7 +519,22 @@ def _catalog_source_ref(
 
 
 def _catalog_table_leaf_name(table_identifier: str) -> str:
-    leaf = table_identifier.rsplit(".", maxsplit=1)[-1].strip()
+    try:
+        normalized_identifier, _ = _normalize_table_identifier(table_identifier)
+    except ValueError as exc:
+        if "empty segment" in str(exc):
+            raise ValueError(
+                "malformed catalog table identifier: empty leaf segment"
+            ) from exc
+        if "illegal segment" in str(exc):
+            illegal = str(exc).split("illegal segment", maxsplit=1)[-1].strip()
+            raise ValueError(
+                "malformed catalog table identifier: "
+                f"illegal leaf segment {illegal}"
+            ) from exc
+        raise ValueError(f"malformed catalog table identifier: {exc}") from exc
+
+    leaf = normalized_identifier.rsplit(".", maxsplit=1)[-1].strip()
     if not leaf:
         raise ValueError("malformed catalog table identifier: empty leaf segment")
     if "." in leaf:
@@ -531,3 +547,41 @@ def _catalog_table_leaf_name(table_identifier: str) -> str:
         )
 
     return leaf
+
+
+def _normalize_legacy_manifest_entry(
+    table: WarehouseTableManifestEntry,
+) -> WarehouseTableManifestEntry:
+    if "." in table.table_name:
+        return table
+
+    legacy_table_map = {
+        "image_assets": "images.image_assets",
+        "chunk_index": "images.chunk_index",
+        "joined_profiles": "profiles.joined_profiles",
+        "image_crops": "images.image_crops",
+        "source_images": "images.source_images",
+        "profile_with_images": "profiles.profile_with_images",
+    }
+    normalized_name = legacy_table_map.get(table.table_name)
+    if normalized_name is None:
+        raise ValueError(
+            "Cannot normalize legacy manifest table_name "
+            f"{table.table_name!r} to {DEFAULT_WAREHOUSE_SPEC_VERSION}."
+        )
+
+    logger.warning(
+        "Normalizing legacy manifest table_name from %s to %s",
+        table.table_name,
+        normalized_name,
+    )
+    return WarehouseTableManifestEntry(
+        table_name=normalized_name,
+        role=table.role,
+        format=table.format,
+        join_keys=list(table.join_keys),
+        source_type=table.source_type,
+        source_ref=table.source_ref,
+        row_count=table.row_count,
+        columns=list(table.columns),
+    )
