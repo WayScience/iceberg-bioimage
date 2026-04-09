@@ -12,11 +12,13 @@ import pytest
 import zarr
 
 from iceberg_bioimage import (
+    export_catalog_to_cytomining_warehouse,
     export_profiles_to_cytomining_warehouse,
     export_store_to_cytomining_warehouse,
     export_table_to_cytomining_warehouse,
 )
 from iceberg_bioimage.integrations.cytomining import (
+    DEFAULT_WAREHOUSE_SPEC_VERSION,
     export_scan_result_to_cytomining_warehouse,
     load_warehouse_manifest,
 )
@@ -62,6 +64,40 @@ def test_export_scan_result_to_cytomining_warehouse(tmp_path: Path) -> None:
     assert (
         ds.dataset(warehouse_root / "images" / "chunk_index").to_table().num_rows
         == EXPECTED_CHUNK_ROWS
+    )
+
+
+def test_export_scan_result_to_cytomining_warehouse_normalizes_bare_table_names(
+    tmp_path: Path,
+) -> None:
+    scan_result = ScanResult(
+        source_uri="/tmp/plate.zarr",
+        format_family="zarr",
+        image_assets=[
+            ImageAsset(
+                uri="/tmp/plate.zarr",
+                array_path="0",
+                shape=[4, 4],
+                dtype="uint16",
+                chunk_shape=[2, 2],
+                image_id="plate:0",
+            )
+        ],
+    )
+    warehouse_root = tmp_path / "warehouse"
+
+    result = export_scan_result_to_cytomining_warehouse(
+        scan_result,
+        warehouse_root,
+        include_chunks=False,
+        image_assets_table_name="image_assets",
+        joined_table_name="joined_profiles",
+    )
+
+    assert result.tables_written == ["images.image_assets"]
+    assert result.row_counts == {"images.image_assets": 1}
+    assert (
+        ds.dataset(warehouse_root / "images" / "image_assets").to_table().num_rows == 1
     )
 
 
@@ -205,6 +241,7 @@ def test_export_profiles_to_cytomining_warehouse_appends_named_tables(
     assert cosmicqc_table.to_pydict()["QC_Pass"] == [True]
 
     manifest = load_warehouse_manifest(warehouse_root)
+    assert manifest.warehouse_spec_version == DEFAULT_WAREHOUSE_SPEC_VERSION
     manifest_tables = {table.table_name: table for table in manifest.tables}
     assert sorted(manifest_tables) == [
         "profiles.cosmicqc_profiles",
@@ -241,6 +278,7 @@ def test_export_table_to_cytomining_warehouse_supports_custom_role(
 
     assert result.row_counts == {"embeddings": 1}
     manifest = load_warehouse_manifest(warehouse_root)
+    assert manifest.warehouse_spec_version == DEFAULT_WAREHOUSE_SPEC_VERSION
     embeddings_entry = next(
         table for table in manifest.tables if table.table_name == "embeddings"
     )
@@ -292,3 +330,82 @@ def test_export_table_to_cytomining_warehouse_rejects_empty_table_name_segment(
             role="joined_profiles",
             join_keys=["dataset_id", "image_id"],
         )
+
+
+def test_export_catalog_to_cytomining_warehouse_reads_catalog_leaf_names(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    read_tables: list[str] = []
+
+    def fake_catalog_table_to_arrow(
+        catalog: object,
+        namespace: object,
+        table_name: str,
+        *,
+        scan_options: object | None = None,
+    ) -> pa.Table:
+        del catalog, namespace, scan_options
+        read_tables.append(table_name)
+        if table_name == "image_assets":
+            return pa.table({"dataset_id": ["plate"], "image_id": ["plate:0"]})
+        if table_name == "chunk_index":
+            return pa.table(
+                {
+                    "dataset_id": ["plate"],
+                    "image_id": ["plate:0"],
+                    "array_path": ["0"],
+                }
+            )
+        raise AssertionError(f"unexpected table_name {table_name!r}")
+
+    monkeypatch.setattr(
+        "iceberg_bioimage.integrations.catalog.catalog_table_to_arrow",
+        fake_catalog_table_to_arrow,
+    )
+
+    result = export_catalog_to_cytomining_warehouse(
+        catalog="default",
+        namespace="bioimage.cytotable",
+        warehouse_root=tmp_path / "warehouse",
+        profiles=None,
+    )
+
+    assert read_tables == ["image_assets", "chunk_index"]
+    assert result.tables_written == ["images.image_assets", "images.chunk_index"]
+
+
+def test_export_catalog_to_cytomining_warehouse_supports_explicit_catalog_names(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    read_tables: list[str] = []
+
+    def fake_catalog_table_to_arrow(
+        catalog: object,
+        namespace: object,
+        table_name: str,
+        *,
+        scan_options: object | None = None,
+    ) -> pa.Table:
+        del catalog, namespace, scan_options
+        read_tables.append(table_name)
+        return pa.table({"dataset_id": ["plate"], "image_id": ["plate:0"]})
+
+    monkeypatch.setattr(
+        "iceberg_bioimage.integrations.catalog.catalog_table_to_arrow",
+        fake_catalog_table_to_arrow,
+    )
+
+    result = export_catalog_to_cytomining_warehouse(
+        catalog="default",
+        namespace="bioimage.cytotable",
+        warehouse_root=tmp_path / "warehouse",
+        profiles=None,
+        image_assets_table_name="images.custom_image_assets",
+        chunk_index_table_name=None,
+        catalog_image_assets_table_name="image_assets_v2",
+    )
+
+    assert read_tables == ["image_assets_v2"]
+    assert result.tables_written == ["images.custom_image_assets"]

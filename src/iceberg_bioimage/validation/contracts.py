@@ -217,6 +217,11 @@ def validate_warehouse_manifest(path: str | Path) -> WarehouseValidationResult:
         result.errors.append(f"Invalid warehouse_manifest.json: {exc}")
         return result
 
+    if manifest.warehouse_spec_version is None:
+        result.errors.append(
+            "warehouse_manifest.json must declare warehouse_spec_version."
+        )
+
     seen_table_names: set[str] = set()
     for table in manifest.tables:
         if table.table_name in seen_table_names:
