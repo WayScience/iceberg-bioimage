@@ -445,7 +445,9 @@ def _update_manifest(
 ) -> Path:
     manifest = load_warehouse_manifest(warehouse_root)
     manifest.warehouse_root = str(warehouse_root)
-    manifest.tables = [_normalize_legacy_manifest_entry(table) for table in manifest.tables]
+    manifest.tables = [
+        _normalize_legacy_manifest_entry(table) for table in manifest.tables
+    ]
     if manifest.warehouse_spec_version != DEFAULT_WAREHOUSE_SPEC_VERSION:
         if manifest.warehouse_spec_version is not None:
             logger.warning(
@@ -529,8 +531,7 @@ def _catalog_table_leaf_name(table_identifier: str) -> str:
         if "illegal segment" in str(exc):
             illegal = str(exc).split("illegal segment", maxsplit=1)[-1].strip()
             raise ValueError(
-                "malformed catalog table identifier: "
-                f"illegal leaf segment {illegal}"
+                f"malformed catalog table identifier: illegal leaf segment {illegal}"
             ) from exc
         raise ValueError(f"malformed catalog table identifier: {exc}") from exc
 
