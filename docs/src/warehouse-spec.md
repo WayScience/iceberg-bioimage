@@ -2,7 +2,9 @@
 
 ## Status
 
-Draft, intended to be normative for Cytomining ecosystem implementations.
+Draft
+
+Intended to be normative for Cytomining ecosystem implementations.
 
 ## Terminology
 
