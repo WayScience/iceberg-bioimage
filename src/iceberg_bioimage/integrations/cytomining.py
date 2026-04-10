@@ -566,16 +566,24 @@ def _normalize_legacy_manifest_entry(
     }
     normalized_name = legacy_table_map.get(table.table_name)
     if normalized_name is None:
-        raise ValueError(
-            "Cannot normalize legacy manifest table_name "
-            f"{table.table_name!r} to {DEFAULT_WAREHOUSE_SPEC_VERSION}."
+        fallback_leaf = re.sub(r"[^A-Za-z0-9_-]+", "_", table.table_name.strip())
+        fallback_leaf = fallback_leaf.strip("_")
+        if not fallback_leaf:
+            fallback_leaf = "unknown_table"
+        normalized_name = f"legacy.{fallback_leaf}"
+        logger.warning(
+            "Unknown legacy manifest table_name %s while normalizing to %s; "
+            "falling back to %s",
+            table.table_name,
+            DEFAULT_WAREHOUSE_SPEC_VERSION,
+            normalized_name,
         )
-
-    logger.warning(
-        "Normalizing legacy manifest table_name from %s to %s",
-        table.table_name,
-        normalized_name,
-    )
+    else:
+        logger.warning(
+            "Normalizing legacy manifest table_name from %s to %s",
+            table.table_name,
+            normalized_name,
+        )
     return WarehouseTableManifestEntry(
         table_name=normalized_name,
         role=table.role,

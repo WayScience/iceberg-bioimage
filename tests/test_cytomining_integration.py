@@ -18,6 +18,7 @@ from iceberg_bioimage import (
     export_table_to_cytomining_warehouse,
 )
 from iceberg_bioimage.integrations.cytomining import (
+    DEFAULT_PROFILE_NAMESPACE,
     DEFAULT_WAREHOUSE_SPEC_VERSION,
     _catalog_table_leaf_name,
     export_scan_result_to_cytomining_warehouse,
@@ -275,13 +276,14 @@ def test_export_table_to_cytomining_warehouse_supports_custom_role(
         source_type="custom",
         source_ref="unit-test",
         mode="append",
+        default_namespace=DEFAULT_PROFILE_NAMESPACE,
     )
 
-    assert result.row_counts == {"embeddings": 1}
+    assert result.row_counts == {"profiles.embeddings": 1}
     manifest = load_warehouse_manifest(warehouse_root)
     assert manifest.warehouse_spec_version == DEFAULT_WAREHOUSE_SPEC_VERSION
     embeddings_entry = next(
-        table for table in manifest.tables if table.table_name == "embeddings"
+        table for table in manifest.tables if table.table_name == "profiles.embeddings"
     )
     assert embeddings_entry.role == "embeddings"
     assert embeddings_entry.join_keys == ["dataset_id", "image_id"]
@@ -487,5 +489,44 @@ def test_export_table_to_cytomining_warehouse_normalizes_legacy_manifest_table_n
     assert manifest.warehouse_spec_version == DEFAULT_WAREHOUSE_SPEC_VERSION
     assert sorted(table.table_name for table in manifest.tables) == [
         "images.image_assets",
+        "profiles.joined_profiles",
+    ]
+
+
+def test_export_table_to_cytomining_warehouse_falls_back_for_unknown_legacy_table_names(
+    tmp_path: Path,
+) -> None:
+    warehouse_root = tmp_path / "warehouse"
+    warehouse_root.mkdir(parents=True, exist_ok=True)
+    (warehouse_root / "warehouse_manifest.json").write_text(
+        """
+{
+  "warehouse_root": "stale-root",
+  "warehouse_spec_version": "0.9.0",
+  "tables": [
+    {
+      "table_name": "custom table",
+      "role": "custom_role",
+      "format": "parquet",
+      "join_keys": ["dataset_id", "image_id"],
+      "columns": ["dataset_id", "image_id"]
+    }
+  ]
+}
+""".strip()
+    )
+
+    export_table_to_cytomining_warehouse(
+        pa.table({"dataset_id": ["plate"], "image_id": ["plate:0"]}),
+        warehouse_root,
+        table_name="profiles.joined_profiles",
+        role="joined_profiles",
+        join_keys=["dataset_id", "image_id"],
+    )
+
+    manifest = load_warehouse_manifest(warehouse_root)
+    assert manifest.warehouse_spec_version == DEFAULT_WAREHOUSE_SPEC_VERSION
+    assert sorted(table.table_name for table in manifest.tables) == [
+        "legacy.custom_table",
         "profiles.joined_profiles",
     ]

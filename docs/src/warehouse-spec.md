@@ -15,7 +15,7 @@ The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHOULD**, **SHOULD NOT**, 
 This specification defines a portable warehouse layout and naming contract for projects in and beyond the Cytomining ecosystem.
 
 This specification defines warehouse structure, interoperability behavior, and manifest semantics.
-Detailed per-table column schema constraints are defined in a companion schema specification outside of this project.
+Detailed per-table column schema constraints are defined in a companion schema specification for this project.
 
 The structural core of this specification is intended for general computational bioimaging.
 Cytomining-specific table conventions in this document can be treated as a theme layered on that core.
@@ -94,6 +94,7 @@ Consumers (warehouse readers) use this field to understand how a table should be
 
 1. Manifest table roles **MUST** come from a controlled vocabulary.
 1. Standard roles **MUST** include at least the following values.
+   - `profiles`
    - `image_assets`
    - `chunk_index`
    - `joined_profiles`
@@ -147,9 +148,9 @@ This section defines the required structure and semantics of `warehouse_manifest
 This section defines constraints for modifications made by tools outside this package.
 
 1. Data **MAY** be added to an existing warehouse by tools other than this package.
-1. External writers **MUST** preserve canonical table identifiers, namespace-path mapping, and manifest requirements defined by this specification.
-1. External writers **MUST** update `warehouse_manifest.json` to reflect added, replaced, or removed tables before declaring the warehouse ready for shared consumption.
-1. External writes **SHOULD** be staged atomically, or as close as practical, so readers do not observe partially updated table and manifest state.
+1. Such tools **MUST** preserve canonical table identifiers, namespace-path mapping, and manifest requirements defined by this specification.
+1. Updates to `warehouse_manifest.json` **MUST** reflect added, replaced, or removed tables before declaring the warehouse ready for shared consumption.
+1. Staging of external writes **SHOULD** be atomic, or as close as practical, so readers do not observe partially updated table and manifest state.
 1. Appending data to an existing table **MUST NOT** silently change declared role or analysis-level semantics for that table.
 1. Replacing a table in-place **MUST** preserve identifier stability (`<namespace>.<table>`) and **SHOULD** preserve role semantics unless a documented migration is performed.
 1. If an external write changes analysis level, role, or join behavior, the writer **MUST** treat it as a compatibility-affecting change and **SHOULD** communicate updates with stakeholders.
