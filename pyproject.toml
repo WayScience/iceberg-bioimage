@@ -50,7 +50,7 @@ scripts.iceberg-bioimage = "iceberg_bioimage.cli:main"
 [dependency-groups]
 dev = [
   "poethepoet>=0.34",
-  "pre-commit>=4.2",
+  "pre-commit>=4.5.1",
   "pytest>=8.3.5",
   "ruff>=0.11.11",
 ]
