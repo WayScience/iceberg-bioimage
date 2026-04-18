@@ -5,6 +5,7 @@
 Draft
 
 Intended to be normative for Cytomining ecosystem implementations.
+In this document, “normative” means statements using **MUST**, **MUST NOT**, **SHOULD**, and **MAY** define conformance requirements, while explanatory text and examples are informative.
 
 ## Terminology
 
@@ -40,10 +41,13 @@ An implementation conforms to this specification if it satisfies all requirement
 ## Namespaces and Tables
 
 This section defines the required identifier format and filesystem mapping for tables.
+In this specification, “Apache Iceberg-style” means using a namespace-qualified table identifier (`<namespace>.<table>`) rather than a flat table name.
+See the [Apache Iceberg specification](https://iceberg.apache.org/spec/) for background on Iceberg table and namespace concepts.
 
 1. A warehouse root **MUST** organize tables by Apache Iceberg-style namespace and table identifier.
 1. A canonical namespace and table identifier **MUST** be represented as `<namespace>.<table>`.
 1. On local filesystems, `<namespace>.<table>` **MUST** map to `<warehouse_root>/<namespace>/<table>/`.
+1. On non-local filesystems or object storage (such as AWS S3 or Google Cloud Storage), `<namespace>.<table>` **MUST** map to a path or key prefix equivalent to `.../<namespace>/<table>/` beneath the warehouse root URI.
 
 For clarity, this follows Apache Iceberg's namespace + table identifier model.
 For example, `images.image_assets` means namespace: `images` and table: `image_assets`.
@@ -84,6 +88,7 @@ This subsection defines standard table identifiers for common warehouse content.
 1. `images.image_crops` **MUST** be used for per-object image crops when such a table is produced.
 1. `images.source_images` **MUST** be used for source-image payload tables when such a table is produced.
 1. `profiles.profile_with_images` **MAY** be produced as a derived analytical view when both profile and crop tables are present.
+1. Post-processing profile outputs, for example pycytominer-derived normalized profiles, **MAY** be stored under `profiles.*` identifiers such as `profiles.normalized_profiles`, and they **SHOULD** use names that indicate the processing step they came from.
 1. Additional project-specific tables **MAY** exist, but they **SHOULD** remain in a namespace consistent with their semantics, typically `profiles` or `images`.
 
 ### Role Vocabulary
@@ -105,6 +110,11 @@ Consumers (warehouse readers) use this field to understand how a table should be
    - `embeddings`
    - `annotations`
    - `reports`
+1. In this specification, `profiles` means tabular feature measurements intended for direct profile-level analysis and joins.
+1. In this specification, `embeddings` means transformed latent representations derived from upstream data, which may come from profile features or image models.
+1. Embedding tables **MAY** be classified as either `profiles` or `embeddings` depending on project semantics.
+1. Producers **SHOULD** use the `profiles` namespace when embeddings are treated as the primary profile matrix for downstream analysis and joins.
+1. Producers **SHOULD** use the `embeddings` namespace when they want to preserve explicit distinction from standard feature-profile outputs.
 1. Project-specific roles **MAY** be added, but producers **MUST** document their semantics.
 
 ### Profile Tables
