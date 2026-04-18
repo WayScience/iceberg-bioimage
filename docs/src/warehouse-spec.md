@@ -76,6 +76,16 @@ This subsection defines how image-derived data should be represented under the `
 1. Image identifiers **MUST** remain stable across source format variants so downstream joins to `profiles.*` and QC tables are format-agnostic.
 1. Format-specific metadata fields **MAY** be included, and producers **SHOULD** preserve common canonical fields (`dataset_id`, `image_id`, shape/dtype metadata) for interoperability.
 
+### Format Guidance (Informative)
+
+This subsection is informative and does not add conformance requirements.
+Parquet is the baseline default for tabular warehouse exports today.
+For image workflows, OME-Arrow and OME-Zarr are currently the most consistent fallback choices across the Cytomining ecosystem.
+Vortex is a promising future option for general tabular workloads once Apache Iceberg support is available.
+Lance is a promising future option for random-access-heavy workloads, including large image-oriented datasets with chunk-level access patterns, and readers may refer to the [Lance paper](https://doi.org/10.48550/arXiv.2504.15247) for background.
+Support status for these newer table formats in Apache Iceberg can be tracked at [apache/iceberg#12225](https://github.com/apache/iceberg/issues/12225).
+Implementations may adopt additional formats over time, but they should preserve interoperability-first defaults when cross-tool compatibility is required.
+
 ## Tables
 
 This section defines canonical table names and role semantics.
