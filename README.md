@@ -1,3 +1,5 @@
+<img src="docs/src/_static/iceberg-bioimage-logo.png" alt="iceberg-bioimage logo" width="150">
+
 # iceberg-bioimage
 
 `iceberg-bioimage` is a format-agnostic Python package for cataloging bioimaging data with Apache Iceberg and exporting Cytomining-compatible warehouse layouts.
