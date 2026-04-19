@@ -1,3 +1,5 @@
+<img src="docs/src/_static/iceberg-bioimage-logo.png" alt="iceberg-bioimage logo" width="150">
+
 # iceberg-bioimage
 
 `iceberg-bioimage` is a format-agnostic Python package for cataloging bioimaging data with Apache Iceberg and exporting Cytomining-compatible warehouse layouts.
@@ -185,15 +187,15 @@ print(result.to_dict())
 
 This writes one or more of:
 
-- `image_assets/`
-- `chunk_index/`
-- `joined_profiles/`
+- `images/image_assets/`
+- `images/chunk_index/`
+- `profiles/joined_profiles/`
 
 It can also append downstream Cytomining tables into the same warehouse root,
-for example:
+typically in the `profiles` namespace, for example:
 
-- `pycytominer_profiles/`
-- `cosmicqc_profiles/`
+- `profiles/pycytominer_profiles/`
+- `profiles/cosmicqc_profiles/`
 
 ## OME-Arrow helpers
 

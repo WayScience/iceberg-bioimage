@@ -199,7 +199,10 @@ def load_profile_column_aliases(path: str | Path) -> dict[str, tuple[str, ...]]:
 def validate_warehouse_manifest(path: str | Path) -> WarehouseValidationResult:
     """Validate a manifest-backed warehouse root."""
 
-    from iceberg_bioimage.integrations.cytomining import load_warehouse_manifest
+    from iceberg_bioimage.integrations.cytomining import (
+        _normalize_table_identifier,
+        load_warehouse_manifest,
+    )
 
     root = Path(path)
     result = WarehouseValidationResult(warehouse_root=str(root))
@@ -214,6 +217,11 @@ def validate_warehouse_manifest(path: str | Path) -> WarehouseValidationResult:
         result.errors.append(f"Invalid warehouse_manifest.json: {exc}")
         return result
 
+    if manifest.warehouse_spec_version is None:
+        result.errors.append(
+            "warehouse_manifest.json must declare warehouse_spec_version."
+        )
+
     seen_table_names: set[str] = set()
     for table in manifest.tables:
         if table.table_name in seen_table_names:
@@ -223,7 +231,15 @@ def validate_warehouse_manifest(path: str | Path) -> WarehouseValidationResult:
             continue
         seen_table_names.add(table.table_name)
 
-        dataset_path = root / table.table_name
+        try:
+            _, table_parts = _normalize_table_identifier(table.table_name)
+        except ValueError as exc:
+            result.errors.append(
+                f"Invalid manifest table_name {table.table_name!r}: {exc}"
+            )
+            continue
+
+        dataset_path = root.joinpath(*table_parts)
         if not dataset_path.exists():
             result.errors.append(
                 f"Manifest table path does not exist: {table.table_name}"
