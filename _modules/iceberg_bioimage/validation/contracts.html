@@ -108,6 +108,14 @@
   
   
   
+    
+    
+      
+    
+    
+    <img src="../../../_static/iceberg-bioimage-logo.png" class="logo__image only-light" alt=""/>
+    <img src="../../../_static/iceberg-bioimage-logo.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
   
     <p class="title logo__title">iceberg-bioimage</p>
   
@@ -165,6 +173,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../warehouse-spec.html">
+    Cytomining Warehouse Specification (RFC 2119)
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../../../examples/metadata-workflow.html">
     Metadata Workflow Example
@@ -311,6 +326,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../warehouse-spec.html">
+    Cytomining Warehouse Specification (RFC 2119)
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../examples/metadata-workflow.html">
     Metadata Workflow Example
   </a>
@@ -429,7 +451,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">tomllib</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Mapping</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">json</span><span class="w"> </span><span class="kn">import</span> <span class="n">JSONDecodeError</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
@@ -438,6 +460,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.models.scan_result</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">ContractValidationResult</span><span class="p">,</span>
     <span class="n">ScanResult</span><span class="p">,</span>
+    <span class="n">WarehouseTableManifestEntry</span><span class="p">,</span>
     <span class="n">WarehouseValidationResult</span><span class="p">,</span>
 <span class="p">)</span>
 
@@ -648,7 +671,10 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">validate_warehouse_manifest</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">WarehouseValidationResult</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate a manifest-backed warehouse root.&quot;&quot;&quot;</span>
 
-    <span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.integrations.cytomining</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_warehouse_manifest</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.integrations.cytomining</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">_normalize_table_identifier</span><span class="p">,</span>
+        <span class="n">load_warehouse_manifest</span><span class="p">,</span>
+    <span class="p">)</span>
 
     <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="n">result</span> <span class="o">=</span> <span class="n">WarehouseValidationResult</span><span class="p">(</span><span class="n">warehouse_root</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
@@ -663,6 +689,11 @@
         <span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid warehouse_manifest.json: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">result</span>
 
+    <span class="k">if</span> <span class="n">manifest</span><span class="o">.</span><span class="n">warehouse_spec_version</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="s2">&quot;warehouse_manifest.json must declare warehouse_spec_version.&quot;</span>
+        <span class="p">)</span>
+
     <span class="n">seen_table_names</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">table</span> <span class="ow">in</span> <span class="n">manifest</span><span class="o">.</span><span class="n">tables</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">table</span><span class="o">.</span><span class="n">table_name</span> <span class="ow">in</span> <span class="n">seen_table_names</span><span class="p">:</span>
@@ -671,26 +702,50 @@
             <span class="p">)</span>
             <span class="k">continue</span>
         <span class="n">seen_table_names</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="p">)</span>
-
-        <span class="n">dataset_path</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="n">table</span><span class="o">.</span><span class="n">table_name</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">dataset_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Manifest table path does not exist: </span><span class="si">{</span><span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
-            <span class="k">continue</span>
-
-        <span class="k">if</span> <span class="n">table</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;image_assets&quot;</span><span class="p">,</span> <span class="s2">&quot;joined_profiles&quot;</span><span class="p">}</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">table</span><span class="o">.</span><span class="n">join_keys</span><span class="p">:</span>
-            <span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Manifest table </span><span class="si">{</span><span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="si">}</span><span class="s2"> must declare join_keys.&quot;</span>
-            <span class="p">)</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">table</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-            <span class="n">result</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Manifest table </span><span class="si">{</span><span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="si">}</span><span class="s2"> does not record columns.&quot;</span>
-            <span class="p">)</span>
+        <span class="n">_validate_warehouse_manifest_table</span><span class="p">(</span>
+            <span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">,</span>
+            <span class="n">table</span><span class="o">=</span><span class="n">table</span><span class="p">,</span>
+            <span class="n">result</span><span class="o">=</span><span class="n">result</span><span class="p">,</span>
+            <span class="n">normalize_table_identifier</span><span class="o">=</span><span class="n">_normalize_table_identifier</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">result</span></div>
 
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_warehouse_manifest_table</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">root</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">table</span><span class="p">:</span> <span class="n">WarehouseTableManifestEntry</span><span class="p">,</span>
+    <span class="n">result</span><span class="p">:</span> <span class="n">WarehouseValidationResult</span><span class="p">,</span>
+    <span class="n">normalize_table_identifier</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]]],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">table_parts</span> <span class="o">=</span> <span class="n">normalize_table_identifier</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid manifest table_name </span><span class="si">{</span><span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="si">!r}</span><span class="s2">: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="n">table</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="s2">&quot;quality_control&quot;</span> <span class="ow">and</span> <span class="n">table_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;quality_control&quot;</span><span class="p">:</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="s2">&quot;Manifest table with role quality_control must use the &quot;</span>
+            <span class="s2">&quot;quality_control namespace.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">dataset_path</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="o">*</span><span class="n">table_parts</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">dataset_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Manifest table path does not exist: </span><span class="si">{</span><span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="n">table</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;image_assets&quot;</span><span class="p">,</span> <span class="s2">&quot;joined_profiles&quot;</span><span class="p">}</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">table</span><span class="o">.</span><span class="n">join_keys</span><span class="p">:</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Manifest table </span><span class="si">{</span><span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="si">}</span><span class="s2"> must declare join_keys.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">table</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">warnings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Manifest table </span><span class="si">{</span><span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="si">}</span><span class="s2"> does not record columns.&quot;</span>
+        <span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_profile_contract_warnings</span><span class="p">(</span><span class="n">resolved_columns</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>

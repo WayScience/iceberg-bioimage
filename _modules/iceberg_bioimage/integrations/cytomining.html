@@ -108,6 +108,14 @@
   
   
   
+    
+    
+      
+    
+    
+    <img src="../../../_static/iceberg-bioimage-logo.png" class="logo__image only-light" alt=""/>
+    <img src="../../../_static/iceberg-bioimage-logo.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
   
     <p class="title logo__title">iceberg-bioimage</p>
   
@@ -165,6 +173,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../warehouse-spec.html">
+    Cytomining Warehouse Specification (RFC 2119)
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../../../examples/metadata-workflow.html">
     Metadata Workflow Example
@@ -311,6 +326,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../warehouse-spec.html">
+    Cytomining Warehouse Specification (RFC 2119)
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../examples/metadata-workflow.html">
     Metadata Workflow Example
   </a>
@@ -429,6 +451,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span>
@@ -452,6 +476,15 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.validation.contracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">resolve_microscopy_profile_columns</span>
 
 <span class="n">WriteMode</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;overwrite&quot;</span><span class="p">,</span> <span class="s2">&quot;append&quot;</span><span class="p">]</span>
+<span class="n">DEFAULT_PROFILE_NAMESPACE</span> <span class="o">=</span> <span class="s2">&quot;profiles&quot;</span>
+<span class="n">DEFAULT_IMAGE_NAMESPACE</span> <span class="o">=</span> <span class="s2">&quot;images&quot;</span>
+<span class="n">DEFAULT_QUALITY_CONTROL_NAMESPACE</span> <span class="o">=</span> <span class="s2">&quot;quality_control&quot;</span>
+<span class="n">DEFAULT_JOINED_PROFILES_TABLE</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">DEFAULT_PROFILE_NAMESPACE</span><span class="si">}</span><span class="s2">.joined_profiles&quot;</span>
+<span class="n">DEFAULT_IMAGE_ASSETS_TABLE</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">DEFAULT_IMAGE_NAMESPACE</span><span class="si">}</span><span class="s2">.image_assets&quot;</span>
+<span class="n">DEFAULT_CHUNK_INDEX_TABLE</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">DEFAULT_IMAGE_NAMESPACE</span><span class="si">}</span><span class="s2">.chunk_index&quot;</span>
+<span class="n">DEFAULT_WAREHOUSE_SPEC_VERSION</span> <span class="o">=</span> <span class="s2">&quot;1.0.0&quot;</span>
+<span class="n">_TABLE_NAME_SEGMENT_PATTERN</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^[A-Za-z0-9_-]+$&quot;</span><span class="p">)</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="export_scan_result_to_cytomining_warehouse">
@@ -462,9 +495,9 @@
     <span class="o">*</span><span class="p">,</span>
     <span class="n">profiles</span><span class="p">:</span> <span class="n">MetadataSource</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">include_chunks</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">image_assets_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;image_assets&quot;</span><span class="p">,</span>
-    <span class="n">chunk_index_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;chunk_index&quot;</span><span class="p">,</span>
-    <span class="n">joined_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;joined_profiles&quot;</span><span class="p">,</span>
+    <span class="n">image_assets_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_IMAGE_ASSETS_TABLE</span><span class="p">,</span>
+    <span class="n">chunk_index_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_CHUNK_INDEX_TABLE</span><span class="p">,</span>
+    <span class="n">joined_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_JOINED_PROFILES_TABLE</span><span class="p">,</span>
     <span class="n">profile_dataset_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">WriteMode</span> <span class="o">=</span> <span class="s2">&quot;overwrite&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CytominingWarehouseResult</span><span class="p">:</span>
@@ -486,6 +519,7 @@
         <span class="n">source_type</span><span class="o">=</span><span class="s2">&quot;scan_result&quot;</span><span class="p">,</span>
         <span class="n">source_ref</span><span class="o">=</span><span class="n">scan_result</span><span class="o">.</span><span class="n">source_uri</span><span class="p">,</span>
         <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+        <span class="n">default_namespace</span><span class="o">=</span><span class="n">DEFAULT_IMAGE_NAMESPACE</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">tables_written</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">image_assets_result</span><span class="o">.</span><span class="n">tables_written</span><span class="p">)</span>
     <span class="n">row_counts</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">image_assets_result</span><span class="o">.</span><span class="n">row_counts</span><span class="p">)</span>
@@ -502,6 +536,7 @@
             <span class="n">source_type</span><span class="o">=</span><span class="s2">&quot;scan_result&quot;</span><span class="p">,</span>
             <span class="n">source_ref</span><span class="o">=</span><span class="n">scan_result</span><span class="o">.</span><span class="n">source_uri</span><span class="p">,</span>
             <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+            <span class="n">default_namespace</span><span class="o">=</span><span class="n">DEFAULT_IMAGE_NAMESPACE</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">tables_written</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">chunk_result</span><span class="o">.</span><span class="n">tables_written</span><span class="p">)</span>
         <span class="n">row_counts</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">chunk_result</span><span class="o">.</span><span class="n">row_counts</span><span class="p">)</span>
@@ -523,6 +558,7 @@
             <span class="n">source_type</span><span class="o">=</span><span class="s2">&quot;joined_profiles&quot;</span><span class="p">,</span>
             <span class="n">source_ref</span><span class="o">=</span><span class="n">scan_result</span><span class="o">.</span><span class="n">source_uri</span><span class="p">,</span>
             <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+            <span class="n">default_namespace</span><span class="o">=</span><span class="n">DEFAULT_PROFILE_NAMESPACE</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">tables_written</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">joined_result</span><span class="o">.</span><span class="n">tables_written</span><span class="p">)</span>
         <span class="n">row_counts</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">joined_result</span><span class="o">.</span><span class="n">row_counts</span><span class="p">)</span>
@@ -545,9 +581,9 @@
     <span class="o">*</span><span class="p">,</span>
     <span class="n">profiles</span><span class="p">:</span> <span class="n">MetadataSource</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">include_chunks</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">image_assets_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;image_assets&quot;</span><span class="p">,</span>
-    <span class="n">chunk_index_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;chunk_index&quot;</span><span class="p">,</span>
-    <span class="n">joined_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;joined_profiles&quot;</span><span class="p">,</span>
+    <span class="n">image_assets_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_IMAGE_ASSETS_TABLE</span><span class="p">,</span>
+    <span class="n">chunk_index_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_CHUNK_INDEX_TABLE</span><span class="p">,</span>
+    <span class="n">joined_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_JOINED_PROFILES_TABLE</span><span class="p">,</span>
     <span class="n">profile_dataset_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">WriteMode</span> <span class="o">=</span> <span class="s2">&quot;overwrite&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CytominingWarehouseResult</span><span class="p">:</span>
@@ -577,9 +613,11 @@
     <span class="n">warehouse_root</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">profiles</span><span class="p">:</span> <span class="n">MetadataSource</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">image_assets_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;image_assets&quot;</span><span class="p">,</span>
-    <span class="n">chunk_index_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;chunk_index&quot;</span><span class="p">,</span>
-    <span class="n">joined_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;joined_profiles&quot;</span><span class="p">,</span>
+    <span class="n">image_assets_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_IMAGE_ASSETS_TABLE</span><span class="p">,</span>
+    <span class="n">chunk_index_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">DEFAULT_CHUNK_INDEX_TABLE</span><span class="p">,</span>
+    <span class="n">joined_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_JOINED_PROFILES_TABLE</span><span class="p">,</span>
+    <span class="n">catalog_image_assets_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">catalog_chunk_index_table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">profile_dataset_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">WriteMode</span> <span class="o">=</span> <span class="s2">&quot;overwrite&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CytominingWarehouseResult</span><span class="p">:</span>
@@ -593,11 +631,23 @@
     <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">warehouse_root</span><span class="p">)</span>
     <span class="n">row_counts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">tables_written</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">resolved_catalog_image_assets_table</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">_catalog_table_leaf_name</span><span class="p">(</span><span class="n">image_assets_table_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">catalog_image_assets_table_name</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">else</span> <span class="n">_catalog_table_leaf_name</span><span class="p">(</span><span class="n">catalog_image_assets_table_name</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">resolved_catalog_chunk_index_table</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">chunk_index_table_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">resolved_catalog_chunk_index_table</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">_catalog_table_leaf_name</span><span class="p">(</span><span class="n">chunk_index_table_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">catalog_chunk_index_table_name</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">_catalog_table_leaf_name</span><span class="p">(</span><span class="n">catalog_chunk_index_table_name</span><span class="p">)</span>
+        <span class="p">)</span>
 
     <span class="n">image_assets</span> <span class="o">=</span> <span class="n">catalog_table_to_arrow</span><span class="p">(</span>
         <span class="n">catalog</span><span class="p">,</span>
         <span class="n">namespace</span><span class="p">,</span>
-        <span class="n">image_assets_table_name</span><span class="p">,</span>
+        <span class="n">resolved_catalog_image_assets_table</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">image_assets_result</span> <span class="o">=</span> <span class="n">export_table_to_cytomining_warehouse</span><span class="p">(</span>
         <span class="n">image_assets</span><span class="p">,</span>
@@ -606,18 +656,26 @@
         <span class="n">role</span><span class="o">=</span><span class="s2">&quot;image_assets&quot;</span><span class="p">,</span>
         <span class="n">join_keys</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;dataset_id&quot;</span><span class="p">,</span> <span class="s2">&quot;image_id&quot;</span><span class="p">],</span>
         <span class="n">source_type</span><span class="o">=</span><span class="s2">&quot;catalog&quot;</span><span class="p">,</span>
-        <span class="n">source_ref</span><span class="o">=</span><span class="n">_catalog_source_ref</span><span class="p">(</span><span class="n">catalog</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">image_assets_table_name</span><span class="p">),</span>
+        <span class="n">source_ref</span><span class="o">=</span><span class="n">_catalog_source_ref</span><span class="p">(</span>
+            <span class="n">catalog</span><span class="p">,</span>
+            <span class="n">namespace</span><span class="p">,</span>
+            <span class="n">resolved_catalog_image_assets_table</span><span class="p">,</span>
+        <span class="p">),</span>
         <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+        <span class="n">default_namespace</span><span class="o">=</span><span class="n">DEFAULT_IMAGE_NAMESPACE</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">tables_written</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">image_assets_result</span><span class="o">.</span><span class="n">tables_written</span><span class="p">)</span>
     <span class="n">row_counts</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">image_assets_result</span><span class="o">.</span><span class="n">row_counts</span><span class="p">)</span>
     <span class="n">manifest_path</span> <span class="o">=</span> <span class="n">image_assets_result</span><span class="o">.</span><span class="n">manifest_path</span>
 
-    <span class="k">if</span> <span class="n">chunk_index_table_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">chunk_index_table_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="ow">and</span> <span class="n">resolved_catalog_chunk_index_table</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="p">):</span>
         <span class="n">chunk_index</span> <span class="o">=</span> <span class="n">catalog_table_to_arrow</span><span class="p">(</span>
             <span class="n">catalog</span><span class="p">,</span>
             <span class="n">namespace</span><span class="p">,</span>
-            <span class="n">chunk_index_table_name</span><span class="p">,</span>
+            <span class="n">resolved_catalog_chunk_index_table</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">chunk_result</span> <span class="o">=</span> <span class="n">export_table_to_cytomining_warehouse</span><span class="p">(</span>
             <span class="n">chunk_index</span><span class="p">,</span>
@@ -626,8 +684,13 @@
             <span class="n">role</span><span class="o">=</span><span class="s2">&quot;chunk_index&quot;</span><span class="p">,</span>
             <span class="n">join_keys</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;dataset_id&quot;</span><span class="p">,</span> <span class="s2">&quot;image_id&quot;</span><span class="p">,</span> <span class="s2">&quot;array_path&quot;</span><span class="p">],</span>
             <span class="n">source_type</span><span class="o">=</span><span class="s2">&quot;catalog&quot;</span><span class="p">,</span>
-            <span class="n">source_ref</span><span class="o">=</span><span class="n">_catalog_source_ref</span><span class="p">(</span><span class="n">catalog</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">chunk_index_table_name</span><span class="p">),</span>
+            <span class="n">source_ref</span><span class="o">=</span><span class="n">_catalog_source_ref</span><span class="p">(</span>
+                <span class="n">catalog</span><span class="p">,</span>
+                <span class="n">namespace</span><span class="p">,</span>
+                <span class="n">resolved_catalog_chunk_index_table</span><span class="p">,</span>
+            <span class="p">),</span>
             <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+            <span class="n">default_namespace</span><span class="o">=</span><span class="n">DEFAULT_IMAGE_NAMESPACE</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">tables_written</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">chunk_result</span><span class="o">.</span><span class="n">tables_written</span><span class="p">)</span>
         <span class="n">row_counts</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">chunk_result</span><span class="o">.</span><span class="n">row_counts</span><span class="p">)</span>
@@ -638,8 +701,8 @@
             <span class="n">catalog</span><span class="p">,</span>
             <span class="n">namespace</span><span class="p">,</span>
             <span class="n">profiles</span><span class="p">,</span>
-            <span class="n">image_assets_table</span><span class="o">=</span><span class="n">image_assets_table_name</span><span class="p">,</span>
-            <span class="n">chunk_index_table</span><span class="o">=</span><span class="n">chunk_index_table_name</span><span class="p">,</span>
+            <span class="n">image_assets_table</span><span class="o">=</span><span class="n">resolved_catalog_image_assets_table</span><span class="p">,</span>
+            <span class="n">chunk_index_table</span><span class="o">=</span><span class="n">resolved_catalog_chunk_index_table</span><span class="p">,</span>
             <span class="n">profile_dataset_id</span><span class="o">=</span><span class="n">profile_dataset_id</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">joined_result</span> <span class="o">=</span> <span class="n">export_table_to_cytomining_warehouse</span><span class="p">(</span>
@@ -651,6 +714,7 @@
             <span class="n">source_type</span><span class="o">=</span><span class="s2">&quot;catalog_join&quot;</span><span class="p">,</span>
             <span class="n">source_ref</span><span class="o">=</span><span class="n">_catalog_source_ref</span><span class="p">(</span><span class="n">catalog</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">joined_table_name</span><span class="p">),</span>
             <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+            <span class="n">default_namespace</span><span class="o">=</span><span class="n">DEFAULT_PROFILE_NAMESPACE</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">tables_written</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">joined_result</span><span class="o">.</span><span class="n">tables_written</span><span class="p">)</span>
         <span class="n">row_counts</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">joined_result</span><span class="o">.</span><span class="n">row_counts</span><span class="p">)</span>
@@ -671,7 +735,7 @@
     <span class="n">profiles</span><span class="p">:</span> <span class="n">MetadataSource</span><span class="p">,</span>
     <span class="n">warehouse_root</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;profiles&quot;</span><span class="p">,</span>
+    <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">DEFAULT_PROFILE_NAMESPACE</span><span class="si">}</span><span class="s2">.profiles&quot;</span><span class="p">,</span>
     <span class="n">role</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;profiles&quot;</span><span class="p">,</span>
     <span class="n">profile_dataset_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">join_keys</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -697,6 +761,7 @@
         <span class="n">source_type</span><span class="o">=</span><span class="n">source_type</span><span class="p">,</span>
         <span class="n">source_ref</span><span class="o">=</span><span class="n">source_ref</span> <span class="k">if</span> <span class="n">source_ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">profiles</span><span class="p">),</span>
         <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+        <span class="n">default_namespace</span><span class="o">=</span><span class="n">_default_namespace_for_role</span><span class="p">(</span><span class="n">role</span><span class="p">),</span>
     <span class="p">)</span></div>
 
 
@@ -713,11 +778,17 @@
     <span class="n">source_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">source_ref</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">WriteMode</span> <span class="o">=</span> <span class="s2">&quot;append&quot;</span><span class="p">,</span>
+    <span class="n">default_namespace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CytominingWarehouseResult</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Write a generic table into a warehouse root and update the manifest.&quot;&quot;&quot;</span>
 
     <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">warehouse_root</span><span class="p">)</span>
-    <span class="n">dataset_path</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="n">table_name</span>
+    <span class="n">normalized_table_name</span><span class="p">,</span> <span class="n">dataset_path</span> <span class="o">=</span> <span class="n">_resolve_table_layout</span><span class="p">(</span>
+        <span class="n">root</span><span class="p">,</span>
+        <span class="n">table_name</span><span class="p">,</span>
+        <span class="n">default_namespace</span><span class="o">=</span><span class="n">default_namespace</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">_validate_role_namespace</span><span class="p">(</span><span class="n">normalized_table_name</span><span class="p">,</span> <span class="n">role</span><span class="p">)</span>
     <span class="n">_write_parquet_dataset</span><span class="p">(</span>
         <span class="n">table</span><span class="p">,</span>
         <span class="n">dataset_path</span><span class="p">,</span>
@@ -726,7 +797,7 @@
     <span class="n">manifest_path</span> <span class="o">=</span> <span class="n">_update_manifest</span><span class="p">(</span>
         <span class="n">root</span><span class="p">,</span>
         <span class="n">WarehouseTableManifestEntry</span><span class="p">(</span>
-            <span class="n">table_name</span><span class="o">=</span><span class="n">table_name</span><span class="p">,</span>
+            <span class="n">table_name</span><span class="o">=</span><span class="n">normalized_table_name</span><span class="p">,</span>
             <span class="n">role</span><span class="o">=</span><span class="n">role</span><span class="p">,</span>
             <span class="n">join_keys</span><span class="o">=</span><span class="p">[]</span> <span class="k">if</span> <span class="n">join_keys</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">join_keys</span><span class="p">,</span>
             <span class="n">source_type</span><span class="o">=</span><span class="n">source_type</span><span class="p">,</span>
@@ -737,11 +808,69 @@
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">CytominingWarehouseResult</span><span class="p">(</span>
         <span class="n">warehouse_root</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span><span class="p">),</span>
-        <span class="n">tables_written</span><span class="o">=</span><span class="p">[</span><span class="n">table_name</span><span class="p">],</span>
-        <span class="n">row_counts</span><span class="o">=</span><span class="p">{</span><span class="n">table_name</span><span class="p">:</span> <span class="n">table</span><span class="o">.</span><span class="n">num_rows</span><span class="p">},</span>
+        <span class="n">tables_written</span><span class="o">=</span><span class="p">[</span><span class="n">normalized_table_name</span><span class="p">],</span>
+        <span class="n">row_counts</span><span class="o">=</span><span class="p">{</span><span class="n">normalized_table_name</span><span class="p">:</span> <span class="n">table</span><span class="o">.</span><span class="n">num_rows</span><span class="p">},</span>
         <span class="n">manifest_path</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">manifest_path</span><span class="p">),</span>
     <span class="p">)</span></div>
 
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_resolve_table_layout</span><span class="p">(</span>
+    <span class="n">warehouse_root</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">default_namespace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]:</span>
+    <span class="n">normalized_name</span><span class="p">,</span> <span class="n">parts</span> <span class="o">=</span> <span class="n">_normalize_table_identifier</span><span class="p">(</span>
+        <span class="n">table_name</span><span class="p">,</span>
+        <span class="n">default_namespace</span><span class="o">=</span><span class="n">default_namespace</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">normalized_name</span><span class="p">,</span> <span class="n">warehouse_root</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="o">*</span><span class="n">parts</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_normalize_table_identifier</span><span class="p">(</span>
+    <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">default_namespace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]]:</span>
+    <span class="n">normalized</span> <span class="o">=</span> <span class="n">table_name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">normalized</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;table_name must not be empty.&quot;</span><span class="p">)</span>
+
+    <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="n">part</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">normalized</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">part</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;malformed table_name: empty segment&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">normalized</span> <span class="ow">and</span> <span class="n">default_namespace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">namespace</span> <span class="o">=</span> <span class="n">default_namespace</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">namespace</span><span class="p">:</span>
+            <span class="n">namespace_parts</span> <span class="o">=</span> <span class="p">[</span><span class="n">part</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">namespace</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">part</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">namespace_parts</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;malformed default_namespace: empty segment&quot;</span><span class="p">)</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="n">namespace_parts</span><span class="p">,</span> <span class="o">*</span><span class="n">parts</span><span class="p">]</span>
+
+    <span class="n">illegal</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">part</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">parts</span> <span class="k">if</span> <span class="n">_TABLE_NAME_SEGMENT_PATTERN</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">part</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">illegal</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;malformed table_name: illegal segment </span><span class="si">{</span><span class="n">illegal</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_default_namespace_for_role</span><span class="p">(</span><span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">role</span> <span class="o">==</span> <span class="s2">&quot;quality_control&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">DEFAULT_QUALITY_CONTROL_NAMESPACE</span>
+    <span class="k">return</span> <span class="n">DEFAULT_PROFILE_NAMESPACE</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_validate_role_namespace</span><span class="p">(</span><span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">role</span> <span class="o">!=</span> <span class="s2">&quot;quality_control&quot;</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="n">namespace</span> <span class="o">=</span> <span class="n">table_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">namespace</span> <span class="o">!=</span> <span class="n">DEFAULT_QUALITY_CONTROL_NAMESPACE</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;quality_control role must use the quality_control namespace.&quot;</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_write_parquet_dataset</span><span class="p">(</span>
@@ -774,6 +903,7 @@
     <span class="n">payload</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">manifest_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
     <span class="k">return</span> <span class="n">WarehouseManifest</span><span class="p">(</span>
         <span class="n">warehouse_root</span><span class="o">=</span><span class="n">payload</span><span class="p">[</span><span class="s2">&quot;warehouse_root&quot;</span><span class="p">],</span>
+        <span class="n">warehouse_spec_version</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;warehouse_spec_version&quot;</span><span class="p">),</span>
         <span class="n">tables</span><span class="o">=</span><span class="p">[</span>
             <span class="n">WarehouseTableManifestEntry</span><span class="p">(</span>
                 <span class="n">table_name</span><span class="o">=</span><span class="n">table</span><span class="p">[</span><span class="s2">&quot;table_name&quot;</span><span class="p">],</span>
@@ -797,6 +927,17 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
     <span class="n">manifest</span> <span class="o">=</span> <span class="n">load_warehouse_manifest</span><span class="p">(</span><span class="n">warehouse_root</span><span class="p">)</span>
     <span class="n">manifest</span><span class="o">.</span><span class="n">warehouse_root</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">warehouse_root</span><span class="p">)</span>
+    <span class="n">manifest</span><span class="o">.</span><span class="n">tables</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">_normalize_legacy_manifest_entry</span><span class="p">(</span><span class="n">table</span><span class="p">)</span> <span class="k">for</span> <span class="n">table</span> <span class="ow">in</span> <span class="n">manifest</span><span class="o">.</span><span class="n">tables</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="n">manifest</span><span class="o">.</span><span class="n">warehouse_spec_version</span> <span class="o">!=</span> <span class="n">DEFAULT_WAREHOUSE_SPEC_VERSION</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">manifest</span><span class="o">.</span><span class="n">warehouse_spec_version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Normalizing warehouse_spec_version from </span><span class="si">%s</span><span class="s2"> to </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">manifest</span><span class="o">.</span><span class="n">warehouse_spec_version</span><span class="p">,</span>
+                <span class="n">DEFAULT_WAREHOUSE_SPEC_VERSION</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">manifest</span><span class="o">.</span><span class="n">warehouse_spec_version</span> <span class="o">=</span> <span class="n">DEFAULT_WAREHOUSE_SPEC_VERSION</span>
     <span class="n">manifest</span><span class="o">.</span><span class="n">tables</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">table</span> <span class="k">for</span> <span class="n">table</span> <span class="ow">in</span> <span class="n">manifest</span><span class="o">.</span><span class="n">tables</span> <span class="k">if</span> <span class="n">table</span><span class="o">.</span><span class="n">table_name</span> <span class="o">!=</span> <span class="n">entry</span><span class="o">.</span><span class="n">table_name</span>
     <span class="p">]</span>
@@ -859,6 +1000,82 @@
     <span class="n">namespace_label</span> <span class="o">=</span> <span class="n">namespace</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">namespace</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">namespace</span><span class="p">)</span>
     <span class="n">catalog_label</span> <span class="o">=</span> <span class="n">catalog</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">catalog</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">type</span><span class="p">(</span><span class="n">catalog</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
     <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">catalog_label</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">namespace_label</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">table_name</span><span class="si">}</span><span class="s2">&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_catalog_table_leaf_name</span><span class="p">(</span><span class="n">table_identifier</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">normalized_identifier</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_normalize_table_identifier</span><span class="p">(</span><span class="n">table_identifier</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;empty segment&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;malformed catalog table identifier: empty leaf segment&quot;</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+        <span class="k">if</span> <span class="s2">&quot;illegal segment&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">):</span>
+            <span class="n">illegal</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;illegal segment&quot;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;malformed catalog table identifier: illegal leaf segment </span><span class="si">{</span><span class="n">illegal</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;malformed catalog table identifier: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+    <span class="n">leaf</span> <span class="o">=</span> <span class="n">normalized_identifier</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">leaf</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;malformed catalog table identifier: empty leaf segment&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">in</span> <span class="n">leaf</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;malformed catalog table identifier: leaf must not contain &#39;.&#39;&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">_TABLE_NAME_SEGMENT_PATTERN</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">leaf</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;malformed catalog table identifier: illegal leaf segment </span><span class="si">{</span><span class="n">leaf</span><span class="si">!r}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">leaf</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_normalize_legacy_manifest_entry</span><span class="p">(</span>
+    <span class="n">table</span><span class="p">:</span> <span class="n">WarehouseTableManifestEntry</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">WarehouseTableManifestEntry</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">table</span>
+
+    <span class="n">legacy_table_map</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;image_assets&quot;</span><span class="p">:</span> <span class="s2">&quot;images.image_assets&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;chunk_index&quot;</span><span class="p">:</span> <span class="s2">&quot;images.chunk_index&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;joined_profiles&quot;</span><span class="p">:</span> <span class="s2">&quot;profiles.joined_profiles&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;image_crops&quot;</span><span class="p">:</span> <span class="s2">&quot;images.image_crops&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;source_images&quot;</span><span class="p">:</span> <span class="s2">&quot;images.source_images&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;profile_with_images&quot;</span><span class="p">:</span> <span class="s2">&quot;profiles.profile_with_images&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">normalized_name</span> <span class="o">=</span> <span class="n">legacy_table_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">normalized_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fallback_leaf</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;[^A-Za-z0-9_-]+&quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="n">fallback_leaf</span> <span class="o">=</span> <span class="n">fallback_leaf</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">fallback_leaf</span><span class="p">:</span>
+            <span class="n">fallback_leaf</span> <span class="o">=</span> <span class="s2">&quot;unknown_table&quot;</span>
+        <span class="n">normalized_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;legacy.</span><span class="si">{</span><span class="n">fallback_leaf</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;Unknown legacy manifest table_name </span><span class="si">%s</span><span class="s2"> while normalizing to </span><span class="si">%s</span><span class="s2">; &quot;</span>
+            <span class="s2">&quot;falling back to </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="p">,</span>
+            <span class="n">DEFAULT_WAREHOUSE_SPEC_VERSION</span><span class="p">,</span>
+            <span class="n">normalized_name</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;Normalizing legacy manifest table_name from </span><span class="si">%s</span><span class="s2"> to </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">table</span><span class="o">.</span><span class="n">table_name</span><span class="p">,</span>
+            <span class="n">normalized_name</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">WarehouseTableManifestEntry</span><span class="p">(</span>
+        <span class="n">table_name</span><span class="o">=</span><span class="n">normalized_name</span><span class="p">,</span>
+        <span class="n">role</span><span class="o">=</span><span class="n">table</span><span class="o">.</span><span class="n">role</span><span class="p">,</span>
+        <span class="nb">format</span><span class="o">=</span><span class="n">table</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
+        <span class="n">join_keys</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">join_keys</span><span class="p">),</span>
+        <span class="n">source_type</span><span class="o">=</span><span class="n">table</span><span class="o">.</span><span class="n">source_type</span><span class="p">,</span>
+        <span class="n">source_ref</span><span class="o">=</span><span class="n">table</span><span class="o">.</span><span class="n">source_ref</span><span class="p">,</span>
+        <span class="n">row_count</span><span class="o">=</span><span class="n">table</span><span class="o">.</span><span class="n">row_count</span><span class="p">,</span>
+        <span class="n">columns</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">columns</span><span class="p">),</span>
+    <span class="p">)</span>
 </pre></div>
 
                 </article>

@@ -46,7 +46,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'cytomining';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Metadata Workflow Example" href="examples/metadata-workflow.html" />
+    <link rel="next" title="Cytomining Warehouse Specification (RFC 2119)" href="warehouse-spec.html" />
     <link rel="prev" title="DuckDB Integration" href="duckdb.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -111,6 +111,14 @@
   
   
   
+    
+    
+      
+    
+    
+    <img src="_static/iceberg-bioimage-logo.png" class="logo__image only-light" alt=""/>
+    <img src="_static/iceberg-bioimage-logo.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
   
     <p class="title logo__title">iceberg-bioimage</p>
   
@@ -168,6 +176,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="warehouse-spec.html">
+    Cytomining Warehouse Specification (RFC 2119)
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="examples/metadata-workflow.html">
     Metadata Workflow Example
@@ -312,6 +327,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="warehouse-spec.html">
+    Cytomining Warehouse Specification (RFC 2119)
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="examples/metadata-workflow.html">
     Metadata Workflow Example
   </a>
@@ -450,13 +472,14 @@ only by directory name.</p>
 <h2>Warehouse layout<a class="headerlink" href="#warehouse-layout" title="Link to this heading">#</a></h2>
 <p>The Parquet warehouse root can contain:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">image_assets/</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">chunk_index/</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">joined_profiles/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">images/image_assets/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">images/chunk_index/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">profiles/joined_profiles/</span></code></p></li>
 </ul>
-<p><code class="docutils literal notranslate"><span class="pre">image_assets</span></code> is the base metadata table.</p>
-<p><code class="docutils literal notranslate"><span class="pre">chunk_index</span></code> is optional and only contains rows for chunked assets.</p>
-<p><code class="docutils literal notranslate"><span class="pre">joined_profiles</span></code> is optional and is written when a profile table is provided.</p>
+<p><code class="docutils literal notranslate"><span class="pre">images.image_assets</span></code> is the base metadata table.</p>
+<p><code class="docutils literal notranslate"><span class="pre">images.chunk_index</span></code> is optional and only contains rows for chunked assets.</p>
+<p><code class="docutils literal notranslate"><span class="pre">profiles.joined_profiles</span></code> is optional and is written when a profile table is
+provided.</p>
 </section>
 <section id="export-from-image-stores">
 <h2>Export From Image Stores<a class="headerlink" href="#export-from-image-stores" title="Link to this heading">#</a></h2>
@@ -554,17 +577,18 @@ iceberg-bioimage<span class="w"> </span>export-cytomining-profiles<span class="w
 iceberg-bioimage<span class="w"> </span>export-cytomining-profiles<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--warehouse-root<span class="w"> </span>warehouse-root<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--table-name<span class="w"> </span>cosmicqc_profiles<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--role<span class="w"> </span>quality_control<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--profile-dataset-id<span class="w"> </span>ExampleHuman<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>data/cosmicqc_output.parquet
 </pre></div>
 </div>
 <p>After those steps, the same warehouse root can contain:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">image_assets/</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">chunk_index/</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">joined_profiles/</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pycytominer_profiles/</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">cosmicqc_profiles/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">images/image_assets/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">images/chunk_index/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">profiles/joined_profiles/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">profiles/pycytominer_profiles/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">quality_control/cosmicqc_profiles/</span></code></p></li>
 </ul>
 <p>This keeps the image metadata and downstream Cytomining analysis outputs in one
 portable Parquet layout.</p>
@@ -671,11 +695,11 @@ the analyzable feature columns remain valid.</p>
       </div>
     </a>
     <a class="right-next"
-       href="examples/metadata-workflow.html"
+       href="warehouse-spec.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Metadata Workflow Example</p>
+        <p class="prev-next-title">Cytomining Warehouse Specification (RFC 2119)</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

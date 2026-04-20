@@ -110,6 +110,14 @@
   
   
   
+    
+    
+      
+    
+    
+    <img src="_static/iceberg-bioimage-logo.png" class="logo__image only-light" alt=""/>
+    <img src="_static/iceberg-bioimage-logo.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
   
     <p class="title logo__title">iceberg-bioimage</p>
   
@@ -167,6 +175,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="warehouse-spec.html">
+    Cytomining Warehouse Specification (RFC 2119)
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="examples/metadata-workflow.html">
     Metadata Workflow Example
@@ -313,6 +328,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="warehouse-spec.html">
+    Cytomining Warehouse Specification (RFC 2119)
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="examples/metadata-workflow.html">
     Metadata Workflow Example
   </a>
@@ -399,19 +421,34 @@
                 <article class="bd-article">
                   
   <!-- include contents from the root readme -->
+<img src="docs/src/_static/iceberg-bioimage-logo.png" alt="iceberg-bioimage logo" width="150">
 <section id="iceberg-bioimage">
 <h1>iceberg-bioimage<a class="headerlink" href="#iceberg-bioimage" title="Link to this heading">#</a></h1>
-<p><code class="docutils literal notranslate"><span class="pre">iceberg-bioimage</span></code> is a format-agnostic Python package for cataloging bioimaging data with Apache Iceberg and exporting Cytomining-compatible warehouse layouts.</p>
-<p>Core idea:</p>
+<p><code class="docutils literal notranslate"><span class="pre">iceberg-bioimage</span></code> is a Python package for cataloging bioimaging metadata with Apache Iceberg and exporting Cytomining-compatible warehouse layouts.</p>
+<p>It is designed for teams that want:</p>
 <ul class="simple">
 <li><p>Iceberg is the control plane for cataloging, schemas, joins, and snapshots.</p></li>
 <li><p>Cytomining-compatible Parquet warehouses are a first-class export target.</p></li>
-<li><p>Zarr and OME-TIFF remain the data plane.</p></li>
-<li><p>Adapters normalize each format into a pure-Python <code class="docutils literal notranslate"><span class="pre">ScanResult</span></code>.</p></li>
-<li><p>Execution stays in external tools such as DuckDB, xarray, and tifffile.</p></li>
+<li><p>Flexible image data planes, including Zarr, OME-TIFF, and OME-Arrow-centered workflows.</p></li>
+<li><p>Adapters that normalize source formats into a single <code class="docutils literal notranslate"><span class="pre">ScanResult</span></code> model.</p></li>
+<li><p>Integration with external execution/query tools such as DuckDB, xarray, and tifffile.</p></li>
 </ul>
-<section id="package-layout">
-<h2>Package layout<a class="headerlink" href="#package-layout" title="Link to this heading">#</a></h2>
+<section id="key-capabilities">
+<h2>Key capabilities<a class="headerlink" href="#key-capabilities" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Scan supported source stores, including Zarr and OME-TIFF, into canonical <code class="docutils literal notranslate"><span class="pre">ScanResult</span></code> objects.</p></li>
+<li><p>Summarize scanned datasets into user-facing <code class="docutils literal notranslate"><span class="pre">DatasetSummary</span></code> objects.</p></li>
+<li><p>Publish <code class="docutils literal notranslate"><span class="pre">image_assets</span></code> and <code class="docutils literal notranslate"><span class="pre">chunk_index</span></code> metadata tables with PyIceberg.</p></li>
+<li><p>Ingest one or more datasets into Cytotable-compatible Iceberg warehouses.</p></li>
+<li><p>Export new or existing datasets into Cytomining-compatible Parquet warehouses.</p></li>
+<li><p>Validate profile tables against the microscopy join contract.</p></li>
+<li><p>Join scanned image metadata to profile tables through a simple top-level API.</p></li>
+<li><p>Query canonical metadata through optional DuckDB helpers.</p></li>
+<li><p>Load catalog-backed metadata tables into Arrow for downstream joins.</p></li>
+</ul>
+</section>
+<section id="project-layout">
+<h2>Project layout<a class="headerlink" href="#project-layout" title="Link to this heading">#</a></h2>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>src/iceberg_bioimage/
   __init__.py
   api.py
@@ -424,13 +461,14 @@
 </pre></div>
 </div>
 </section>
-<section id="minimal-dependencies">
-<h2>Minimal dependencies<a class="headerlink" href="#minimal-dependencies" title="Link to this heading">#</a></h2>
+<section id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading">#</a></h2>
+<p>Core runtime dependencies include:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">pyarrow</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pyiceberg</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">tifffile</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">zarr</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pyarrow</span></code> for Arrow/Parquet table operations</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pyiceberg</span></code> for catalog/table publishing</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tifffile</span></code> for OME-TIFF metadata scanning when OME-TIFF sources are used</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">zarr</span></code> for Zarr metadata scanning</p></li>
 </ul>
 <p>Optional integration groups:</p>
 <ul class="simple">
@@ -438,18 +476,13 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">ome-arrow</span></code> for Arrow-native tabular image payloads and lazy image access</p></li>
 </ul>
 </section>
-<section id="start-here">
-<h2>Start Here<a class="headerlink" href="#start-here" title="Link to this heading">#</a></h2>
+<section id="getting-started">
+<h2>Getting started<a class="headerlink" href="#getting-started" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p>If you want a catalog-free first run, start with Cytomining export:
 <code class="docutils literal notranslate"><span class="pre">iceberg-bioimage</span> <span class="pre">export-cytomining</span> <span class="pre">--warehouse-root</span> <span class="pre">warehouse-root</span> <span class="pre">data/experiment.zarr</span></code></p></li>
 <li><p>If you want Iceberg-backed publishing, configure a PyIceberg catalog first.</p></li>
-<li><p>For step-by-step setup, see:</p>
-<ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">docs/src/getting-started.md</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">docs/src/catalog-setup.md</span></code></p></li>
-</ul>
-</li>
+<li><p>For step-by-step setup, see <code class="docutils literal notranslate"><span class="pre">docs/src/getting-started.md</span></code> and <code class="docutils literal notranslate"><span class="pre">docs/src/catalog-setup.md</span></code>.</p></li>
 </ul>
 </section>
 <section id="zarr-support">
@@ -587,21 +620,22 @@ directly.</p>
 </div>
 <p>This writes one or more of:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">image_assets/</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">chunk_index/</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">joined_profiles/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">images/image_assets/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">images/chunk_index/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">profiles/joined_profiles/</span></code></p></li>
 </ul>
 <p>It can also append downstream Cytomining tables into the same warehouse root,
-for example:</p>
+using namespaces that match table semantics, for example:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">pycytominer_profiles/</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">cosmicqc_profiles/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">profiles/pycytominer_profiles/</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">quality_control/cosmicqc_profiles/</span></code></p></li>
 </ul>
 </section>
 <section id="ome-arrow-helpers">
 <h2>OME-Arrow helpers<a class="headerlink" href="#ome-arrow-helpers" title="Link to this heading">#</a></h2>
 <p>OME-Arrow is available as an optional forward-facing integration for tabular
-image payloads stored in Arrow-compatible formats.</p>
+image payloads stored in Arrow-compatible formats.
+Projects may also choose an OME-Arrow-first workflow for source image handling.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_ome_arrow</span><span class="p">,</span> <span class="n">scan_ome_arrow</span>
 
 <span class="n">oa</span> <span class="o">=</span> <span class="n">create_ome_arrow</span><span class="p">(</span><span class="s2">&quot;image.ome.tiff&quot;</span><span class="p">)</span>
@@ -646,18 +680,14 @@ catalog and join them to analysis outputs directly:</p>
 </pre></div>
 </div>
 </section>
-<section id="current-scope">
-<h2>Current scope<a class="headerlink" href="#current-scope" title="Link to this heading">#</a></h2>
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">#</a></h2>
 <ul class="simple">
-<li><p>Scan Zarr and OME-TIFF stores into canonical <code class="docutils literal notranslate"><span class="pre">ScanResult</span></code> objects</p></li>
-<li><p>Summarize scanned datasets into user-facing <code class="docutils literal notranslate"><span class="pre">DatasetSummary</span></code> objects</p></li>
-<li><p>Publish <code class="docutils literal notranslate"><span class="pre">image_assets</span></code> and <code class="docutils literal notranslate"><span class="pre">chunk_index</span></code> metadata tables with PyIceberg</p></li>
-<li><p>Ingest one or more existing datasets into Cytotable-compatible Iceberg warehouses</p></li>
-<li><p>Export new or existing datasets into Cytomining-compatible Parquet warehouses</p></li>
-<li><p>Validate profile tables against the microscopy join contract</p></li>
-<li><p>Join scanned image metadata to profile tables through a simple top-level API</p></li>
-<li><p>Query canonical metadata through optional DuckDB helpers</p></li>
-<li><p>Load catalog-backed metadata tables into Arrow for downstream joins</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs/src/getting-started.md</span></code> for first-time setup</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs/src/catalog-setup.md</span></code> for catalog configuration</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs/src/cytomining.md</span></code> for warehouse export workflows</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs/src/warehouse-spec.md</span></code> for the warehouse interoperability specification</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs/src/workflow.md</span></code> for CLI-driven end-to-end examples</p></li>
 </ul>
 </section>
 <section id="troubleshooting">
@@ -672,8 +702,8 @@ run <code class="docutils literal notranslate"><span class="pre">iceberg-bioimag
 verify catalog configuration, namespace, and table names.</p></li>
 </ul>
 </section>
-<section id="design-note">
-<h2>Design note<a class="headerlink" href="#design-note" title="Link to this heading">#</a></h2>
+<section id="architecture-note">
+<h2>Architecture note<a class="headerlink" href="#architecture-note" title="Link to this heading">#</a></h2>
 <p>The package focuses on metadata scanning, publishing, Cytomining warehouse
 export, validation, and joins. OME-Arrow remains the place for Arrow-native
 image payload handling and lazy image access.</p>
@@ -826,6 +856,30 @@ image payload handling and lazy image access.</p>
 <li class="toctree-l2"><a class="reference internal" href="cytomining.html#generic-table-export">Generic Table Export</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cytomining.html#cytomining-metadata-compatibility">Cytomining Metadata Compatibility</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cytomining.html#ome-arrow-and-other-columns">OME-Arrow and Other Columns</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="warehouse-spec.html">Cytomining Warehouse Specification (RFC 2119)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="warehouse-spec.html#status">Status</a></li>
+<li class="toctree-l2"><a class="reference internal" href="warehouse-spec.html#terminology">Terminology</a></li>
+<li class="toctree-l2"><a class="reference internal" href="warehouse-spec.html#scope">Scope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="warehouse-spec.html#specification-versioning">Specification Versioning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="warehouse-spec.html#conformance">Conformance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="warehouse-spec.html#namespaces-and-tables">Namespaces and Tables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="warehouse-spec.html#namespaces">Namespaces</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="warehouse-spec.html#canonical-namespaces">Canonical Namespaces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="warehouse-spec.html#image-namespace-data-conventions">Image Namespace Data Conventions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="warehouse-spec.html#format-guidance-informative">Format Guidance (Informative)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="warehouse-spec.html#tables">Tables</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="warehouse-spec.html#canonical-table-names-and-descriptions">Canonical Table Names and Descriptions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="warehouse-spec.html#role-vocabulary">Role Vocabulary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="warehouse-spec.html#profile-tables">Profile Tables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="warehouse-spec.html#quality-control-tables">Quality Control Tables</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="warehouse-spec.html#manifest">Manifest</a></li>
+<li class="toctree-l2"><a class="reference internal" href="warehouse-spec.html#independent-and-external-writes">Independent and External Writes</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="examples/metadata-workflow.html">Metadata Workflow Example</a><ul>

@@ -108,6 +108,14 @@
   
   
   
+    
+    
+      
+    
+    
+    <img src="../../../_static/iceberg-bioimage-logo.png" class="logo__image only-light" alt=""/>
+    <img src="../../../_static/iceberg-bioimage-logo.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
   
     <p class="title logo__title">iceberg-bioimage</p>
   
@@ -165,6 +173,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../warehouse-spec.html">
+    Cytomining Warehouse Specification (RFC 2119)
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../../../examples/metadata-workflow.html">
     Metadata Workflow Example
@@ -306,6 +321,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="../../../cytomining.html">
     Cytomining Workflow
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../warehouse-spec.html">
+    Cytomining Warehouse Specification (RFC 2119)
   </a>
 </li>
 
@@ -752,6 +774,7 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Serializable manifest describing tables stored in a warehouse root.&quot;&quot;&quot;</span>
 
     <span class="n">warehouse_root</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">warehouse_spec_version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">tables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">WarehouseTableManifestEntry</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
 
 <div class="viewcode-block" id="WarehouseManifest.to_dict">
@@ -761,6 +784,7 @@
 
         <span class="k">return</span> <span class="p">{</span>
             <span class="s2">&quot;warehouse_root&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">warehouse_root</span><span class="p">,</span>
+            <span class="s2">&quot;warehouse_spec_version&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">warehouse_spec_version</span><span class="p">,</span>
             <span class="s2">&quot;tables&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">table</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">table</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tables</span><span class="p">],</span>
         <span class="p">}</span></div>
 
