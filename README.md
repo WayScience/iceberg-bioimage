@@ -192,10 +192,10 @@ This writes one or more of:
 - `profiles/joined_profiles/`
 
 It can also append downstream Cytomining tables into the same warehouse root,
-typically in the `profiles` namespace, for example:
+using namespaces that match table semantics, for example:
 
 - `profiles/pycytominer_profiles/`
-- `profiles/cosmicqc_profiles/`
+- `quality_control/cosmicqc_profiles/`
 
 ## OME-Arrow helpers
 

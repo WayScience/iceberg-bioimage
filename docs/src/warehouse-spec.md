@@ -55,7 +55,7 @@ In a local exported warehouse, that identifier maps to `<warehouse_root>/images/
 
 ## Namespaces
 
-This section defines namespace expectations for profile and image-related tables.
+This section defines namespace expectations for profile, image, and quality-control tables.
 
 ### Canonical Namespaces
 
@@ -63,6 +63,7 @@ This subsection defines the default namespaces used by conforming implementation
 
 1. Profile-oriented tables **MUST** use the `profiles` namespace.
 1. Image and image-metadata tables or data **MUST** use the `images` namespace.
+1. Quality-control tables **MUST** use the `quality_control` namespace.
 1. Implementations **SHOULD** reject ambiguous warehouse writes that omit namespace when multiple namespace defaults are possible.
 
 ### Image Namespace Data Conventions
@@ -99,7 +100,7 @@ This subsection defines standard table identifiers for common warehouse content.
 1. `images.source_images` **MUST** be used for source-image payload tables when such a table is produced.
 1. `profiles.profile_with_images` **MAY** be produced as a derived analytical view when both profile and crop tables are present.
 1. Post-processing profile outputs, for example pycytominer-derived normalized profiles, **MAY** be stored under `profiles.*` identifiers such as `profiles.normalized_profiles`, and they **SHOULD** use names that indicate the processing step they came from.
-1. Additional project-specific tables **MAY** exist, but they **SHOULD** remain in a namespace consistent with their semantics, typically `profiles` or `images`.
+1. Additional project-specific tables **MAY** exist, but they **SHOULD** remain in a namespace consistent with their semantics, typically `profiles`, `images`, or `quality_control`.
 
 ### Role Vocabulary
 
@@ -148,7 +149,7 @@ We provide the following definitions to help describe profile specifications bel
 A quality control (QC) table records pass/fail flags or scores used to keep, filter, or exclude profile rows for downstream analysis.
 
 1. Warehouses **MAY** contain multiple quality control (QC) datasets.
-1. QC datasets intended to filter profiles, for example [coSMicQC](https://github.com/cytomining/coSMicQC) outputs, **MUST** be stored as profile namespace tables, for example under `profiles.<qc_table_name>`.
+1. QC datasets intended to filter profiles, for example [coSMicQC](https://github.com/cytomining/coSMicQC) outputs, **MUST** be stored as quality-control namespace tables, for example under `quality_control.<table_name>`.
 1. A QC table used for object-level filtering **SHOULD** include object-level identifiers when available.
 1. A QC filtering indicator **SHOULD** be representable as at least a boolean column.
 1. When a QC table is exported, its manifest `role` **MUST** identify the table as quality-control data, for example `quality_control` or a project-specific QC role.

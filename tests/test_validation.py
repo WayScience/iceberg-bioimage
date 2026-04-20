@@ -132,3 +132,34 @@ def test_validate_warehouse_manifest_requires_spec_version(tmp_path: Path) -> No
     assert (
         "warehouse_manifest.json must declare warehouse_spec_version." in result.errors
     )
+
+
+def test_validate_warehouse_manifest_requires_quality_control_namespace(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "profiles" / "cosmicqc_profiles").mkdir(parents=True)
+    (tmp_path / "warehouse_manifest.json").write_text(
+        json.dumps(
+            {
+                "warehouse_root": str(tmp_path),
+                "warehouse_spec_version": "1.0.0",
+                "tables": [
+                    {
+                        "table_name": "profiles.cosmicqc_profiles",
+                        "role": "quality_control",
+                        "format": "parquet",
+                        "join_keys": ["dataset_id", "image_id"],
+                        "columns": ["dataset_id", "image_id", "qc_pass"],
+                    }
+                ],
+            }
+        )
+    )
+
+    result = validate_warehouse_manifest(tmp_path)
+
+    assert result.is_valid is False
+    assert (
+        "Manifest table with role quality_control must use the quality_control "
+        "namespace." in result.errors
+    )

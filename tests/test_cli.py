@@ -384,17 +384,19 @@ def test_export_cytomining_profiles_cli(
     monkeypatch: MonkeyPatch,
     capsys: CaptureFixture[str],
 ) -> None:
-    def _fake_export_profiles_to_cytomining_warehouse(
+    def _fake_export_profiles_to_cytomining_warehouse(  # noqa: PLR0913
         profiles: str,
         warehouse_root: str,
         *,
         table_name: str = "profiles",
+        role: str = "profiles",
         profile_dataset_id: str | None = None,
         mode: str = "append",
     ) -> object:
         assert profiles == "data/profiles.parquet"
         assert warehouse_root == "warehouse-root"
         assert table_name == "cosmicqc_profiles"
+        assert role == "quality_control"
         assert profile_dataset_id == "plate"
         assert mode == "append"
         return SimpleNamespace(
@@ -421,6 +423,8 @@ def test_export_cytomining_profiles_cli(
             "warehouse-root",
             "--table-name",
             "cosmicqc_profiles",
+            "--role",
+            "quality_control",
             "--profile-dataset-id",
             "plate",
             "data/profiles.parquet",

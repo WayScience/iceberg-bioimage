@@ -222,18 +222,19 @@ def test_export_profiles_to_cytomining_warehouse_appends_named_tables(
         cosmicqc_profiles,
         warehouse_root,
         table_name="cosmicqc_profiles",
+        role="quality_control",
         profile_dataset_id="plate",
         mode="append",
     )
 
     assert pycytominer_result.row_counts == {"profiles.pycytominer_profiles": 1}
-    assert cosmicqc_result.row_counts == {"profiles.cosmicqc_profiles": 1}
+    assert cosmicqc_result.row_counts == {"quality_control.cosmicqc_profiles": 1}
 
     pycytominer_table = ds.dataset(
         warehouse_root / "profiles" / "pycytominer_profiles"
     ).to_table()
     cosmicqc_table = ds.dataset(
-        warehouse_root / "profiles" / "cosmicqc_profiles"
+        warehouse_root / "quality_control" / "cosmicqc_profiles"
     ).to_table()
 
     assert pycytominer_table.to_pydict()["dataset_id"] == ["plate"]
@@ -246,11 +247,14 @@ def test_export_profiles_to_cytomining_warehouse_appends_named_tables(
     assert manifest.warehouse_spec_version == DEFAULT_WAREHOUSE_SPEC_VERSION
     manifest_tables = {table.table_name: table for table in manifest.tables}
     assert sorted(manifest_tables) == [
-        "profiles.cosmicqc_profiles",
         "profiles.pycytominer_profiles",
+        "quality_control.cosmicqc_profiles",
     ]
     assert manifest_tables["profiles.pycytominer_profiles"].role == "profiles"
-    assert manifest_tables["profiles.cosmicqc_profiles"].row_count == 1
+    assert (
+        manifest_tables["quality_control.cosmicqc_profiles"].role == "quality_control"
+    )
+    assert manifest_tables["quality_control.cosmicqc_profiles"].row_count == 1
 
     validation = validate_warehouse_manifest(warehouse_root)
     assert validation.is_valid is True
@@ -288,6 +292,32 @@ def test_export_table_to_cytomining_warehouse_supports_custom_role(
     assert embeddings_entry.role == "embeddings"
     assert embeddings_entry.join_keys == ["dataset_id", "image_id"]
     assert embeddings_entry.source_ref == "unit-test"
+
+
+def test_export_table_to_cytomining_warehouse_requires_quality_control_namespace(
+    tmp_path: Path,
+) -> None:
+    warehouse_root = tmp_path / "warehouse"
+    with pytest.raises(
+        ValueError,
+        match="quality_control role must use the quality_control namespace",
+    ):
+        export_table_to_cytomining_warehouse(
+            pa.table(
+                {
+                    "dataset_id": ["plate"],
+                    "image_id": ["plate:0"],
+                    "qc_pass": [True],
+                }
+            ),
+            warehouse_root,
+            table_name="profiles.cosmicqc_profiles",
+            role="quality_control",
+            join_keys=["dataset_id", "image_id"],
+            source_type="custom",
+            source_ref="unit-test",
+            mode="append",
+        )
 
 
 def test_export_table_to_cytomining_warehouse_normalizes_table_identifier(

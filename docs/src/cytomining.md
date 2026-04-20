@@ -137,6 +137,7 @@ iceberg-bioimage export-cytomining-profiles \
 iceberg-bioimage export-cytomining-profiles \
   --warehouse-root warehouse-root \
   --table-name cosmicqc_profiles \
+  --role quality_control \
   --profile-dataset-id ExampleHuman \
   data/cosmicqc_output.parquet
 ```
@@ -147,7 +148,7 @@ After those steps, the same warehouse root can contain:
 - `images/chunk_index/`
 - `profiles/joined_profiles/`
 - `profiles/pycytominer_profiles/`
-- `profiles/cosmicqc_profiles/`
+- `quality_control/cosmicqc_profiles/`
 
 This keeps the image metadata and downstream Cytomining analysis outputs in one
 portable Parquet layout.

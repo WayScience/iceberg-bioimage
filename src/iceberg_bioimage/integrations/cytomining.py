@@ -30,6 +30,7 @@ from iceberg_bioimage.validation.contracts import resolve_microscopy_profile_col
 WriteMode = Literal["overwrite", "append"]
 DEFAULT_PROFILE_NAMESPACE = "profiles"
 DEFAULT_IMAGE_NAMESPACE = "images"
+DEFAULT_QUALITY_CONTROL_NAMESPACE = "quality_control"
 DEFAULT_JOINED_PROFILES_TABLE = f"{DEFAULT_PROFILE_NAMESPACE}.joined_profiles"
 DEFAULT_IMAGE_ASSETS_TABLE = f"{DEFAULT_IMAGE_NAMESPACE}.image_assets"
 DEFAULT_CHUNK_INDEX_TABLE = f"{DEFAULT_IMAGE_NAMESPACE}.chunk_index"
@@ -301,7 +302,7 @@ def export_profiles_to_cytomining_warehouse(  # noqa: PLR0913
         source_type=source_type,
         source_ref=source_ref if source_ref is not None else str(profiles),
         mode=mode,
-        default_namespace=DEFAULT_PROFILE_NAMESPACE,
+        default_namespace=_default_namespace_for_role(role),
     )
 
 
@@ -325,6 +326,7 @@ def export_table_to_cytomining_warehouse(  # noqa: PLR0913
         table_name,
         default_namespace=default_namespace,
     )
+    _validate_role_namespace(normalized_table_name, role)
     _write_parquet_dataset(
         table,
         dataset_path,
@@ -392,6 +394,20 @@ def _normalize_table_identifier(
         raise ValueError(f"malformed table_name: illegal segment {illegal!r}")
 
     return ".".join(parts), tuple(parts)
+
+
+def _default_namespace_for_role(role: str) -> str:
+    if role == "quality_control":
+        return DEFAULT_QUALITY_CONTROL_NAMESPACE
+    return DEFAULT_PROFILE_NAMESPACE
+
+
+def _validate_role_namespace(table_name: str, role: str) -> None:
+    if role != "quality_control":
+        return
+    namespace = table_name.split(".", maxsplit=1)[0]
+    if namespace != DEFAULT_QUALITY_CONTROL_NAMESPACE:
+        raise ValueError("quality_control role must use the quality_control namespace.")
 
 
 def _write_parquet_dataset(

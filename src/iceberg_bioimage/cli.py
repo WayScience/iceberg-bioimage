@@ -172,6 +172,14 @@ def build_parser() -> argparse.ArgumentParser:
         default="profiles",
     )
     cytomining_profiles_parser.add_argument(
+        "--role",
+        default="profiles",
+        help=(
+            "Manifest role for the exported table (for example profiles or "
+            "quality_control)."
+        ),
+    )
+    cytomining_profiles_parser.add_argument(
         "--profile-dataset-id",
         help=(
             "Inject dataset_id for profile tables that only carry "
@@ -350,6 +358,7 @@ def _handle_export_cytomining_profiles(args: argparse.Namespace) -> int:
         args.profiles,
         args.warehouse_root,
         table_name=args.table_name,
+        role=args.role,
         profile_dataset_id=args.profile_dataset_id,
         mode=args.mode,
     )
