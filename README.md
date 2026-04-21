@@ -3,7 +3,7 @@
 # iceberg-bioimage
 
 [![Software DOI badge](https://zenodo.org/badge/DOI/10.5281/zenodo.19672521.svg)](https://doi.org/10.5281/zenodo.19672521)
-![PyPI - Version](https://img.shields.io/pypi/v/iceberg-bioimage)
+[![PyPI - Version](https://img.shields.io/pypi/v/iceberg-bioimage)](https://pypi.org/project/iceberg-bioimage/)
 [![Build Status](https://github.com/d33bs/iceberg-bioimage/actions/workflows/run-tests.yml/badge.svg?branch=main)](https://github.com/d33bs/iceberg-bioimage/actions/workflows/run-tests.yml?query=branch%3Amain)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
