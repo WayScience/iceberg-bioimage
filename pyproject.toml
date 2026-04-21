@@ -1,10 +1,13 @@
 [build-system]
 build-backend = "setuptools.build_meta"
-requires = [ "setuptools>=82.0.1" ]
+requires = [
+  "setuptools>=82.0.1",
+  "setuptools-scm>=8",
+  "uv-dynamic-versioning",
+]
 
 [project]
 name = "iceberg-bioimage"
-version = "0.0.1"
 description = "A format-agnostic framework for cataloging and querying bioimaging data (Zarr, OME-TIFF) with Apache Iceberg"
 readme = "README.md"
 keywords = [
@@ -29,6 +32,7 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
   "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
+dynamic = [ "version" ]
 dependencies = [
   "pyarrow>=18",
   "pyiceberg>=0.7.1",
@@ -77,6 +81,12 @@ ome-arrow = [
 package-dir = { "" = "src" }
 packages.find.where = [ "src" ]
 
+[tool.setuptools_scm]
+root = "."
+version_scheme = "no-guess-dev"
+local_scheme = "no-local-version"
+version_file = "src/iceberg_bioimage/_version.py"
+
 [tool.ruff]
 target-version = "py311"
 line-length = 88
@@ -116,6 +126,10 @@ lint.per-file-ignores."src/iceberg_bioimage/validation/contracts.py" = [ "PLC041
 
 [tool.pytest]
 ini_options.pythonpath = [ ".", "src" ]
+
+[tool.uv-dynamic-versioning]
+vcs = "git"
+style = "semver"
 
 [tool.jupytext]
 formats = "ipynb,py:light"
