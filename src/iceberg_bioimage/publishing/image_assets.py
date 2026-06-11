@@ -28,6 +28,13 @@ class SupportsAppend(Protocol):
         """Append a pyarrow table."""
 
 
+class SupportsDelete(Protocol):
+    """Protocol for row-deletable Iceberg-like tables."""
+
+    def delete(self, delete_filter: object) -> None:
+        """Delete rows matching a filter expression."""
+
+
 TTable = TypeVar("TTable")
 
 
@@ -50,6 +57,39 @@ class SupportsCatalog(Protocol):
         schema: object,
     ) -> SupportsAppend:
         """Create and return a table."""
+
+
+def publish_profile_table(
+    arrow_table: pa.Table,
+    catalog: str | SupportsCatalog,
+    namespace: str | Iterable[str],
+    table_name: str,
+) -> int:
+    """Publish a profile Arrow table into the Iceberg catalog.
+
+    The schema is derived from the Arrow table, so any profile columns are
+    preserved.  The conventional namespace is ``<experiment>.profiles``.
+
+    Returns the number of rows published.
+    """
+
+    def _build_profile_schema() -> object:
+        try:
+            from pyiceberg.io.pyarrow import _pyarrow_to_schema_without_ids
+        except ImportError as exc:  # pragma: no cover
+            raise RuntimeError(
+                "PyIceberg is required for publishing. Install `pyiceberg` first."
+            ) from exc
+        return _pyarrow_to_schema_without_ids(arrow_table.schema)
+
+    table = _load_or_create_table(
+        catalog,
+        namespace,
+        table_name,
+        schema_builder=_build_profile_schema,
+    )
+    table.append(arrow_table)
+    return arrow_table.num_rows
 
 
 def publish_image_assets(
@@ -101,6 +141,48 @@ def _asset_to_row(
         if asset.metadata
         else None,
     }
+
+
+def delete_dataset_image_assets(
+    catalog: str | SupportsCatalog,
+    namespace: str | Iterable[str],
+    table_name: str,
+    dataset_id: str,
+) -> None:
+    """Delete all image_assets rows for a given dataset_id.
+
+    If the table does not yet exist this is a no-op.  If the table exists but
+    does not support row-level deletes a :exc:`RuntimeError` is raised.
+    """
+
+    resolved = _resolve_catalog(catalog)
+    try:
+        table = _load_table_with_namespace_fallback(
+            resolved,
+            namespace,
+            table_name,
+            operation="deleting",
+        )
+    except NoSuchTableError:
+        return
+
+    if not hasattr(table, "delete"):
+        raise RuntimeError(
+            f"Table {table_name!r} does not support row-level deletion. "
+            "Ensure your Iceberg catalog and table format support delete operations "
+            "(copy-on-write or merge-on-read)."
+        )
+    table.delete(_dataset_id_filter(dataset_id))
+
+
+def _dataset_id_filter(dataset_id: str) -> object:
+    try:
+        from pyiceberg.expressions import EqualTo
+    except ImportError as exc:  # pragma: no cover
+        raise RuntimeError(
+            "PyIceberg is required for delete operations."
+        ) from exc
+    return EqualTo("dataset_id", dataset_id)
 
 
 def _load_or_create_table(

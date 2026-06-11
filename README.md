@@ -8,287 +8,247 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 
-`iceberg-bioimage` is a Python package for cataloging bioimaging metadata with Apache Iceberg and exporting Cytomining-compatible warehouse layouts.
+`iceberg-bioimage` scans OME-TIFF and OME-Zarr images into queryable Arrow tables and optionally catalogs them with Apache Iceberg.
 
-It is designed for teams that want:
+## Install
 
-- Iceberg is the control plane for cataloging, schemas, joins, and snapshots.
-- Cytomining-compatible Parquet warehouses are a first-class export target.
-- Flexible image data planes, including Zarr, OME-TIFF, and OME-Arrow-centered workflows.
-- Adapters that normalize source formats into a single `ScanResult` model.
-- Integration with external execution/query tools such as DuckDB, xarray, and tifffile.
-
-## Key capabilities
-
-- Scan supported source stores, including Zarr and OME-TIFF, into canonical `ScanResult` objects.
-- Summarize scanned datasets into user-facing `DatasetSummary` objects.
-- Publish `image_assets` and `chunk_index` metadata tables with PyIceberg.
-- Ingest one or more datasets into Cytotable-compatible Iceberg warehouses.
-- Export new or existing datasets into Cytomining-compatible Parquet warehouses.
-- Validate profile tables against the microscopy join contract.
-- Join scanned image metadata to profile tables through a simple top-level API.
-- Query canonical metadata through optional DuckDB helpers.
-- Load catalog-backed metadata tables into Arrow for downstream joins.
-
-## Project layout
-
-```text
-src/iceberg_bioimage/
-  __init__.py
-  api.py
-  cli.py
-  adapters/
-  integrations/
-  models/
-  publishing/
-  validation/
+```bash
+pip install iceberg-bioimage
 ```
 
-## Dependencies
+Optional extras:
 
-Core runtime dependencies include:
+```bash
+pip install 'iceberg-bioimage[duckdb]'     # DuckDB query helpers
+pip install 'iceberg-bioimage[ome-arrow]'  # OME-Arrow image payloads (≥0.0.10)
+pip install 'iceberg-bioimage[s3]'         # S3 / remote URI support
+```
 
-- `pyarrow` for Arrow/Parquet table operations
-- `pyiceberg` for catalog/table publishing
-- `tifffile` for OME-TIFF metadata scanning when OME-TIFF sources are used
-- `zarr` for Zarr metadata scanning
+---
 
-Optional integration groups:
+## Usage
 
-- `duckdb` for query helpers and examples
-- `ome-arrow` for Arrow-native tabular image payloads and lazy image access
+### 1 — Virtual datasets (no catalog required)
 
-## Getting started
-
-- If you want a catalog-free first run, start with Cytomining export:
-  `iceberg-bioimage export-cytomining --warehouse-root warehouse-root data/experiment.zarr`
-- If you want Iceberg-backed publishing, configure a PyIceberg catalog first.
-- For step-by-step setup, see `docs/src/getting-started.md` and `docs/src/catalog-setup.md`.
-
-## Zarr support
-
-`iceberg-bioimage` keeps the user-facing API simple: use `scan_store(...)` for
-both local Zarr v2 stores and local Zarr v3 metadata stores.
-
-- Zarr v2 arrays are scanned through the `zarr` Python package
-- Local Zarr v3 stores are scanned from `zarr.json` metadata without requiring
-  a separate API
-- Summaries report the storage variant as `zarr-v2` or `zarr-v3`
-- The base package allows either Zarr 2 or Zarr 3 runtimes so that optional
-  forward-facing integrations can coexist in the same environment
-
-## Quickstart
+Scan any image directly into an Arrow table. No Iceberg catalog, no setup.
 
 ```python
-from iceberg_bioimage import (
-    export_store_to_cytomining_warehouse,
-    ingest_stores_to_warehouse,
-    join_profiles_with_store,
-    register_store,
-    summarize_store,
-    validate_microscopy_profile_table,
-)
+from iceberg_bioimage import scan_as_arrow_table
 
-registration = register_store(
-    "data/experiment.zarr",
+table = scan_as_arrow_table("data/experiment.ome.tiff")
+# or: scan_as_arrow_table("data/experiment.zarr")
+# or: scan_as_arrow_table("s3://bucket/experiment.ome.tiff")
+
+print(table.schema)
+# dataset_id, image_id, uri, format_family, shape_json, dtype, ...
+```
+
+The result is a standard `pyarrow.Table` — query it with DuckDB, Pandas, or pass it directly to downstream tools.
+
+```python
+import duckdb
+
+duckdb.query("SELECT dataset_id, shape_json FROM table WHERE dtype = 'uint16'")
+```
+
+### 2 — Catalog registration
+
+Register images into an Apache Iceberg catalog so they can be queried across experiments.
+
+```python
+from iceberg_bioimage import register_store
+
+register_store("data/experiment.zarr", "default", "myproject.images")
+```
+
+Register a whole directory at once:
+
+```python
+from iceberg_bioimage import register_directory
+
+register_directory(
+    "data/plates/",
     "default",
-    "bioimage.cytotable",
+    "myproject.images",
+    glob="**/*.ome.tiff",   # default is **/*.ome.zarr
 )
-print(registration.to_dict())
+```
 
-summary = summarize_store("data/experiment.zarr")
-print(summary.to_dict())
+Replace an existing registration (upsert):
 
-contract = validate_microscopy_profile_table("data/cells.parquet")
-print(contract.is_valid)
+```python
+register_store("data/experiment.zarr", "default", "myproject.images", replace=True)
+```
 
-# Requires the optional DuckDB integration:
-#   pip install 'iceberg-bioimage[duckdb]'
-joined = join_profiles_with_store("data/experiment.zarr", "data/cells.parquet")
+Remove a dataset from the catalog:
+
+```python
+from iceberg_bioimage import deregister_store
+
+deregister_store("data/experiment.zarr", "default", "myproject.images")
+```
+
+Skip chunk indexing (recommended for TIFF-only datasets):
+
+```python
+register_store("data/experiment.ome.tiff", "default", "myproject.images", chunk_index_table=None)
+```
+
+### 3 — Profile tables
+
+Publish a CellProfiler / pycytominer profile Parquet into the catalog under a `profiles` namespace. Column aliases for common pycytominer conventions (`Image_Metadata_Well`, `Metadata_Plate`, etc.) are resolved automatically.
+
+```python
+from iceberg_bioimage import register_profile_table
+
+register_profile_table(
+    "data/profiles.parquet",
+    "default",
+    "myproject.profiles",   # conventional: <experiment>.profiles
+)
+```
+
+Validate a profile table against the microscopy join contract before registering:
+
+```python
+from iceberg_bioimage import validate_microscopy_profile_table
+
+result = validate_microscopy_profile_table("data/profiles.parquet")
+print(result.is_valid)
+print(result.missing_required_columns)   # ['dataset_id', 'image_id'] if unresolvable
+print(result.warnings)                   # alias normalization notes
+```
+
+### 4 — Joining images to profiles
+
+```python
+from iceberg_bioimage import join_profiles_with_store
+
+joined = join_profiles_with_store("data/experiment.zarr", "data/profiles.parquet")
 print(joined.num_rows)
-
-warehouse = ingest_stores_to_warehouse(
-    ["data/experiment-a.zarr", "data/experiment-b.zarr"],
-    "default",
-    "bioimage.cytotable",
-)
-print(warehouse.to_dict())
-
-cytomining_export = export_store_to_cytomining_warehouse(
-    "data/experiment-a.zarr",
-    "warehouse-root",
-    profiles="data/cells.parquet",
-    profile_dataset_id="experiment-a",
-)
-print(cytomining_export.to_dict())
 ```
 
-```bash
-iceberg-bioimage scan data/experiment.zarr
-iceberg-bioimage summarize data/experiment.zarr
-iceberg-bioimage register --catalog default --namespace bioimage.cytotable data/experiment.zarr
-iceberg-bioimage ingest --catalog default --namespace bioimage.cytotable data/experiment-a.zarr data/experiment-b.zarr
-iceberg-bioimage export-cytomining --warehouse-root warehouse-root data/experiment.zarr
-iceberg-bioimage publish-chunks --catalog default --namespace bioimage.cytotable data/experiment.zarr
-iceberg-bioimage register --catalog default --namespace bioimage.cytotable --publish-chunks data/experiment.zarr
-iceberg-bioimage validate-contract data/cells.parquet
-iceberg-bioimage join-profiles data/experiment.zarr data/cells.parquet --output joined.parquet
-```
-
-- `examples/quickstart.py` for a minimal scan, publish, and validation script
-- `examples/catalog_duckdb.py` for a catalog-backed query workflow
-- `examples/synthetic_workflow.py` for a self-contained local workflow
-
-Install optional integrations with:
-
-```bash
-pip install 'iceberg-bioimage[duckdb]'
-pip install 'iceberg-bioimage[ome-arrow]'
-```
-
-## DuckDB helpers
-
-DuckDB is supported as an optional integration layer, not as a required engine.
-The join helpers also accept common `pycytominer` and `coSMicQC`-style
-`Metadata_*` aliases for `dataset_id`, `image_id`, `plate_id`, `well_id`, and
-`site_id`. If a profile table is missing `dataset_id` but all rows belong to
-one dataset, pass `profile_dataset_id=...` to the high-level join helpers.
+When `dataset_id` is absent from the profile table but all rows belong to one dataset:
 
 ```python
-import pyarrow as pa
-
-from iceberg_bioimage import join_image_assets_with_profiles, query_metadata_table
-
-image_assets = pa.table(
-    {
-        "dataset_id": ["ds-1"],
-        "image_id": ["img-1"],
-        "array_path": ["0"],
-        "uri": ["data/example.zarr"],
-    }
-)
-profiles = pa.table(
-    {
-        "dataset_id": ["ds-1"],
-        "image_id": ["img-1"],
-        "cell_count": [42],
-    }
-)
-
-joined = join_image_assets_with_profiles(image_assets, profiles)
-filtered = query_metadata_table(
-    joined,
-    filters=[("cell_count", ">", 10)],
+joined = join_profiles_with_store(
+    "data/experiment.zarr",
+    "data/profiles.parquet",
+    profile_dataset_id="experiment",
 )
 ```
 
-Install the optional integration with `uv sync --group duckdb`.
+### 5 — Cytomining warehouse export
 
-## Cytomining warehouse export
-
-The package supports Cytomining interoperability as a primary workflow.
-Besides publishing canonical metadata to Iceberg, it can materialize a
-Parquet-backed warehouse root that tools like `pycytominer` can consume
-directly.
+Export images and profiles into a Parquet warehouse layout that `pycytominer` and CytoTable can consume directly:
 
 ```python
 from iceberg_bioimage import export_store_to_cytomining_warehouse
 
-result = export_store_to_cytomining_warehouse(
+export_store_to_cytomining_warehouse(
     "data/experiment.zarr",
     "warehouse-root",
     profiles="data/profiles.parquet",
     profile_dataset_id="experiment",
 )
-print(result.to_dict())
 ```
 
-This writes one or more of:
+This writes:
 
-- `images/image_assets/`
-- `images/chunk_index/`
-- `profiles/joined_profiles/`
-
-It can also append downstream Cytomining tables into the same warehouse root,
-using namespaces that match table semantics, for example:
-
-- `profiles/pycytominer_profiles/`
-- `quality_control/cosmicqc_profiles/`
-
-## OME-Arrow helpers
-
-OME-Arrow is available as an optional forward-facing integration for tabular
-image payloads stored in Arrow-compatible formats.
-Projects may also choose an OME-Arrow-first workflow for source image handling.
-
-```python
-from iceberg_bioimage import create_ome_arrow, scan_ome_arrow
-
-oa = create_ome_arrow("image.ome.tiff")
-lazy_oa = scan_ome_arrow("image.ome.parquet")
+```
+warehouse-root/
+  images/image_assets/
+  profiles/joined_profiles/
 ```
 
-Install it with `uv sync --group ome-arrow` or
-`pip install 'iceberg-bioimage[ome-arrow]'`.
-
-## Local synthetic workflow
-
-For a catalog-free onboarding path, `examples/synthetic_workflow.py` creates a
-small Zarr store and profile table, validates the join contract, derives
-canonical metadata rows, and joins them with the optional DuckDB helpers.
-
-Run it with:
+### 6 — CLI
 
 ```bash
-uv run --group duckdb python examples/synthetic_workflow.py
+iceberg-bioimage scan data/experiment.zarr
+iceberg-bioimage summarize data/experiment.zarr
+iceberg-bioimage register --catalog default --namespace myproject.images data/experiment.zarr
+iceberg-bioimage ingest --catalog default --namespace myproject.images data/a.zarr data/b.zarr
+iceberg-bioimage export-cytomining --warehouse-root warehouse-root data/experiment.zarr
+iceberg-bioimage validate-contract data/profiles.parquet
+iceberg-bioimage join-profiles data/experiment.zarr data/profiles.parquet --output joined.parquet
 ```
 
-## Catalog-backed query workflow
+---
 
-If you already published canonical metadata tables, you can read them from a
-catalog and join them to analysis outputs directly:
+## S3 and remote URIs
+
+Zarr stores on S3 work with no extra configuration (via `fsspec`). OME-TIFF on S3 requires the `s3` extra:
+
+```bash
+pip install 'iceberg-bioimage[s3]'
+```
 
 ```python
-import pyarrow as pa
+table = scan_as_arrow_table("s3://my-bucket/plates/experiment.ome.tiff")
+register_directory("s3://my-bucket/plates/", catalog, "myproject.images")
+```
 
-from iceberg_bioimage import join_catalog_image_assets_with_profiles
+---
 
-profiles = pa.table(
-    {
-        "dataset_id": ["ds-1"],
-        "image_id": ["img-1"],
-        "cell_count": [42],
-    }
-)
+## Namespace layout
 
-joined = join_catalog_image_assets_with_profiles(
-    "default",
-    "bioimage.cytotable",
-    profiles,
-    chunk_index_table="chunk_index",
+A typical experiment in the catalog looks like:
+
+```
+myproject.images   → image_assets table  (one row per image file)
+                   → chunk_index table   (optional; Zarr chunked arrays only)
+myproject.profiles → profiles table      (pycytominer measurements)
+```
+
+---
+
+## OME-Arrow integration
+
+For Arrow-native tabular image payloads (requires `ome-arrow >= 0.0.10`):
+
+```python
+from iceberg_bioimage import (
+    create_ome_arrow_from_tiff,
+    create_ome_arrow_from_zarr,
+    open_ome_arrow_dataset,
+    write_ome_arrow_dataset,
 )
 ```
 
-## Documentation
+Install with `pip install 'iceberg-bioimage[ome-arrow]'`.
 
-- `docs/src/getting-started.md` for first-time setup
-- `docs/src/catalog-setup.md` for catalog configuration
-- `docs/src/cytomining.md` for warehouse export workflows
-- `docs/src/warehouse-spec.md` for the warehouse interoperability specification
-- `docs/src/workflow.md` for CLI-driven end-to-end examples
+---
+
+## DuckDB helpers
+
+```python
+from iceberg_bioimage import join_image_assets_with_profiles, query_metadata_table
+
+joined = join_image_assets_with_profiles(image_assets_table, profiles_table)
+filtered = query_metadata_table(joined, filters=[("cell_count", ">", 10)])
+```
+
+Install with `pip install 'iceberg-bioimage[duckdb]'`.
+
+---
 
 ## Troubleshooting
 
-- `DuckDB helpers require the optional duckdb dependency group`:
-  install with `pip install 'iceberg-bioimage[duckdb]'` or `uv sync --group duckdb`.
-- `Profiles do not satisfy the microscopy join contract`:
-  run `iceberg-bioimage validate-contract ...` and pass
-  `--profile-dataset-id` when `dataset_id` is missing but implied.
-- `Missing table: ...` for catalog-backed paths:
-  verify catalog configuration, namespace, and table names.
+| Problem | Fix |
+|---|---|
+| `DuckDB helpers require the optional duckdb dependency` | `pip install 'iceberg-bioimage[duckdb]'` |
+| `fsspec is required to open remote TIFF URIs` | `pip install 'iceberg-bioimage[s3]'` |
+| Profile fails join contract (`missing dataset_id`) | Pass `profile_dataset_id=` to join helpers, or check `validate_microscopy_profile_table()` for alias suggestions |
+| `Missing table: ...` for catalog-backed paths | Check catalog config, namespace spelling, and table names |
 
-## Architecture note
+---
 
-The package focuses on metadata scanning, publishing, Cytomining warehouse
-export, validation, and joins. OME-Arrow remains the place for Arrow-native
-image payload handling and lazy image access.
+## Documentation
+
+- `docs/src/getting-started.md` — first-time setup
+- `docs/src/catalog-setup.md` — catalog configuration
+- `docs/src/cytomining.md` — warehouse export workflows
+- `docs/src/warehouse-spec.md` — warehouse interoperability specification
+- `examples/quickstart.py` — minimal scan, publish, validation
+- `examples/catalog_duckdb.py` — catalog-backed query workflow
+- `examples/synthetic_workflow.py` — catalog-free local workflow

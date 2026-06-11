@@ -36,16 +36,22 @@ MICROSCOPY_PROFILE_COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
     "plate_id": (
         "Metadata_Plate",
         "Image_Metadata_Plate",
+        "Image_Metadata_Plate_x",
+        "Image_Metadata_Plate_y",
         "Metadata_plate",
     ),
     "well_id": (
         "Metadata_Well",
         "Image_Metadata_Well",
+        "Image_Metadata_Well_x",
+        "Image_Metadata_Well_y",
         "Metadata_well",
     ),
     "site_id": (
         "Metadata_Site",
         "Image_Metadata_Site",
+        "Image_Metadata_Site_x",
+        "Image_Metadata_Site_y",
         "Metadata_SiteNumber",
         "Metadata_Field",
         "Metadata_FOV",

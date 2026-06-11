@@ -14,8 +14,11 @@ from iceberg_bioimage.models.scan_result import ImageAsset, ScanResult
 from iceberg_bioimage.publishing.image_assets import (
     SupportsCatalog,
     _dataset_id,
+    _dataset_id_filter,
     _fallback_image_id,
     _load_or_create_table,
+    _load_table_with_namespace_fallback,
+    _resolve_catalog,
 )
 from iceberg_bioimage.validation.contracts import raise_for_invalid_scan_result
 
@@ -41,6 +44,43 @@ def publish_chunk_index(
 
     table.append(pa.Table.from_pylist(rows))
     return len(rows)
+
+
+def delete_dataset_chunk_index(
+    catalog: str | SupportsCatalog,
+    namespace: str | Iterable[str],
+    table_name: str,
+    dataset_id: str,
+) -> None:
+    """Delete all chunk_index rows for a given dataset_id.
+
+    If the table does not yet exist this is a no-op.  If the table exists but
+    does not support row-level deletes a :exc:`RuntimeError` is raised.
+    """
+
+    try:
+        from pyiceberg.exceptions import NoSuchTableError
+    except ImportError as exc:  # pragma: no cover
+        raise RuntimeError("PyIceberg is required.") from exc
+
+    resolved = _resolve_catalog(catalog)
+    try:
+        table = _load_table_with_namespace_fallback(
+            resolved,
+            namespace,
+            table_name,
+            operation="deleting",
+        )
+    except NoSuchTableError:
+        return
+
+    if not hasattr(table, "delete"):
+        raise RuntimeError(
+            f"Table {table_name!r} does not support row-level deletion. "
+            "Ensure your Iceberg catalog and table format support delete operations "
+            "(copy-on-write or merge-on-read)."
+        )
+    table.delete(_dataset_id_filter(dataset_id))
 
 
 def scan_result_to_chunk_rows(scan_result: ScanResult) -> list[dict[str, object]]:

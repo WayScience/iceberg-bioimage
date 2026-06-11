@@ -43,7 +43,10 @@ optional-dependencies.duckdb = [
   "duckdb>=1.2.2",
 ]
 optional-dependencies.ome-arrow = [
-  "ome-arrow>=0.0.4",
+  "ome-arrow>=0.0.10",
+]
+optional-dependencies.s3 = [
+  "s3fs>=2024.2.0",
 ]
 urls.Documentation = "https://d33bs.github.io/iceberg-bioimage/"
 urls.Homepage = "https://github.com/d33bs/iceberg-bioimage"
@@ -53,6 +56,14 @@ scripts.iceberg-bioimage = "iceberg_bioimage.cli:main"
 
 [dependency-groups]
 dev = [
+<<<<<<< Updated upstream
+=======
+  "linkml>=1.9.4",
+  "linkml-runtime>=1.9.5",
+  "networkx>=3.3",
+  "ome-iris>=0.0.5",
+  "pillow>=11.2.1",
+>>>>>>> Stashed changes
   "poethepoet>=0.44",
   "pre-commit>=4.2",
   "pytest>=8.3.5",
@@ -74,7 +85,7 @@ notebooks = [
   "jupytext>=1.17.1",
 ]
 ome-arrow = [
-  "ome-arrow>=0.0.4",
+  "ome-arrow>=0.0.10",
 ]
 
 [tool.setuptools]
@@ -116,7 +127,11 @@ lint.select = [
 ]
 # Ignore `F401` (unused imports) for `__init__.py` file
 lint.per-file-ignores."__init__.py" = [ "F401" ]
+lint.per-file-ignores."tests/*.py" = [ "PLC0415" ]
+lint.per-file-ignores."tests/conftest.py" = [ "PLC0415" ]
 lint.per-file-ignores."src/iceberg_bioimage/cli.py" = [ "PLR0915" ]
+lint.per-file-ignores."src/iceberg_bioimage/api.py" = [ "PLR0913" ]
+lint.per-file-ignores."src/iceberg_bioimage/adapters/ome_tiff.py" = [ "PLC0415" ]
 lint.per-file-ignores."src/iceberg_bioimage/integrations/catalog.py" = [ "PLR0913" ]
 lint.per-file-ignores."src/iceberg_bioimage/integrations/cytomining.py" = [ "PLC0415" ]
 lint.per-file-ignores."src/iceberg_bioimage/integrations/duckdb.py" = [ "PLC0415" ]
@@ -124,8 +139,12 @@ lint.per-file-ignores."src/iceberg_bioimage/publishing/chunk_index.py" = [ "PLC0
 lint.per-file-ignores."src/iceberg_bioimage/publishing/image_assets.py" = [ "PLC0415" ]
 lint.per-file-ignores."src/iceberg_bioimage/validation/contracts.py" = [ "PLC0415" ]
 
-[tool.pytest]
-ini_options.pythonpath = [ ".", "src" ]
+[tool.pytest.ini_options]
+pythonpath = [ ".", "src" ]
+markers = [
+  "network: tests that download data from the internet (deselect with '-m \"not network\"')",
+]
+addopts = "-m 'not network'"
 
 [tool.uv-dynamic-versioning]
 vcs = "git"
