@@ -119,9 +119,7 @@ def test_create_ome_arrow_from_tiff_delegates_to_from_tiff() -> None:
     fake_oa = MagicMock()
     with patch.dict("sys.modules", {"ome_arrow": fake_oa}):
         create_ome_arrow_from_tiff("image.ome.tiff", clamp_to_uint16=False)
-    fake_oa.from_tiff.assert_called_once_with(
-        "image.ome.tiff", clamp_to_uint16=False
-    )
+    fake_oa.from_tiff.assert_called_once_with("image.ome.tiff", clamp_to_uint16=False)
 
 
 def test_open_ome_arrow_dataset_delegates_to_ome_arrow_dataset_class() -> None:

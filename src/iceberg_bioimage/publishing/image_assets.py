@@ -179,9 +179,7 @@ def _dataset_id_filter(dataset_id: str) -> object:
     try:
         from pyiceberg.expressions import EqualTo
     except ImportError as exc:  # pragma: no cover
-        raise RuntimeError(
-            "PyIceberg is required for delete operations."
-        ) from exc
+        raise RuntimeError("PyIceberg is required for delete operations.") from exc
     return EqualTo("dataset_id", dataset_id)
 
 

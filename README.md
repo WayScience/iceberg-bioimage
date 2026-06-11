@@ -24,7 +24,7 @@ pip install 'iceberg-bioimage[ome-arrow]'  # OME-Arrow image payloads (≥0.0.10
 pip install 'iceberg-bioimage[s3]'         # S3 / remote URI support
 ```
 
----
+______________________________________________________________________
 
 ## Usage
 
@@ -173,7 +173,7 @@ iceberg-bioimage validate-contract data/profiles.parquet
 iceberg-bioimage join-profiles data/experiment.zarr data/profiles.parquet --output joined.parquet
 ```
 
----
+______________________________________________________________________
 
 ## S3 and remote URIs
 
@@ -188,7 +188,7 @@ table = scan_as_arrow_table("s3://my-bucket/plates/experiment.ome.tiff")
 register_directory("s3://my-bucket/plates/", catalog, "myproject.images")
 ```
 
----
+______________________________________________________________________
 
 ## Namespace layout
 
@@ -200,7 +200,7 @@ myproject.images   → image_assets table  (one row per image file)
 myproject.profiles → profiles table      (pycytominer measurements)
 ```
 
----
+______________________________________________________________________
 
 ## OME-Arrow integration
 
@@ -217,7 +217,7 @@ from iceberg_bioimage import (
 
 Install with `pip install 'iceberg-bioimage[ome-arrow]'`.
 
----
+______________________________________________________________________
 
 ## DuckDB helpers
 
@@ -230,18 +230,18 @@ filtered = query_metadata_table(joined, filters=[("cell_count", ">", 10)])
 
 Install with `pip install 'iceberg-bioimage[duckdb]'`.
 
----
+______________________________________________________________________
 
 ## Troubleshooting
 
-| Problem | Fix |
-|---|---|
-| `DuckDB helpers require the optional duckdb dependency` | `pip install 'iceberg-bioimage[duckdb]'` |
-| `fsspec is required to open remote TIFF URIs` | `pip install 'iceberg-bioimage[s3]'` |
-| Profile fails join contract (`missing dataset_id`) | Pass `profile_dataset_id=` to join helpers, or check `validate_microscopy_profile_table()` for alias suggestions |
-| `Missing table: ...` for catalog-backed paths | Check catalog config, namespace spelling, and table names |
+| Problem                                                 | Fix                                                                                                              |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `DuckDB helpers require the optional duckdb dependency` | `pip install 'iceberg-bioimage[duckdb]'`                                                                         |
+| `fsspec is required to open remote TIFF URIs`           | `pip install 'iceberg-bioimage[s3]'`                                                                             |
+| Profile fails join contract (`missing dataset_id`)      | Pass `profile_dataset_id=` to join helpers, or check `validate_microscopy_profile_table()` for alias suggestions |
+| `Missing table: ...` for catalog-backed paths           | Check catalog config, namespace spelling, and table names                                                        |
 
----
+______________________________________________________________________
 
 ## Documentation
 

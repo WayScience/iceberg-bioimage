@@ -53,19 +53,15 @@ def test_register_store_replace_deletes_before_append(
         delete_calls.append((table_name, dataset_id))
 
     monkeypatch.setattr("iceberg_bioimage.api.scan_store", _fake_scan)
-    monkeypatch.setattr(
-        "iceberg_bioimage.api.delete_dataset_image_assets", fake_delete
-    )
-    monkeypatch.setattr(
-        "iceberg_bioimage.api.delete_dataset_chunk_index", fake_delete
-    )
+    monkeypatch.setattr("iceberg_bioimage.api.delete_dataset_image_assets", fake_delete)
+    monkeypatch.setattr("iceberg_bioimage.api.delete_dataset_chunk_index", fake_delete)
     monkeypatch.setattr(
         "iceberg_bioimage.api.publish_image_assets",
-        lambda *a, **kw: 1,
+        lambda *a, **_: 1,
     )
     monkeypatch.setattr(
         "iceberg_bioimage.api.publish_chunk_index",
-        lambda *a, **kw: 0,
+        lambda *a, **_: 0,
     )
 
     register_store("/tmp/plate.ome.zarr", "default", "bio", replace=True)
@@ -82,19 +78,19 @@ def test_register_store_replace_false_does_not_delete(
     monkeypatch.setattr("iceberg_bioimage.api.scan_store", _fake_scan)
     monkeypatch.setattr(
         "iceberg_bioimage.api.delete_dataset_image_assets",
-        lambda *a, **kw: delete_calls.append(a),
+        lambda *a, **_: delete_calls.append(a),
     )
     monkeypatch.setattr(
         "iceberg_bioimage.api.delete_dataset_chunk_index",
-        lambda *a, **kw: delete_calls.append(a),
+        lambda *a, **_: delete_calls.append(a),
     )
     monkeypatch.setattr(
         "iceberg_bioimage.api.publish_image_assets",
-        lambda *a, **kw: 1,
+        lambda *a, **_: 1,
     )
     monkeypatch.setattr(
         "iceberg_bioimage.api.publish_chunk_index",
-        lambda *a, **kw: 0,
+        lambda *a, **_: 0,
     )
 
     register_store("/tmp/plate.ome.zarr", "default", "bio", replace=False)
@@ -110,15 +106,15 @@ def test_register_store_replace_skips_chunk_delete_when_no_chunk_table(
     monkeypatch.setattr("iceberg_bioimage.api.scan_store", _fake_scan)
     monkeypatch.setattr(
         "iceberg_bioimage.api.delete_dataset_image_assets",
-        lambda *a, **kw: None,
+        lambda *a, **_: None,
     )
     monkeypatch.setattr(
         "iceberg_bioimage.api.delete_dataset_chunk_index",
-        lambda *a, **kw: chunk_delete_calls.append(a),
+        lambda *a, **_: chunk_delete_calls.append(a),
     )
     monkeypatch.setattr(
         "iceberg_bioimage.api.publish_image_assets",
-        lambda *a, **kw: 1,
+        lambda *a, **_: 1,
     )
 
     register_store(
@@ -189,12 +185,8 @@ def test_deregister_store_deletes_both_tables(
     ) -> None:
         delete_calls.append((table_name, dataset_id))
 
-    monkeypatch.setattr(
-        "iceberg_bioimage.api.delete_dataset_image_assets", fake_delete
-    )
-    monkeypatch.setattr(
-        "iceberg_bioimage.api.delete_dataset_chunk_index", fake_delete
-    )
+    monkeypatch.setattr("iceberg_bioimage.api.delete_dataset_image_assets", fake_delete)
+    monkeypatch.setattr("iceberg_bioimage.api.delete_dataset_chunk_index", fake_delete)
 
     deregister_store("/tmp/plate.ome.zarr", "default", "bio")
 
@@ -209,11 +201,11 @@ def test_deregister_store_skips_chunk_table_when_none(
 
     monkeypatch.setattr(
         "iceberg_bioimage.api.delete_dataset_image_assets",
-        lambda *a, **kw: None,
+        lambda *a, **_: None,
     )
     monkeypatch.setattr(
         "iceberg_bioimage.api.delete_dataset_chunk_index",
-        lambda *a, **kw: chunk_calls.append(a),
+        lambda *a, **_: chunk_calls.append(a),
     )
 
     deregister_store(
@@ -260,9 +252,7 @@ def test_delete_dataset_image_assets_calls_table_delete() -> None:
     from iceberg_bioimage.publishing.image_assets import delete_dataset_image_assets
 
     table = FakeTable()
-    catalog = FakeCatalog(
-        tables={("bio", "cytotable", "image_assets"): table}
-    )
+    catalog = FakeCatalog(tables={("bio", "cytotable", "image_assets"): table})
 
     delete_dataset_image_assets(catalog, ("bio",), "image_assets", "plate")
 
@@ -282,9 +272,7 @@ def test_delete_dataset_chunk_index_calls_table_delete() -> None:
     from iceberg_bioimage.publishing.chunk_index import delete_dataset_chunk_index
 
     table = FakeTable()
-    catalog = FakeCatalog(
-        tables={("bio", "cytotable", "chunk_index"): table}
-    )
+    catalog = FakeCatalog(tables={("bio", "cytotable", "chunk_index"): table})
 
     delete_dataset_chunk_index(catalog, ("bio",), "chunk_index", "plate")
 
@@ -317,9 +305,7 @@ def test_register_directory_discovers_matching_stores(
         return 1
 
     monkeypatch.setattr("iceberg_bioimage.api.publish_image_assets", fake_publish)
-    monkeypatch.setattr(
-        "iceberg_bioimage.api.publish_chunk_index", lambda *a, **kw: 0
-    )
+    monkeypatch.setattr("iceberg_bioimage.api.publish_chunk_index", lambda *a, **_: 0)
 
     result = register_directory(str(tmp_path), "default", "bio")
 
@@ -331,12 +317,8 @@ def test_register_directory_empty_dir_returns_zero_datasets(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(
-        "iceberg_bioimage.api.publish_image_assets", lambda *a, **kw: 0
-    )
-    monkeypatch.setattr(
-        "iceberg_bioimage.api.publish_chunk_index", lambda *a, **kw: 0
-    )
+    monkeypatch.setattr("iceberg_bioimage.api.publish_image_assets", lambda *a, **_: 0)
+    monkeypatch.setattr("iceberg_bioimage.api.publish_chunk_index", lambda *a, **_: 0)
 
     result = register_directory(str(tmp_path), "default", "bio")
 
@@ -364,13 +346,9 @@ def test_register_directory_custom_glob_finds_tiff(
         return 1
 
     monkeypatch.setattr("iceberg_bioimage.api.publish_image_assets", fake_publish)
-    monkeypatch.setattr(
-        "iceberg_bioimage.api.publish_chunk_index", lambda *a, **kw: 0
-    )
+    monkeypatch.setattr("iceberg_bioimage.api.publish_chunk_index", lambda *a, **_: 0)
 
-    result = register_directory(
-        str(tmp_path), "default", "bio", glob="**/*.ome.tiff"
-    )
+    result = register_directory(str(tmp_path), "default", "bio", glob="**/*.ome.tiff")
 
     assert result.dataset_count == 1
     assert registered[0].endswith("img.ome.tiff")
@@ -381,9 +359,7 @@ def test_register_directory_replace_calls_delete_per_dataset(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     (tmp_path / "plate.ome.zarr").mkdir()
-    zarr.open(
-        str(tmp_path / "plate.ome.zarr"), mode="w", shape=(2, 2), dtype="uint8"
-    )
+    zarr.open(str(tmp_path / "plate.ome.zarr"), mode="w", shape=(2, 2), dtype="uint8")
 
     delete_calls: list[str] = []
 
@@ -395,18 +371,10 @@ def test_register_directory_replace_calls_delete_per_dataset(
     ) -> None:
         delete_calls.append(dataset_id)
 
-    monkeypatch.setattr(
-        "iceberg_bioimage.api.delete_dataset_image_assets", fake_delete
-    )
-    monkeypatch.setattr(
-        "iceberg_bioimage.api.delete_dataset_chunk_index", fake_delete
-    )
-    monkeypatch.setattr(
-        "iceberg_bioimage.api.publish_image_assets", lambda *a, **kw: 1
-    )
-    monkeypatch.setattr(
-        "iceberg_bioimage.api.publish_chunk_index", lambda *a, **kw: 0
-    )
+    monkeypatch.setattr("iceberg_bioimage.api.delete_dataset_image_assets", fake_delete)
+    monkeypatch.setattr("iceberg_bioimage.api.delete_dataset_chunk_index", fake_delete)
+    monkeypatch.setattr("iceberg_bioimage.api.publish_image_assets", lambda *a, **_: 1)
+    monkeypatch.setattr("iceberg_bioimage.api.publish_chunk_index", lambda *a, **_: 0)
 
     register_directory(str(tmp_path), "default", "bio", replace=True)
 
@@ -417,12 +385,8 @@ def test_register_directory_result_carries_namespace(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(
-        "iceberg_bioimage.api.publish_image_assets", lambda *a, **kw: 0
-    )
-    monkeypatch.setattr(
-        "iceberg_bioimage.api.publish_chunk_index", lambda *a, **kw: 0
-    )
+    monkeypatch.setattr("iceberg_bioimage.api.publish_image_assets", lambda *a, **_: 0)
+    monkeypatch.setattr("iceberg_bioimage.api.publish_chunk_index", lambda *a, **_: 0)
 
     result = register_directory(str(tmp_path), "default", "bioimage.cytotable")
 
