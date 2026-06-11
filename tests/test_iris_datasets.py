@@ -164,6 +164,7 @@ def test_iris_nf1_scan_as_arrow_table(iris_nf1: Path) -> None:
     """scan_as_arrow_table on nf1 images returns valid Arrow tables."""
 
     tiff_files = sorted((iris_nf1 / "images").glob("*.tif"))
+    assert tiff_files, "No .tif files found in iris_nf1/images"
     tables = [scan_as_arrow_table(str(p)) for p in tiff_files]
 
     assert all(isinstance(t, pa.Table) for t in tables)
@@ -194,6 +195,7 @@ def test_iris_nf1_dataset_ids_are_unique(iris_nf1: Path) -> None:
     """Each nf1 TIFF produces a distinct dataset_id in the Arrow table."""
 
     tiff_files = sorted((iris_nf1 / "images").glob("*.tif"))
+    assert tiff_files, "No .tif files found in iris_nf1/images"
     dataset_ids = [
         scan_as_arrow_table(str(p))["dataset_id"][0].as_py() for p in tiff_files
     ]
@@ -205,8 +207,7 @@ def test_iris_nf1_dataset_ids_are_unique(iris_nf1: Path) -> None:
 def test_iris_nf1_profiles_parquet_is_present(iris_nf1: Path) -> None:
     """The nf1 dataset includes a Parquet profile file."""
 
-    parquet_files = list(iris_nf1.glob("*.parquet"))
-    assert parquet_files, "Expected profiles.parquet in nf1 dataset"
+    assert (iris_nf1 / "profiles.parquet").exists(), "profiles.parquet missing"
 
 
 @pytest.mark.network

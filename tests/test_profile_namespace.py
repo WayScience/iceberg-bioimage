@@ -218,3 +218,4 @@ def test_iris_nf1_profiles_alias_resolves_well_and_site(iris_nf1: Path) -> None:
     resolved = resolve_microscopy_profile_columns(columns)
     assert resolved["well_id"] is not None, "well_id alias should resolve"
     assert resolved["plate_id"] is not None, "plate_id alias should resolve"
+    assert resolved["site_id"] is not None, "site_id alias should resolve"

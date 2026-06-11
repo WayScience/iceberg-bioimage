@@ -78,9 +78,10 @@ def register_store(
     """
 
     scan_result = scan_store(uri)
+    dataset_id = _dataset_id(scan_result.source_uri)
     if replace:
         _deregister_by_dataset_id(
-            _dataset_id(scan_result.source_uri),
+            dataset_id,
             catalog,
             namespace,
             image_assets_table,

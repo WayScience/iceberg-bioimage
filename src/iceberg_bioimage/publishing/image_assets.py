@@ -75,12 +75,19 @@ def publish_profile_table(
 
     def _build_profile_schema() -> object:
         try:
-            from pyiceberg.io.pyarrow import _pyarrow_to_schema_without_ids
+            from pyiceberg.io.pyarrow import pyarrow_to_schema
+            from pyiceberg.table.name_mapping import MappedField, NameMapping
         except ImportError as exc:  # pragma: no cover
             raise RuntimeError(
                 "PyIceberg is required for publishing. Install `pyiceberg` first."
             ) from exc
-        return _pyarrow_to_schema_without_ids(arrow_table.schema)
+        name_mapping = NameMapping(
+            [
+                MappedField(field_id=i + 1, names=[field.name])
+                for i, field in enumerate(arrow_table.schema)
+            ]
+        )
+        return pyarrow_to_schema(arrow_table.schema, name_mapping=name_mapping)
 
     table = _load_or_create_table(
         catalog,
