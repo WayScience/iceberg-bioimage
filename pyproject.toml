@@ -56,17 +56,16 @@ scripts.iceberg-bioimage = "iceberg_bioimage.cli:main"
 
 [dependency-groups]
 dev = [
-<<<<<<< Updated upstream
-=======
   "linkml>=1.9.4",
   "linkml-runtime>=1.9.5",
   "networkx>=3.3",
   "ome-iris>=0.0.5",
   "pillow>=11.2.1",
->>>>>>> Stashed changes
   "poethepoet>=0.44",
   "pre-commit>=4.2",
+  "pydot>=3.0.1",
   "pytest>=8.3.5",
+  "pyyaml>=6.0.2",
   "ruff>=0.11.11",
 ]
 docs = [
