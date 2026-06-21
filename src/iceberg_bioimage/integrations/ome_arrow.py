@@ -25,6 +25,13 @@ def create_ome_arrow_from_zarr(zarr_path: str, **kwargs: Any) -> object:  # noqa
 
     Requires ``bioio`` and an OME-Zarr reader backend in the environment.
     Any keyword arguments are forwarded to ``ome_arrow.from_ome_zarr``.
+
+    Conversion cost: ``ome_arrow.from_ome_zarr`` eagerly reads every plane of
+    the array into memory and re-encodes it into Arrow; there is no lazy or
+    streaming path. Expect cost roughly proportional to reading the full
+    pixel array once, plus Arrow encoding overhead. For repeated reads of the
+    same data, convert once and reuse :func:`open_ome_arrow_dataset` instead
+    of calling this function each time.
     """
 
     ome_arrow = _require_ome_arrow()
@@ -36,6 +43,9 @@ def create_ome_arrow_from_tiff(tiff_path: str, **kwargs: Any) -> object:  # noqa
 
     Requires ``bioio`` in the environment.
     Any keyword arguments are forwarded to ``ome_arrow.from_tiff``.
+
+    Conversion cost: same as :func:`create_ome_arrow_from_zarr` — this reads
+    and re-encodes the full pixel array eagerly, with no lazy path.
     """
 
     ome_arrow = _require_ome_arrow()

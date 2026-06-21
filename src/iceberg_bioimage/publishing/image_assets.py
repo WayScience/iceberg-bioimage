@@ -70,17 +70,29 @@ def publish_profile_table(
     The schema is derived from the Arrow table, so any profile columns are
     preserved.  The conventional namespace is ``<experiment>.profiles``.
 
-    Returns the number of rows published.
+    Parameters
+    ----------
+    arrow_table:
+        Profile rows to publish (for example, a pycytominer output table).
+    catalog:
+        A PyIceberg catalog instance, or the name of a catalog configured in
+        ``.pyiceberg.yaml``/environment variables.
+    namespace:
+        Target namespace, e.g. ``"experiment.profiles"`` or
+        ``["experiment", "profiles"]``.
+    table_name:
+        Name of the Iceberg table to create or append to.
+
+    Returns
+    -------
+    int
+        The number of rows published.
     """
 
     def _build_profile_schema() -> object:
-        try:
-            from pyiceberg.io.pyarrow import pyarrow_to_schema
-            from pyiceberg.table.name_mapping import MappedField, NameMapping
-        except ImportError as exc:  # pragma: no cover
-            raise RuntimeError(
-                "PyIceberg is required for publishing. Install `pyiceberg` first."
-            ) from exc
+        from pyiceberg.io.pyarrow import pyarrow_to_schema
+        from pyiceberg.table.name_mapping import MappedField, NameMapping
+
         name_mapping = NameMapping(
             [
                 MappedField(field_id=i + 1, names=[field.name])
@@ -158,8 +170,9 @@ def delete_dataset_image_assets(
 ) -> None:
     """Delete all image_assets rows for a given dataset_id.
 
-    If the table does not yet exist this is a no-op.  If the table exists but
-    does not support row-level deletes a :exc:`RuntimeError` is raised.
+    If the table does not yet exist, nothing happens and no error is raised.
+    If the table exists but does not support row-level deletes, a
+    :exc:`RuntimeError` is raised.
     """
 
     resolved = _resolve_catalog(catalog)
@@ -183,10 +196,8 @@ def delete_dataset_image_assets(
 
 
 def _dataset_id_filter(dataset_id: str) -> object:
-    try:
-        from pyiceberg.expressions import EqualTo
-    except ImportError as exc:  # pragma: no cover
-        raise RuntimeError("PyIceberg is required for delete operations.") from exc
+    from pyiceberg.expressions import EqualTo
+
     return EqualTo("dataset_id", dataset_id)
 
 
@@ -231,25 +242,14 @@ def _resolve_catalog(catalog_or_name: str | SupportsCatalog) -> SupportsCatalog:
     if not isinstance(catalog_or_name, str):
         return catalog_or_name
 
-    try:
-        from pyiceberg.catalog import load_catalog
-    except ImportError as exc:  # pragma: no cover - guarded by dependency declaration
-        raise RuntimeError(
-            "PyIceberg is required to resolve a catalog by name. "
-            "Install `pyiceberg` first."
-        ) from exc
+    from pyiceberg.catalog import load_catalog
 
     return load_catalog(catalog_or_name)
 
 
 def _build_image_assets_schema() -> object:
-    try:
-        from pyiceberg.schema import Schema
-        from pyiceberg.types import NestedField, StringType
-    except ImportError as exc:  # pragma: no cover - guarded by dependency declaration
-        raise RuntimeError(
-            "PyIceberg is required for publishing. Install `pyiceberg` first."
-        ) from exc
+    from pyiceberg.schema import Schema
+    from pyiceberg.types import NestedField, StringType
 
     # Field IDs are intentionally non-sequential in _build_image_assets_schema.
     # These stable NestedField identifiers keep compatibility with prior or

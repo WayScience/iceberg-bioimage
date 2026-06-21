@@ -54,14 +54,12 @@ def delete_dataset_chunk_index(
 ) -> None:
     """Delete all chunk_index rows for a given dataset_id.
 
-    If the table does not yet exist this is a no-op.  If the table exists but
-    does not support row-level deletes a :exc:`RuntimeError` is raised.
+    If the table does not yet exist, nothing happens and no error is raised.
+    If the table exists but does not support row-level deletes, a
+    :exc:`RuntimeError` is raised.
     """
 
-    try:
-        from pyiceberg.exceptions import NoSuchTableError
-    except ImportError as exc:  # pragma: no cover
-        raise RuntimeError("PyIceberg is required.") from exc
+    from pyiceberg.exceptions import NoSuchTableError
 
     resolved = _resolve_catalog(catalog)
     try:
@@ -154,13 +152,8 @@ def _chunk_key(chunk_coords: tuple[int, ...]) -> str:
 
 
 def _build_chunk_index_schema() -> object:
-    try:
-        from pyiceberg.schema import Schema
-        from pyiceberg.types import LongType, NestedField, StringType
-    except ImportError as exc:  # pragma: no cover - guarded by dependency declaration
-        raise RuntimeError(
-            "PyIceberg is required for publishing. Install `pyiceberg` first."
-        ) from exc
+    from pyiceberg.schema import Schema
+    from pyiceberg.types import LongType, NestedField, StringType
 
     return Schema(
         NestedField(

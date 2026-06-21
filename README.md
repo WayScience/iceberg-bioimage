@@ -8,7 +8,20 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 
-`iceberg-bioimage` scans OME-TIFF and OME-Zarr images into queryable Arrow tables and optionally catalogs them with Apache Iceberg.
+`iceberg-bioimage` reads the metadata of OME-TIFF and OME-Zarr image files
+(shape, dtype, axes, chunking — not pixel data) into Arrow tables that can be
+queried directly or cataloged in Apache Iceberg.
+
+## Two terms used throughout this README
+
+- **scan** — read an image's metadata (shape, dtype, axes, chunk layout) without
+  loading pixel data. Fast and constant-time regardless of image size.
+- **store** — a single image dataset this package can scan: one Zarr directory,
+  or one OME-TIFF file, on local disk or remote (S3) storage.
+
+> **Note on "registration":** in this README, "register"/"registration" means
+> *recording an image's metadata as a row in an Iceberg table*, not the
+> bioimage-analysis sense of spatially aligning two images.
 
 ## Install
 
@@ -20,8 +33,8 @@ Optional extras:
 
 ```bash
 pip install 'iceberg-bioimage[duckdb]'     # DuckDB query helpers
-pip install 'iceberg-bioimage[ome-arrow]'  # OME-Arrow image payloads (≥0.0.10)
-pip install 'iceberg-bioimage[s3]'         # S3 / remote URI support
+pip install 'iceberg-bioimage[ome-arrow]'  # OME-Arrow image pixel-data access (≥0.0.10)
+pip install 'iceberg-bioimage[s3]'         # S3 / remote URI support for OME-TIFF
 ```
 
 ______________________________________________________________________
@@ -30,7 +43,10 @@ ______________________________________________________________________
 
 ### 1 — Virtual datasets (no catalog required)
 
-Scan any image directly into an Arrow table. No Iceberg catalog, no setup.
+Scan any image directly into an Arrow table.
+No Iceberg catalog, no setup.
+This is the fastest path to start exploring a dataset: only the file's
+metadata is read, so it works the same whether the image is 1 MB or 100 GB.
 
 ```python
 from iceberg_bioimage import scan_as_arrow_table
@@ -43,7 +59,8 @@ print(table.schema)
 # dataset_id, image_id, uri, format_family, shape_json, dtype, ...
 ```
 
-The result is a standard `pyarrow.Table` — query it with DuckDB, Pandas, or pass it directly to downstream tools.
+The result is a standard `pyarrow.Table` — query it with DuckDB, Pandas, or
+pass it directly to downstream tools.
 
 ```python
 import duckdb
@@ -51,9 +68,11 @@ import duckdb
 duckdb.query("SELECT dataset_id, shape_json FROM table WHERE dtype = 'uint16'")
 ```
 
-### 2 — Catalog registration
+### 2 — Cataloging images in Iceberg
 
-Register images into an Apache Iceberg catalog so they can be queried across experiments.
+Once you have many datasets and want to query across them, write their
+metadata into a persistent Apache Iceberg catalog instead of re-scanning files
+each time.
 
 ```python
 from iceberg_bioimage import register_store
@@ -61,7 +80,7 @@ from iceberg_bioimage import register_store
 register_store("data/experiment.zarr", "default", "myproject.images")
 ```
 
-Register a whole directory at once:
+Register a whole directory of stores at once:
 
 ```python
 from iceberg_bioimage import register_directory
@@ -74,13 +93,15 @@ register_directory(
 )
 ```
 
-Replace an existing registration (upsert):
+Use `replace=True` to re-register a store that already exists in the catalog —
+for example, after re-running a pipeline that regenerated the source image and
+you want the catalog row updated instead of duplicated:
 
 ```python
 register_store("data/experiment.zarr", "default", "myproject.images", replace=True)
 ```
 
-Remove a dataset from the catalog:
+Remove a dataset's rows from the catalog entirely:
 
 ```python
 from iceberg_bioimage import deregister_store
@@ -88,15 +109,22 @@ from iceberg_bioimage import deregister_store
 deregister_store("data/experiment.zarr", "default", "myproject.images")
 ```
 
-Skip chunk indexing (recommended for TIFF-only datasets):
+Pass `chunk_index_table=None` to skip writing the optional chunk-index table.
+Recommended for TIFF-only datasets, since TIFF isn't stored as Zarr-style
+chunks — the table would always end up empty for TIFF data, so skipping it
+avoids an unused table and unnecessary writes:
 
 ```python
 register_store("data/experiment.ome.tiff", "default", "myproject.images", chunk_index_table=None)
 ```
 
+→ details: [`docs/src/catalog-setup.md`](docs/src/catalog-setup.md)
+
 ### 3 — Profile tables
 
-Publish a CellProfiler / pycytominer profile Parquet into the catalog under a `profiles` namespace. Column aliases for common pycytominer conventions (`Image_Metadata_Well`, `Metadata_Plate`, etc.) are resolved automatically.
+A "profile table" here means a CellProfiler / Pycytominer measurements file
+(cell counts, intensities, shape features, etc.), keyed by image and/or well.
+Publish one into the catalog under a `profiles` namespace:
 
 ```python
 from iceberg_bioimage import register_profile_table
@@ -108,15 +136,33 @@ register_profile_table(
 )
 ```
 
-Validate a profile table against the microscopy join contract before registering:
+Pycytominer tools name their metadata columns inconsistently across pipelines
+(`Image_Metadata_Well`, `Metadata_Plate`, `Image_Metadata_Well_x`, ...).
+"Alias resolution" means this package recognizes those common naming variants
+and maps each one to a canonical column name (`well_id`, `plate_id`, etc.) so
+joins work without you renaming columns by hand.
+
+Before registering, you can check whether a profile table has everything
+needed to join against image metadata. This package's **microscopy join
+contract** is the set of canonical columns a join needs: `dataset_id` and
+`image_id` are required, `plate_id`/`well_id`/`site_id` are recommended but
+optional.
 
 ```python
 from iceberg_bioimage import validate_microscopy_profile_table
 
 result = validate_microscopy_profile_table("data/profiles.parquet")
+
 print(result.is_valid)
-print(result.missing_required_columns)   # ['dataset_id', 'image_id'] if unresolvable
-print(result.warnings)                   # alias normalization notes
+# False if dataset_id/image_id can't be found or aliased
+
+print(result.missing_required_columns)
+# e.g. ['dataset_id', 'image_id'] — columns the join contract needs but
+# this table doesn't have, even after alias matching
+
+print(result.warnings)
+# e.g. "Microscopy join keys will require alias normalization: well_id<-Image_Metadata_Well"
+# — lists which input columns were matched to canonical names via alias resolution
 ```
 
 ### 4 — Joining images to profiles
@@ -128,7 +174,8 @@ joined = join_profiles_with_store("data/experiment.zarr", "data/profiles.parquet
 print(joined.num_rows)
 ```
 
-When `dataset_id` is absent from the profile table but all rows belong to one dataset:
+When `dataset_id` is absent from the profile table but all rows belong to one
+dataset, supply it directly instead of relying on alias resolution:
 
 ```python
 joined = join_profiles_with_store(
@@ -140,7 +187,8 @@ joined = join_profiles_with_store(
 
 ### 5 — Cytomining warehouse export
 
-Export images and profiles into a Parquet warehouse layout that `pycytominer` and CytoTable can consume directly:
+Export images and profiles into a Parquet warehouse layout that `pycytominer`
+and CytoTable can consume directly, without going through Iceberg at all:
 
 ```python
 from iceberg_bioimage import export_store_to_cytomining_warehouse
@@ -161,7 +209,13 @@ warehouse-root/
   profiles/joined_profiles/
 ```
 
+→ details: [`docs/src/cytomining.md`](docs/src/cytomining.md)
+
 ### 6 — CLI
+
+A command-line wrapper around the same functions, for use in shell scripts and
+CI pipelines where writing a Python file isn't worth it. Each subcommand
+mirrors a Python function from the sections above:
 
 ```bash
 iceberg-bioimage scan data/experiment.zarr
@@ -177,11 +231,17 @@ ______________________________________________________________________
 
 ## S3 and remote URIs
 
-Zarr stores on S3 work with no extra configuration (via `fsspec`). OME-TIFF on S3 requires the `s3` extra:
+Zarr stores on S3 work with no extra configuration (via `fsspec`).
+OME-TIFF on S3 requires the `s3` extra:
 
 ```bash
 pip install 'iceberg-bioimage[s3]'
 ```
+
+The reason for the difference: `zarr` already depends on `fsspec`, so `s3://`
+paths work immediately. `tifffile` (used for OME-TIFF) does not understand
+`fsspec` URLs on its own, so this package adds an `fsspec`-backed file opener
+behind the `s3` extra to bridge the gap.
 
 ```python
 table = scan_as_arrow_table("s3://my-bucket/plates/experiment.ome.tiff")
@@ -204,7 +264,10 @@ ______________________________________________________________________
 
 ## OME-Arrow integration
 
-For Arrow-native tabular image payloads (requires `ome-arrow >= 0.0.10`):
+Everything above deals with *metadata* — shape, dtype, file location. If you
+also need the *pixel data itself* (the "image payload") in Arrow form, for
+example to pass into an ML pipeline without re-reading the original file
+format, use the optional OME-Arrow integration (requires `ome-arrow >= 0.0.10`):
 
 ```python
 from iceberg_bioimage import (
@@ -215,11 +278,22 @@ from iceberg_bioimage import (
 )
 ```
 
+> **Conversion cost:** `create_ome_arrow_from_zarr`/`create_ome_arrow_from_tiff`
+> eagerly read every plane of the source image into memory and re-encode it as
+> Arrow — there is no lazy/streaming path. For large images, expect the
+> conversion to take roughly as long as reading the full pixel array once, plus
+> Arrow encoding overhead. Prefer `open_ome_arrow_dataset` to read an
+> already-converted OME-Arrow dataset without re-paying that cost.
+
 Install with `pip install 'iceberg-bioimage[ome-arrow]'`.
 
 ______________________________________________________________________
 
 ## DuckDB helpers
+
+Optional SQL-style filtering and joins over registered metadata tables,
+useful when you want ad-hoc queries (e.g. "all images with `cell_count > 10`")
+without writing pandas/pyarrow code by hand:
 
 ```python
 from iceberg_bioimage import join_image_assets_with_profiles, query_metadata_table
