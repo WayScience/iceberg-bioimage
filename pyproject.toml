@@ -78,14 +78,14 @@ ome-arrow = [
 ]
 
 [tool.setuptools]
-package-dir = { "" = "src" }
 packages.find.where = [ "src" ]
+package-dir = { "" = "src" }
 
 [tool.setuptools_scm]
-root = "."
+version_file = "src/iceberg_bioimage/_version.py"
 version_scheme = "no-guess-dev"
 local_scheme = "no-local-version"
-version_file = "src/iceberg_bioimage/_version.py"
+root = "."
 
 [tool.ruff]
 target-version = "py311"
@@ -124,6 +124,10 @@ lint.per-file-ignores."src/iceberg_bioimage/publishing/chunk_index.py" = [ "PLC0
 lint.per-file-ignores."src/iceberg_bioimage/publishing/image_assets.py" = [ "PLC0415" ]
 lint.per-file-ignores."src/iceberg_bioimage/validation/contracts.py" = [ "PLC0415" ]
 
+[tool.vulture]
+paths = [ "src/iceberg_bioimage", "tests" ]
+min_confidence = 90
+
 [tool.pytest]
 ini_options.pythonpath = [ ".", "src" ]
 
@@ -133,10 +137,6 @@ style = "semver"
 
 [tool.jupytext]
 formats = "ipynb,py:light"
-
-[tool.vulture]
-min_confidence = 90
-paths = [ "src/iceberg_bioimage", "tests" ]
 
 [tool.poe]
 # tasks for development environments
@@ -153,8 +153,7 @@ tasks.build.shell = """
 uv build
 uvx twine check dist/*
 """
-tasks.notebooks.shell = """
-before="$(git status --porcelain -- docs/src/examples)"
+tasks.notebooks.shell = '''before="$(git status --porcelain -- docs/src/examples)"
 python -m jupytext --sync docs/src/examples/*.ipynb
 after="$(git status --porcelain -- docs/src/examples)"
 if [ "$before" != "$after" ]; then
@@ -162,7 +161,7 @@ if [ "$before" != "$after" ]; then
   git diff -- docs/src/examples
   exit 1
 fi
-"""
+'''
 tasks.jupyter.shell = """
 jupyter lab
 """
