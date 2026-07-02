@@ -158,7 +158,7 @@ def delete_dataset_image_assets(
 ) -> None:
     """Delete all image_assets rows for a given dataset_id.
 
-    If the table does not yet exist this is a no-op.  If the table exists but
+    If the table does not yet exist this is a no-op. If the table exists but
     does not support row-level deletes a :exc:`RuntimeError` is raised.
     """
 
