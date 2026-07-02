@@ -231,8 +231,8 @@ ______________________________________________________________________
 
 ## S3 and remote URIs
 
-Zarr stores on S3 work with no extra configuration (via `fsspec`).
-OME-TIFF on S3 requires the `s3` extra:
+Zarr stores on S3 work out of the box — no extra install needed — because `zarr` already pulls in `fsspec`.
+OME-TIFF on S3 requires an extra install because `tifffile` does not:
 
 ```bash
 pip install 'iceberg-bioimage[s3]'
