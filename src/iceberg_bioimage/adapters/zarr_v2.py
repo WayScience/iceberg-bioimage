@@ -36,7 +36,8 @@ class ZarrV2Adapter(BaseAdapter):
     format_family = "zarr"
 
     def can_handle(self, uri: str) -> bool:
-        return uri.lower().endswith(".zarr") or ".zarr/" in uri.lower()
+        lower = uri.lower()
+        return lower.endswith(".zarr") or ".zarr/" in lower
 
     def scan(self, uri: str) -> ScanResult:
         if self._is_local_zarr_v3(uri):

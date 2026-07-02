@@ -28,6 +28,13 @@ class SupportsAppend(Protocol):
         """Append a pyarrow table."""
 
 
+class SupportsDelete(Protocol):
+    """Protocol for row-deletable Iceberg-like tables."""
+
+    def delete(self, delete_filter: object) -> None:
+        """Delete rows matching a filter expression."""
+
+
 TTable = TypeVar("TTable")
 
 
@@ -50,6 +57,58 @@ class SupportsCatalog(Protocol):
         schema: object,
     ) -> SupportsAppend:
         """Create and return a table."""
+
+
+def publish_profile_table(
+    arrow_table: pa.Table,
+    catalog: str | SupportsCatalog,
+    namespace: str | Iterable[str],
+    table_name: str,
+) -> int:
+    """Publish a profile Arrow table into the Iceberg catalog.
+
+    The schema is derived from the Arrow table, so any profile columns are
+    preserved.  The conventional namespace is ``<experiment>.profiles``.
+
+    Parameters
+    ----------
+    arrow_table:
+        Profile rows to publish (for example, a pycytominer output table).
+    catalog:
+        A PyIceberg catalog instance, or the name of a catalog configured in
+        ``.pyiceberg.yaml``/environment variables.
+    namespace:
+        Target namespace, e.g. ``"experiment.profiles"`` or
+        ``["experiment", "profiles"]``.
+    table_name:
+        Name of the Iceberg table to create or append to.
+
+    Returns
+    -------
+    int
+        The number of rows published.
+    """
+
+    def _build_profile_schema() -> object:
+        from pyiceberg.io.pyarrow import pyarrow_to_schema
+        from pyiceberg.table.name_mapping import MappedField, NameMapping
+
+        name_mapping = NameMapping(
+            [
+                MappedField(field_id=i + 1, names=[field.name])
+                for i, field in enumerate(arrow_table.schema)
+            ]
+        )
+        return pyarrow_to_schema(arrow_table.schema, name_mapping=name_mapping)
+
+    table = _load_or_create_table(
+        catalog,
+        namespace,
+        table_name,
+        schema_builder=_build_profile_schema,
+    )
+    table.append(arrow_table)
+    return arrow_table.num_rows
 
 
 def publish_image_assets(
@@ -103,6 +162,45 @@ def _asset_to_row(
     }
 
 
+def delete_dataset_image_assets(
+    catalog: str | SupportsCatalog,
+    namespace: str | Iterable[str],
+    table_name: str,
+    dataset_id: str,
+) -> None:
+    """Delete all image_assets rows for a given dataset_id.
+
+    If the table does not yet exist, nothing happens and no error is raised.
+    If the table exists but does not support row-level deletes, a
+    :exc:`RuntimeError` is raised.
+    """
+
+    resolved = _resolve_catalog(catalog)
+    try:
+        table = _load_table_with_namespace_fallback(
+            resolved,
+            namespace,
+            table_name,
+            operation="deleting",
+        )
+    except NoSuchTableError:
+        return
+
+    if not hasattr(table, "delete"):
+        raise RuntimeError(
+            f"Table {table_name!r} does not support row-level deletion. "
+            "Ensure your Iceberg catalog and table format support delete operations "
+            "(copy-on-write or merge-on-read)."
+        )
+    table.delete(_dataset_id_filter(dataset_id))
+
+
+def _dataset_id_filter(dataset_id: str) -> object:
+    from pyiceberg.expressions import EqualTo
+
+    return EqualTo("dataset_id", dataset_id)
+
+
 def _load_or_create_table(
     catalog_or_name: str | SupportsCatalog,
     namespace: str | Iterable[str],
@@ -144,25 +242,14 @@ def _resolve_catalog(catalog_or_name: str | SupportsCatalog) -> SupportsCatalog:
     if not isinstance(catalog_or_name, str):
         return catalog_or_name
 
-    try:
-        from pyiceberg.catalog import load_catalog
-    except ImportError as exc:  # pragma: no cover - guarded by dependency declaration
-        raise RuntimeError(
-            "PyIceberg is required to resolve a catalog by name. "
-            "Install `pyiceberg` first."
-        ) from exc
+    from pyiceberg.catalog import load_catalog
 
     return load_catalog(catalog_or_name)
 
 
 def _build_image_assets_schema() -> object:
-    try:
-        from pyiceberg.schema import Schema
-        from pyiceberg.types import NestedField, StringType
-    except ImportError as exc:  # pragma: no cover - guarded by dependency declaration
-        raise RuntimeError(
-            "PyIceberg is required for publishing. Install `pyiceberg` first."
-        ) from exc
+    from pyiceberg.schema import Schema
+    from pyiceberg.types import NestedField, StringType
 
     # Field IDs are intentionally non-sequential in _build_image_assets_schema.
     # These stable NestedField identifiers keep compatibility with prior or
