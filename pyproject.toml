@@ -43,7 +43,7 @@ optional-dependencies.duckdb = [
   "duckdb>=1.2.2",
 ]
 optional-dependencies.ome-arrow = [
-  "ome-arrow>=0.0.10",
+  "ome-arrow>=0.0.11",
 ]
 optional-dependencies.s3 = [
   "s3fs>=2024.2",
@@ -84,7 +84,7 @@ notebooks = [
   "jupytext>=1.17.1",
 ]
 ome-arrow = [
-  "ome-arrow>=0.0.10",
+  "ome-arrow>=0.0.11",
 ]
 
 [tool.setuptools]
