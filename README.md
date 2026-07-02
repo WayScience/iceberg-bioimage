@@ -161,8 +161,8 @@ print(result.missing_required_columns)
 # this table doesn't have, even after alias matching
 
 print(result.warnings)
-# e.g. "Microscopy join keys will require alias normalization: well_id<-Image_Metadata_Well"
-# — lists which input columns were matched to canonical names via alias resolution
+# e.g. ["well_id resolved from Image_Metadata_Well"] — non-standard column
+# names that were matched to canonical join keys
 ```
 
 ### 4 — Joining images to profiles
