@@ -72,7 +72,7 @@ duckdb.query("SELECT dataset_id, shape_json FROM table WHERE dtype = 'uint16'")
 
 Once you have many datasets and want to query across them, write their
 metadata into a persistent Apache Iceberg catalog instead of re-scanning files
-each time.
+each time. See `docs/src/catalog-setup.md` for catalog configuration.
 
 ```python
 from iceberg_bioimage import register_store
@@ -188,7 +188,8 @@ joined = join_profiles_with_store(
 ### 5 — Cytomining warehouse export
 
 Export images and profiles into a Parquet warehouse layout that `pycytominer`
-and CytoTable can consume directly, without going through Iceberg at all:
+and CytoTable can consume directly, without going through Iceberg at all.
+See `docs/src/cytomining.md` for full warehouse export workflows.
 
 ```python
 from iceberg_bioimage import export_store_to_cytomining_warehouse
