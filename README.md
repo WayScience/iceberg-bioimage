@@ -266,9 +266,9 @@ ______________________________________________________________________
 ## OME-Arrow integration
 
 Everything above deals with *metadata* — shape, dtype, file location. If you
-also need the *pixel data itself* (the "image payload") in Arrow form, for
-example to pass into an ML pipeline without re-reading the original file
-format, use the optional OME-Arrow integration (requires `ome-arrow >= 0.0.10`):
+also need the *pixel data itself* stored as an Arrow table (for example, to
+pass raw pixel arrays into an ML pipeline without re-reading the original
+file), use the optional OME-Arrow integration (requires `ome-arrow >= 0.0.11`):
 
 ```python
 from iceberg_bioimage import (
