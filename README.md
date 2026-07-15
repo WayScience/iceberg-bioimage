@@ -10,11 +10,29 @@
 
 `iceberg-bioimage` reads the metadata of OME-TIFF and OME-Zarr image files (shape, dtype, axes, chunking — not pixel data) into Arrow tables that can be queried directly or cataloged in Apache Iceberg.
 
-This README is organized around the common workflow first: scan image metadata,
-catalog it, join it to profile tables, and export Cytomining-compatible
-metadata warehouses. Pixel-data workflows are covered later in the OME-Arrow
-section because they require an optional integration and pay a separate
-conversion cost.
+## Why this exists
+
+Image-based profiling workflows often keep microscopy images, image metadata,
+single-cell profiles, and quality-control outputs in separate files or systems.
+That makes it easy for tables to drift apart from the images they describe and
+hard to ask simple questions like "which image produced this profile row?"
+
+`iceberg-bioimage` gives those workflows a lightweight metadata layer:
+
+- scan image stores without loading pixel data;
+- represent experiments made from one file, many files, or a mix of supported
+  formats such as OME-TIFF and OME-Zarr;
+- join image metadata to Cytomining profile tables using stable keys;
+- catalog many image stores in Apache Iceberg for data-lake scale, versioned
+  snapshots, schema evolution, and access from Iceberg-compatible query engines
+  and views;
+- keep metadata in Arrow-friendly tables that query engines can process with
+  vectorized execution and hardware-aware optimizations such as SIMD;
+- export portable Parquet warehouse layouts for tools that do not use Iceberg.
+
+This README follows that metadata-first path. Pixel-data workflows are covered
+later in the OME-Arrow section because they require an optional integration and
+pay a separate conversion cost.
 
 ## Two terms used throughout this README
 
