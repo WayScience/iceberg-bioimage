@@ -1,4 +1,11 @@
-"""Tests for virtual dataset API (catalog-free Arrow table access)."""
+"""Tests for virtual dataset API (catalog-free Arrow table access).
+
+These tests cover the in-memory path for image metadata: converting an existing
+``ScanResult`` into a ``pyarrow.Table`` and scanning supported local image
+stores directly into Arrow rows. The goal is to verify callers can inspect and
+query OME-Zarr or OME-TIFF metadata without first creating an Iceberg catalog,
+warehouse table, or persistent dataset registration.
+"""
 
 from __future__ import annotations
 

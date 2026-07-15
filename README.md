@@ -8,9 +8,7 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 
-`iceberg-bioimage` reads the metadata of OME-TIFF and OME-Zarr image files
-(shape, dtype, axes, chunking — not pixel data) into Arrow tables that can be
-queried directly or cataloged in Apache Iceberg.
+`iceberg-bioimage` reads the metadata of OME-TIFF and OME-Zarr image files (shape, dtype, axes, chunking — not pixel data) into Arrow tables that can be queried directly or cataloged in Apache Iceberg.
 
 ## Two terms used throughout this README
 
@@ -56,7 +54,15 @@ table = scan_as_arrow_table("data/experiment.ome.tiff")
 # or: scan_as_arrow_table("s3://bucket/experiment.ome.tiff")
 
 print(table.schema)
-# dataset_id, image_id, uri, format_family, shape_json, dtype, ...
+# dataset_id: string
+# image_id: string
+# format_family: string
+# uri: string
+# array_path: null
+# shape_json: string
+# dtype: string
+# chunk_shape_json: null
+# metadata_json: string
 ```
 
 The result is a standard `pyarrow.Table` — query it with DuckDB, Pandas, or
