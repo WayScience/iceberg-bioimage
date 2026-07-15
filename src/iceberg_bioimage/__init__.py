@@ -1,11 +1,16 @@
 """Public package interface for iceberg_bioimage."""
 
 from .api import (
+    deregister_store,
     ingest_scan_results_to_warehouse,
     ingest_stores_to_warehouse,
     join_profiles_with_scan_result,
     join_profiles_with_store,
+    register_directory,
+    register_profile_table,
     register_store,
+    scan_as_arrow_table,
+    scan_result_as_arrow_table,
     scan_store,
     summarize_scan_result,
     summarize_store,
@@ -30,7 +35,14 @@ from .integrations.duckdb import (
     join_image_assets_with_profiles,
     query_metadata_table,
 )
-from .integrations.ome_arrow import create_ome_arrow, scan_ome_arrow
+from .integrations.ome_arrow import (
+    create_ome_arrow,
+    create_ome_arrow_from_tiff,
+    create_ome_arrow_from_zarr,
+    open_ome_arrow_dataset,
+    scan_ome_arrow,
+    write_ome_arrow_dataset,
+)
 from .models.scan_result import (
     ContractValidationResult,
     CytominingWarehouseResult,
@@ -67,6 +79,9 @@ __all__ = [
     "catalog_table_to_arrow",
     "create_duckdb_connection",
     "create_ome_arrow",
+    "create_ome_arrow_from_tiff",
+    "create_ome_arrow_from_zarr",
+    "deregister_store",
     "export_catalog_to_cytomining_warehouse",
     "export_profiles_to_cytomining_warehouse",
     "export_scan_result_to_cytomining_warehouse",
@@ -82,15 +97,21 @@ __all__ = [
     "load_catalog_table",
     "load_profile_column_aliases",
     "load_warehouse_manifest",
+    "open_ome_arrow_dataset",
     "publish_chunk_index",
     "publish_image_assets",
     "query_metadata_table",
+    "register_directory",
+    "register_profile_table",
     "register_store",
+    "scan_as_arrow_table",
     "scan_ome_arrow",
+    "scan_result_as_arrow_table",
     "scan_store",
     "summarize_scan_result",
     "summarize_store",
     "validate_microscopy_profile_columns",
     "validate_microscopy_profile_table",
     "validate_warehouse_manifest",
+    "write_ome_arrow_dataset",
 ]

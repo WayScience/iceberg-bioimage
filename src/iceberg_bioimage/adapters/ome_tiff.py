@@ -3,11 +3,18 @@
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.parse import urlparse
 
 import tifffile
 
 from iceberg_bioimage.adapters.base import BaseAdapter
 from iceberg_bioimage.models.scan_result import ImageAsset, ScanResult
+
+_REMOTE_SCHEMES = frozenset({"s3", "gs", "az", "abfs", "http", "https"})
+
+
+def _is_remote_uri(uri: str) -> bool:
+    return urlparse(uri).scheme in _REMOTE_SCHEMES
 
 
 class OMETiffAdapter(BaseAdapter):
@@ -23,7 +30,7 @@ class OMETiffAdapter(BaseAdapter):
     def scan(self, uri: str) -> ScanResult:
         image_assets: list[ImageAsset] = []
 
-        with tifffile.TiffFile(uri) as tif:
+        with self._open_tiff(uri) as tif:
             for index, series in enumerate(tif.series):
                 array_path = None if len(tif.series) == 1 else f"series/{index}"
                 axes = getattr(series, "axes", "")
@@ -52,6 +59,20 @@ class OMETiffAdapter(BaseAdapter):
             format_family=self.format_family,
             image_assets=image_assets,
         )
+
+    def _open_tiff(self, uri: str) -> tifffile.TiffFile:
+        if _is_remote_uri(uri):
+            try:
+                import fsspec
+            except ImportError as exc:
+                raise ImportError(
+                    "fsspec is required to open remote TIFF URIs. "
+                    "Install it with: pip install fsspec  "
+                    "(for S3 also install s3fs)."
+                ) from exc
+            fileobj = fsspec.open(uri, "rb").open()
+            return tifffile.TiffFile(fileobj)
+        return tifffile.TiffFile(uri)
 
     def _channel_count(self, axes: str, shape: tuple[int, ...]) -> int | None:
         if "C" not in axes:

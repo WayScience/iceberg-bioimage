@@ -7,13 +7,17 @@ from pyiceberg.exceptions import NamespaceAlreadyExistsError, NoSuchTableError
 
 
 class FakeTable:
-    """Simple append-only table stub."""
+    """Append and delete table stub."""
 
     def __init__(self) -> None:
         self.appends: list[pa.Table] = []
+        self.deletes: list[object] = []
 
     def append(self, table: pa.Table) -> None:
         self.appends.append(table)
+
+    def delete(self, delete_filter: object) -> None:
+        self.deletes.append(delete_filter)
 
 
 class _BaseFakeCatalog:
