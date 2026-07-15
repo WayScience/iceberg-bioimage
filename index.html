@@ -448,289 +448,355 @@
 <a class="reference external" href="https://github.com/wayscience/iceberg-bioimage/actions/workflows/run-tests.yml?query=branch%3Amain"><img alt="Build Status" src="https://github.com/wayscience/iceberg-bioimage/actions/workflows/run-tests.yml/badge.svg?branch=main" /></a>
 <a class="reference external" href="https://github.com/astral-sh/ruff"><img alt="Ruff" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" /></a>
 <a class="reference external" href="https://github.com/astral-sh/uv"><img alt="uv" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json" /></a></p>
-<p><code class="docutils literal notranslate"><span class="pre">iceberg-bioimage</span></code> is a Python package for cataloging bioimaging metadata with Apache Iceberg and exporting Cytomining-compatible warehouse layouts.</p>
-<p>It is designed for teams that want:</p>
+<p><code class="docutils literal notranslate"><span class="pre">iceberg-bioimage</span></code> reads the metadata of OME-TIFF and OME-Zarr image files (shape, dtype, axes, chunking — not pixel data) into Arrow tables that can be queried directly or cataloged in Apache Iceberg.</p>
+<section id="why-this-exists">
+<h2>Why this exists<a class="headerlink" href="#why-this-exists" title="Link to this heading">#</a></h2>
+<p>Image-based profiling workflows often keep microscopy images, image metadata,
+single-cell profiles, and quality-control outputs in separate files or systems.
+That makes it easy for tables to drift apart from the images they describe and
+hard to ask simple questions like “which image produced this profile row?”</p>
+<p><code class="docutils literal notranslate"><span class="pre">iceberg-bioimage</span></code> gives those workflows a lightweight metadata layer:</p>
 <ul class="simple">
-<li><p>Iceberg is the control plane for cataloging, schemas, joins, and snapshots.</p></li>
-<li><p>Cytomining-compatible Parquet warehouses are a first-class export target.</p></li>
-<li><p>Flexible image data planes, including Zarr, OME-TIFF, and OME-Arrow-centered workflows.</p></li>
-<li><p>Adapters that normalize source formats into a single <code class="docutils literal notranslate"><span class="pre">ScanResult</span></code> model.</p></li>
-<li><p>Integration with external execution/query tools such as DuckDB, xarray, and tifffile.</p></li>
+<li><p>scan image stores without loading pixel data;</p></li>
+<li><p>represent experiments made from one file, many files, or a mix of supported
+formats such as OME-TIFF and OME-Zarr;</p></li>
+<li><p>join image metadata to Cytomining profile tables using stable keys;</p></li>
+<li><p>catalog many image stores in Apache Iceberg for data-lake scale, versioned
+snapshots, schema evolution, and access from Iceberg-compatible query engines
+and views;</p></li>
+<li><p>keep metadata in Arrow-friendly tables that query engines can process with
+vectorized execution and hardware-aware optimizations such as SIMD;</p></li>
+<li><p>export portable Parquet warehouse layouts for tools that do not use Iceberg.</p></li>
 </ul>
-<section id="key-capabilities">
-<h2>Key capabilities<a class="headerlink" href="#key-capabilities" title="Link to this heading">#</a></h2>
-<ul class="simple">
-<li><p>Scan supported source stores, including Zarr and OME-TIFF, into canonical <code class="docutils literal notranslate"><span class="pre">ScanResult</span></code> objects.</p></li>
-<li><p>Summarize scanned datasets into user-facing <code class="docutils literal notranslate"><span class="pre">DatasetSummary</span></code> objects.</p></li>
-<li><p>Publish <code class="docutils literal notranslate"><span class="pre">image_assets</span></code> and <code class="docutils literal notranslate"><span class="pre">chunk_index</span></code> metadata tables with PyIceberg.</p></li>
-<li><p>Ingest one or more datasets into Cytotable-compatible Iceberg warehouses.</p></li>
-<li><p>Export new or existing datasets into Cytomining-compatible Parquet warehouses.</p></li>
-<li><p>Validate profile tables against the microscopy join contract.</p></li>
-<li><p>Join scanned image metadata to profile tables through a simple top-level API.</p></li>
-<li><p>Query canonical metadata through optional DuckDB helpers.</p></li>
-<li><p>Load catalog-backed metadata tables into Arrow for downstream joins.</p></li>
-</ul>
+<p>This README follows that metadata-first path. Pixel-data workflows are covered
+later in the OME-Arrow section because they require an optional integration and
+pay a separate conversion cost.</p>
 </section>
-<section id="project-layout">
-<h2>Project layout<a class="headerlink" href="#project-layout" title="Link to this heading">#</a></h2>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>src/iceberg_bioimage/
-  __init__.py
-  api.py
-  cli.py
-  adapters/
-  integrations/
-  models/
-  publishing/
-  validation/
+<section id="two-terms-used-throughout-this-readme">
+<h2>Two terms used throughout this README<a class="headerlink" href="#two-terms-used-throughout-this-readme" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>scan</strong> — read an image’s metadata (shape, dtype, axes, chunk layout) without
+loading pixel data. Fast and constant-time regardless of image size.</p></li>
+<li><p><strong>store</strong> — a single image dataset this package can scan: one Zarr directory,
+or one OME-TIFF file, on local disk or remote (S3) storage.</p></li>
+</ul>
+<blockquote>
+<div><p><strong>Note on “registration”:</strong> in this README, “register”/”registration” means
+<em>recording an image’s metadata as a row in an Iceberg table</em>, not the
+bioimage-analysis sense of spatially aligning two images.</p>
+</div></blockquote>
+</section>
+<section id="install">
+<h2>Install<a class="headerlink" href="#install" title="Link to this heading">#</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>iceberg-bioimage
+</pre></div>
+</div>
+<p>Optional extras:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;iceberg-bioimage[duckdb]&#39;</span><span class="w">     </span><span class="c1"># DuckDB query helpers</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;iceberg-bioimage[ome-arrow]&#39;</span><span class="w">  </span><span class="c1"># OME-Arrow image pixel-data access (≥0.0.10)</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;iceberg-bioimage[s3]&#39;</span><span class="w">         </span><span class="c1"># S3 / remote URI support for OME-TIFF</span>
 </pre></div>
 </div>
 </section>
-<section id="dependencies">
-<h2>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading">#</a></h2>
-<p>Core runtime dependencies include:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">pyarrow</span></code> for Arrow/Parquet table operations</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pyiceberg</span></code> for catalog/table publishing</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">tifffile</span></code> for OME-TIFF metadata scanning when OME-TIFF sources are used</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">zarr</span></code> for Zarr metadata scanning</p></li>
-</ul>
-<p>Optional integration groups:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">duckdb</span></code> for query helpers and examples</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ome-arrow</span></code> for Arrow-native tabular image payloads and lazy image access</p></li>
-</ul>
-</section>
-<section id="getting-started">
-<h2>Getting started<a class="headerlink" href="#getting-started" title="Link to this heading">#</a></h2>
-<ul class="simple">
-<li><p>If you want a catalog-free first run, start with Cytomining export:
-<code class="docutils literal notranslate"><span class="pre">iceberg-bioimage</span> <span class="pre">export-cytomining</span> <span class="pre">--warehouse-root</span> <span class="pre">warehouse-root</span> <span class="pre">data/experiment.zarr</span></code></p></li>
-<li><p>If you want Iceberg-backed publishing, configure a PyIceberg catalog first.</p></li>
-<li><p>For step-by-step setup, see <code class="docutils literal notranslate"><span class="pre">docs/src/getting-started.md</span></code> and <code class="docutils literal notranslate"><span class="pre">docs/src/catalog-setup.md</span></code>.</p></li>
-</ul>
-</section>
-<section id="zarr-support">
-<h2>Zarr support<a class="headerlink" href="#zarr-support" title="Link to this heading">#</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">iceberg-bioimage</span></code> keeps the user-facing API simple: use <code class="docutils literal notranslate"><span class="pre">scan_store(...)</span></code> for
-both local Zarr v2 stores and local Zarr v3 metadata stores.</p>
-<ul class="simple">
-<li><p>Zarr v2 arrays are scanned through the <code class="docutils literal notranslate"><span class="pre">zarr</span></code> Python package</p></li>
-<li><p>Local Zarr v3 stores are scanned from <code class="docutils literal notranslate"><span class="pre">zarr.json</span></code> metadata without requiring
-a separate API</p></li>
-<li><p>Summaries report the storage variant as <code class="docutils literal notranslate"><span class="pre">zarr-v2</span></code> or <code class="docutils literal notranslate"><span class="pre">zarr-v3</span></code></p></li>
-<li><p>The base package allows either Zarr 2 or Zarr 3 runtimes so that optional
-forward-facing integrations can coexist in the same environment</p></li>
-</ul>
-</section>
-<section id="quickstart">
-<h2>Quickstart<a class="headerlink" href="#quickstart" title="Link to this heading">#</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">export_store_to_cytomining_warehouse</span><span class="p">,</span>
-    <span class="n">ingest_stores_to_warehouse</span><span class="p">,</span>
-    <span class="n">join_profiles_with_store</span><span class="p">,</span>
-    <span class="n">register_store</span><span class="p">,</span>
-    <span class="n">summarize_store</span><span class="p">,</span>
-    <span class="n">validate_microscopy_profile_table</span><span class="p">,</span>
-<span class="p">)</span>
+<hr class="docutils" />
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading">#</a></h2>
+<section id="virtual-datasets-no-catalog-required">
+<h3>1 — Virtual datasets (no catalog required)<a class="headerlink" href="#virtual-datasets-no-catalog-required" title="Link to this heading">#</a></h3>
+<p>Scan any image directly into an Arrow table.
+No Iceberg catalog, no setup.
+This is the fastest path to start exploring a dataset: only the file’s
+metadata is read, so it works the same whether the image is 1 MB or 100 GB.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">scan_as_arrow_table</span>
 
-<span class="n">registration</span> <span class="o">=</span> <span class="n">register_store</span><span class="p">(</span>
-    <span class="s2">&quot;data/experiment.zarr&quot;</span><span class="p">,</span>
+<span class="n">table</span> <span class="o">=</span> <span class="n">scan_as_arrow_table</span><span class="p">(</span><span class="s2">&quot;data/experiment.ome.tiff&quot;</span><span class="p">)</span>
+<span class="c1"># or: scan_as_arrow_table(&quot;data/experiment.zarr&quot;)</span>
+<span class="c1"># or: scan_as_arrow_table(&quot;s3://bucket/experiment.ome.tiff&quot;)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">schema</span><span class="p">)</span>
+<span class="c1"># dataset_id: string</span>
+<span class="c1"># image_id: string</span>
+<span class="c1"># format_family: string</span>
+<span class="c1"># uri: string</span>
+<span class="c1"># array_path: null</span>
+<span class="c1"># shape_json: string</span>
+<span class="c1"># dtype: string</span>
+<span class="c1"># chunk_shape_json: null</span>
+<span class="c1"># metadata_json: string</span>
+</pre></div>
+</div>
+<p>The result is a standard <code class="docutils literal notranslate"><span class="pre">pyarrow.Table</span></code> — inspect it with Pandas, query it
+with DuckDB, or pass it directly to downstream tools.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="s2">&quot;dataset_id&quot;</span><span class="p">,</span> <span class="s2">&quot;shape_json&quot;</span><span class="p">,</span> <span class="s2">&quot;dtype&quot;</span><span class="p">]])</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">duckdb</span>
+
+<span class="n">duckdb</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;SELECT dataset_id, shape_json FROM table WHERE dtype = &#39;uint16&#39;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="cataloging-images-in-iceberg">
+<h3>2 — Cataloging images in Iceberg<a class="headerlink" href="#cataloging-images-in-iceberg" title="Link to this heading">#</a></h3>
+<p>Once you have many datasets and want to query across them, write their
+metadata into a persistent Apache Iceberg catalog instead of re-scanning files
+each time. See <code class="docutils literal notranslate"><span class="pre">docs/src/catalog-setup.md</span></code> for catalog configuration.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_store</span>
+
+<span class="n">register_store</span><span class="p">(</span><span class="s2">&quot;data/experiment.zarr&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="s2">&quot;myproject.images&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Register a whole directory when an experiment writes one image store per well,
+field, plate, or time point. This creates one cataloged metadata row per store,
+so you can query the full experiment later without manually registering or
+rescanning each image file.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_directory</span>
+
+<span class="n">register_directory</span><span class="p">(</span>
+    <span class="s2">&quot;data/plates/&quot;</span><span class="p">,</span>
     <span class="s2">&quot;default&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;bioimage.cytotable&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;myproject.images&quot;</span><span class="p">,</span>
+    <span class="n">glob</span><span class="o">=</span><span class="s2">&quot;**/*.ome.tiff&quot;</span><span class="p">,</span>   <span class="c1"># default is **/*.ome.zarr</span>
 <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">registration</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">replace=True</span></code> when an image has changed and you want to refresh its
+catalog metadata. The old rows are removed first, so later queries use the
+latest shape, dtype, chunking, and file location without duplicate entries.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">register_store</span><span class="p">(</span><span class="s2">&quot;data/experiment.zarr&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="s2">&quot;myproject.images&quot;</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Remove a dataset’s rows from the catalog entirely:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">deregister_store</span>
 
-<span class="n">summary</span> <span class="o">=</span> <span class="n">summarize_store</span><span class="p">(</span><span class="s2">&quot;data/experiment.zarr&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">summary</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+<span class="n">deregister_store</span><span class="p">(</span><span class="s2">&quot;data/experiment.zarr&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="s2">&quot;myproject.images&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Pass <code class="docutils literal notranslate"><span class="pre">chunk_index_table=None</span></code> to skip writing the optional chunk-index table.
+The chunk-index table records Zarr array chunk coordinates that can be queried
+later for region-level access. TIFF scans do not expose a Zarr-style chunk
+grid, so TIFF-only registrations have no chunk rows to write; skipping the
+table avoids an unused table and unnecessary writes:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">register_store</span><span class="p">(</span><span class="s2">&quot;data/experiment.ome.tiff&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="s2">&quot;myproject.images&quot;</span><span class="p">,</span> <span class="n">chunk_index_table</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>→ details: <a class="reference internal" href="catalog-setup.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">docs/src/catalog-setup.md</span></code></span></a></p>
+</section>
+<section id="profile-tables">
+<h3>3 — Profile tables<a class="headerlink" href="#profile-tables" title="Link to this heading">#</a></h3>
+<p>A “profile table” here means a CellProfiler / Pycytominer measurements file
+(cell counts, intensities, shape features, etc.), keyed by image and/or well.
+Publish one into the catalog under a <code class="docutils literal notranslate"><span class="pre">profiles</span></code> namespace:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_profile_table</span>
 
-<span class="n">contract</span> <span class="o">=</span> <span class="n">validate_microscopy_profile_table</span><span class="p">(</span><span class="s2">&quot;data/cells.parquet&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">contract</span><span class="o">.</span><span class="n">is_valid</span><span class="p">)</span>
+<span class="n">register_profile_table</span><span class="p">(</span>
+    <span class="s2">&quot;data/profiles.parquet&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;myproject.profiles&quot;</span><span class="p">,</span>   <span class="c1"># conventional: &lt;experiment&gt;.profiles</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Tools in the Cytomining ecosystem do not all use the same metadata column names
+(<code class="docutils literal notranslate"><span class="pre">Image_Metadata_Well</span></code>, <code class="docutils literal notranslate"><span class="pre">Metadata_Plate</span></code>, <code class="docutils literal notranslate"><span class="pre">Metadata_Site</span></code>, …). The join
+helpers need stable keys such as <code class="docutils literal notranslate"><span class="pre">well_id</span></code> and <code class="docutils literal notranslate"><span class="pre">plate_id</span></code> to match profile rows
+to image metadata. “Alias resolution” maps common variants onto those canonical
+names so joins work without you renaming columns by hand.</p>
+<p>Before registering, you can check whether a profile table has everything
+needed to join against image metadata. This package’s <strong>microscopy join
+contract</strong> is the set of canonical columns a join needs: <code class="docutils literal notranslate"><span class="pre">dataset_id</span></code> and
+<code class="docutils literal notranslate"><span class="pre">image_id</span></code> are required, <code class="docutils literal notranslate"><span class="pre">plate_id</span></code>/<code class="docutils literal notranslate"><span class="pre">well_id</span></code>/<code class="docutils literal notranslate"><span class="pre">site_id</span></code> are recommended but
+optional.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_microscopy_profile_table</span>
 
-<span class="c1"># Requires the optional DuckDB integration:</span>
-<span class="c1">#   pip install &#39;iceberg-bioimage[duckdb]&#39;</span>
-<span class="n">joined</span> <span class="o">=</span> <span class="n">join_profiles_with_store</span><span class="p">(</span><span class="s2">&quot;data/experiment.zarr&quot;</span><span class="p">,</span> <span class="s2">&quot;data/cells.parquet&quot;</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_microscopy_profile_table</span><span class="p">(</span><span class="s2">&quot;data/profiles.parquet&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">is_valid</span><span class="p">)</span>
+<span class="c1"># False if dataset_id/image_id can&#39;t be found or aliased</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">missing_required_columns</span><span class="p">)</span>
+<span class="c1"># e.g. [&#39;dataset_id&#39;, &#39;image_id&#39;] — columns the join contract needs but</span>
+<span class="c1"># this table doesn&#39;t have, even after alias matching</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">warnings</span><span class="p">)</span>
+<span class="c1"># e.g. [&quot;well_id resolved from Image_Metadata_Well&quot;] — non-standard column</span>
+<span class="c1"># names that were matched to canonical join keys</span>
+</pre></div>
+</div>
+</section>
+<section id="joining-images-to-profiles">
+<h3>4 — Joining images to profiles<a class="headerlink" href="#joining-images-to-profiles" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">join_profiles_with_store</span>
+
+<span class="n">joined</span> <span class="o">=</span> <span class="n">join_profiles_with_store</span><span class="p">(</span><span class="s2">&quot;data/experiment.zarr&quot;</span><span class="p">,</span> <span class="s2">&quot;data/profiles.parquet&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">joined</span><span class="o">.</span><span class="n">num_rows</span><span class="p">)</span>
-
-<span class="n">warehouse</span> <span class="o">=</span> <span class="n">ingest_stores_to_warehouse</span><span class="p">(</span>
-    <span class="p">[</span><span class="s2">&quot;data/experiment-a.zarr&quot;</span><span class="p">,</span> <span class="s2">&quot;data/experiment-b.zarr&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;default&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;bioimage.cytotable&quot;</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">warehouse</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
-
-<span class="n">cytomining_export</span> <span class="o">=</span> <span class="n">export_store_to_cytomining_warehouse</span><span class="p">(</span>
-    <span class="s2">&quot;data/experiment-a.zarr&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;warehouse-root&quot;</span><span class="p">,</span>
-    <span class="n">profiles</span><span class="o">=</span><span class="s2">&quot;data/cells.parquet&quot;</span><span class="p">,</span>
-    <span class="n">profile_dataset_id</span><span class="o">=</span><span class="s2">&quot;experiment-a&quot;</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">cytomining_export</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
 </pre></div>
 </div>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>iceberg-bioimage<span class="w"> </span>scan<span class="w"> </span>data/experiment.zarr
-iceberg-bioimage<span class="w"> </span>summarize<span class="w"> </span>data/experiment.zarr
-iceberg-bioimage<span class="w"> </span>register<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage.cytotable<span class="w"> </span>data/experiment.zarr
-iceberg-bioimage<span class="w"> </span>ingest<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage.cytotable<span class="w"> </span>data/experiment-a.zarr<span class="w"> </span>data/experiment-b.zarr
-iceberg-bioimage<span class="w"> </span>export-cytomining<span class="w"> </span>--warehouse-root<span class="w"> </span>warehouse-root<span class="w"> </span>data/experiment.zarr
-iceberg-bioimage<span class="w"> </span>publish-chunks<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage.cytotable<span class="w"> </span>data/experiment.zarr
-iceberg-bioimage<span class="w"> </span>register<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>bioimage.cytotable<span class="w"> </span>--publish-chunks<span class="w"> </span>data/experiment.zarr
-iceberg-bioimage<span class="w"> </span>validate-contract<span class="w"> </span>data/cells.parquet
-iceberg-bioimage<span class="w"> </span>join-profiles<span class="w"> </span>data/experiment.zarr<span class="w"> </span>data/cells.parquet<span class="w"> </span>--output<span class="w"> </span>joined.parquet
-</pre></div>
-</div>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">examples/quickstart.py</span></code> for a minimal scan, publish, and validation script</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">examples/catalog_duckdb.py</span></code> for a catalog-backed query workflow</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">examples/synthetic_workflow.py</span></code> for a self-contained local workflow</p></li>
-</ul>
-<p>Install optional integrations with:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;iceberg-bioimage[duckdb]&#39;</span>
-pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;iceberg-bioimage[ome-arrow]&#39;</span>
-</pre></div>
-</div>
-</section>
-<section id="duckdb-helpers">
-<h2>DuckDB helpers<a class="headerlink" href="#duckdb-helpers" title="Link to this heading">#</a></h2>
-<p>DuckDB is supported as an optional integration layer, not as a required engine.
-The join helpers also accept common <code class="docutils literal notranslate"><span class="pre">pycytominer</span></code> and <code class="docutils literal notranslate"><span class="pre">coSMicQC</span></code>-style
-<code class="docutils literal notranslate"><span class="pre">Metadata_*</span></code> aliases for <code class="docutils literal notranslate"><span class="pre">dataset_id</span></code>, <code class="docutils literal notranslate"><span class="pre">image_id</span></code>, <code class="docutils literal notranslate"><span class="pre">plate_id</span></code>, <code class="docutils literal notranslate"><span class="pre">well_id</span></code>, and
-<code class="docutils literal notranslate"><span class="pre">site_id</span></code>. If a profile table is missing <code class="docutils literal notranslate"><span class="pre">dataset_id</span></code> but all rows belong to
-one dataset, pass <code class="docutils literal notranslate"><span class="pre">profile_dataset_id=...</span></code> to the high-level join helpers.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pa</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">join_image_assets_with_profiles</span><span class="p">,</span> <span class="n">query_metadata_table</span>
-
-<span class="n">image_assets</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">table</span><span class="p">(</span>
-    <span class="p">{</span>
-        <span class="s2">&quot;dataset_id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;ds-1&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;image_id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;img-1&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;array_path&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;0&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;uri&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;data/example.zarr&quot;</span><span class="p">],</span>
-    <span class="p">}</span>
-<span class="p">)</span>
-<span class="n">profiles</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">table</span><span class="p">(</span>
-    <span class="p">{</span>
-        <span class="s2">&quot;dataset_id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;ds-1&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;image_id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;img-1&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;cell_count&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">42</span><span class="p">],</span>
-    <span class="p">}</span>
-<span class="p">)</span>
-
-<span class="n">joined</span> <span class="o">=</span> <span class="n">join_image_assets_with_profiles</span><span class="p">(</span><span class="n">image_assets</span><span class="p">,</span> <span class="n">profiles</span><span class="p">)</span>
-<span class="n">filtered</span> <span class="o">=</span> <span class="n">query_metadata_table</span><span class="p">(</span>
-    <span class="n">joined</span><span class="p">,</span>
-    <span class="n">filters</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;cell_count&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)],</span>
+<p>Alias resolution means matching known profile-table column variants, such as
+<code class="docutils literal notranslate"><span class="pre">Metadata_ImageID</span></code>, to the canonical join keys used by this package, such as
+<code class="docutils literal notranslate"><span class="pre">image_id</span></code>.</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">dataset_id</span></code> is absent from the profile table but all rows belong to one
+dataset, supply it directly instead of relying on alias resolution:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">joined</span> <span class="o">=</span> <span class="n">join_profiles_with_store</span><span class="p">(</span>
+    <span class="s2">&quot;data/experiment.zarr&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;data/profiles.parquet&quot;</span><span class="p">,</span>
+    <span class="n">profile_dataset_id</span><span class="o">=</span><span class="s2">&quot;experiment&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
-<p>Install the optional integration with <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span> <span class="pre">--group</span> <span class="pre">duckdb</span></code>.</p>
 </section>
 <section id="cytomining-warehouse-export">
-<h2>Cytomining warehouse export<a class="headerlink" href="#cytomining-warehouse-export" title="Link to this heading">#</a></h2>
-<p>The package supports Cytomining interoperability as a primary workflow.
-Besides publishing canonical metadata to Iceberg, it can materialize a
-Parquet-backed warehouse root that tools like <code class="docutils literal notranslate"><span class="pre">pycytominer</span></code> can consume
-directly.</p>
+<h3>5 — Cytomining warehouse export<a class="headerlink" href="#cytomining-warehouse-export" title="Link to this heading">#</a></h3>
+<p>Export images and profiles into a Parquet warehouse layout that <code class="docutils literal notranslate"><span class="pre">Pycytominer</span></code>
+and CytoTable can consume directly, without going through Iceberg at all.
+Choose this path when downstream tools or collaborators expect plain Parquet
+files on disk, or when you want a portable analysis bundle without requiring an
+Iceberg catalog service.
+See <code class="docutils literal notranslate"><span class="pre">docs/src/cytomining.md</span></code> for full warehouse export workflows.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">export_store_to_cytomining_warehouse</span>
 
-<span class="n">result</span> <span class="o">=</span> <span class="n">export_store_to_cytomining_warehouse</span><span class="p">(</span>
+<span class="n">export_store_to_cytomining_warehouse</span><span class="p">(</span>
     <span class="s2">&quot;data/experiment.zarr&quot;</span><span class="p">,</span>
     <span class="s2">&quot;warehouse-root&quot;</span><span class="p">,</span>
     <span class="n">profiles</span><span class="o">=</span><span class="s2">&quot;data/profiles.parquet&quot;</span><span class="p">,</span>
     <span class="n">profile_dataset_id</span><span class="o">=</span><span class="s2">&quot;experiment&quot;</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
 </pre></div>
 </div>
-<p>This writes one or more of:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">images/image_assets/</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">images/chunk_index/</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">profiles/joined_profiles/</span></code></p></li>
-</ul>
-<p>It can also append downstream Cytomining tables into the same warehouse root,
-using namespaces that match table semantics, for example:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">profiles/pycytominer_profiles/</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">quality_control/cosmicqc_profiles/</span></code></p></li>
-</ul>
-</section>
-<section id="ome-arrow-helpers">
-<h2>OME-Arrow helpers<a class="headerlink" href="#ome-arrow-helpers" title="Link to this heading">#</a></h2>
-<p>OME-Arrow is available as an optional forward-facing integration for tabular
-image payloads stored in Arrow-compatible formats.
-Projects may also choose an OME-Arrow-first workflow for source image handling.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_ome_arrow</span><span class="p">,</span> <span class="n">scan_ome_arrow</span>
-
-<span class="n">oa</span> <span class="o">=</span> <span class="n">create_ome_arrow</span><span class="p">(</span><span class="s2">&quot;image.ome.tiff&quot;</span><span class="p">)</span>
-<span class="n">lazy_oa</span> <span class="o">=</span> <span class="n">scan_ome_arrow</span><span class="p">(</span><span class="s2">&quot;image.ome.parquet&quot;</span><span class="p">)</span>
+<p>This writes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">warehouse</span><span class="o">-</span><span class="n">root</span><span class="o">/</span>
+  <span class="n">images</span><span class="o">/</span><span class="n">image_assets</span><span class="o">/</span>
+  <span class="n">profiles</span><span class="o">/</span><span class="n">joined_profiles</span><span class="o">/</span>
 </pre></div>
 </div>
-<p>Install it with <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span> <span class="pre">--group</span> <span class="pre">ome-arrow</span></code> or
-<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'iceberg-bioimage[ome-arrow]'</span></code>.</p>
+<p>→ details: <a class="reference internal" href="cytomining.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">docs/src/cytomining.md</span></code></span></a></p>
 </section>
-<section id="local-synthetic-workflow">
-<h2>Local synthetic workflow<a class="headerlink" href="#local-synthetic-workflow" title="Link to this heading">#</a></h2>
-<p>For a catalog-free onboarding path, <code class="docutils literal notranslate"><span class="pre">examples/synthetic_workflow.py</span></code> creates a
-small Zarr store and profile table, validates the join contract, derives
-canonical metadata rows, and joins them with the optional DuckDB helpers.</p>
-<p>Run it with:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>run<span class="w"> </span>--group<span class="w"> </span>duckdb<span class="w"> </span>python<span class="w"> </span>examples/synthetic_workflow.py
+<section id="cli">
+<h3>6 — CLI<a class="headerlink" href="#cli" title="Link to this heading">#</a></h3>
+<p>A command-line wrapper around the same functions, for use in shell scripts and
+CI pipelines where writing a Python file isn’t worth it. Each subcommand
+mirrors a Python function from the sections above:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>iceberg-bioimage<span class="w"> </span>scan<span class="w"> </span>data/experiment.zarr
+iceberg-bioimage<span class="w"> </span>summarize<span class="w"> </span>data/experiment.zarr
+iceberg-bioimage<span class="w"> </span>register<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>myproject.images<span class="w"> </span>data/experiment.zarr
+iceberg-bioimage<span class="w"> </span>ingest<span class="w"> </span>--catalog<span class="w"> </span>default<span class="w"> </span>--namespace<span class="w"> </span>myproject.images<span class="w"> </span>data/a.zarr<span class="w"> </span>data/b.zarr
+iceberg-bioimage<span class="w"> </span>export-cytomining<span class="w"> </span>--warehouse-root<span class="w"> </span>warehouse-root<span class="w"> </span>data/experiment.zarr
+iceberg-bioimage<span class="w"> </span>validate-contract<span class="w"> </span>data/profiles.parquet
+iceberg-bioimage<span class="w"> </span>join-profiles<span class="w"> </span>data/experiment.zarr<span class="w"> </span>data/profiles.parquet<span class="w"> </span>--output<span class="w"> </span>joined.parquet
 </pre></div>
 </div>
 </section>
-<section id="catalog-backed-query-workflow">
-<h2>Catalog-backed query workflow<a class="headerlink" href="#catalog-backed-query-workflow" title="Link to this heading">#</a></h2>
-<p>If you already published canonical metadata tables, you can read them from a
-catalog and join them to analysis outputs directly:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pa</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">join_catalog_image_assets_with_profiles</span>
-
-<span class="n">profiles</span> <span class="o">=</span> <span class="n">pa</span><span class="o">.</span><span class="n">table</span><span class="p">(</span>
-    <span class="p">{</span>
-        <span class="s2">&quot;dataset_id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;ds-1&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;image_id&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;img-1&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;cell_count&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">42</span><span class="p">],</span>
-    <span class="p">}</span>
+</section>
+<hr class="docutils" />
+<section id="s3-and-remote-uris">
+<h2>S3 and remote URIs<a class="headerlink" href="#s3-and-remote-uris" title="Link to this heading">#</a></h2>
+<p>Zarr stores on S3 work out of the box — no extra install needed — because <code class="docutils literal notranslate"><span class="pre">zarr</span></code> already pulls in <code class="docutils literal notranslate"><span class="pre">fsspec</span></code>.
+OME-TIFF on S3 requires an extra install because <code class="docutils literal notranslate"><span class="pre">tifffile</span></code> does not:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;iceberg-bioimage[s3]&#39;</span>
+</pre></div>
+</div>
+<p>The reason for the difference: <code class="docutils literal notranslate"><span class="pre">zarr</span></code> already depends on <code class="docutils literal notranslate"><span class="pre">fsspec</span></code>, so <code class="docutils literal notranslate"><span class="pre">s3://</span></code>
+paths work immediately. <code class="docutils literal notranslate"><span class="pre">tifffile</span></code> (used for OME-TIFF) does not understand
+<code class="docutils literal notranslate"><span class="pre">fsspec</span></code> URLs on its own, so this package adds an <code class="docutils literal notranslate"><span class="pre">fsspec</span></code>-backed file opener
+behind the <code class="docutils literal notranslate"><span class="pre">s3</span></code> extra to bridge the gap.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">table</span> <span class="o">=</span> <span class="n">scan_as_arrow_table</span><span class="p">(</span><span class="s2">&quot;s3://my-bucket/plates/experiment.ome.tiff&quot;</span><span class="p">)</span>
+<span class="n">register_directory</span><span class="p">(</span><span class="s2">&quot;s3://my-bucket/plates/&quot;</span><span class="p">,</span> <span class="n">catalog</span><span class="p">,</span> <span class="s2">&quot;myproject.images&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="namespace-layout">
+<h2>Namespace layout<a class="headerlink" href="#namespace-layout" title="Link to this heading">#</a></h2>
+<p>A typical experiment in the catalog looks like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>myproject.images   → image_assets table  (one row per image file)
+                   → chunk_index table   (optional; Zarr chunked arrays only)
+myproject.profiles → profiles table      (pycytominer measurements)
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="ome-arrow-integration">
+<h2>OME-Arrow integration<a class="headerlink" href="#ome-arrow-integration" title="Link to this heading">#</a></h2>
+<p>Everything above deals with <em>metadata</em> — shape, dtype, file location. If you
+also need the <em>pixel data itself</em> stored as an Arrow table (for example, to
+pass raw pixel arrays into an ML pipeline without re-reading the original
+file), use the optional OME-Arrow integration (requires <code class="docutils literal notranslate"><span class="pre">ome-arrow</span> <span class="pre">&gt;=</span> <span class="pre">0.0.11</span></code>):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">create_ome_arrow_from_tiff</span><span class="p">,</span>
+    <span class="n">create_ome_arrow_from_zarr</span><span class="p">,</span>
+    <span class="n">open_ome_arrow_dataset</span><span class="p">,</span>
+    <span class="n">write_ome_arrow_dataset</span><span class="p">,</span>
 <span class="p">)</span>
-
-<span class="n">joined</span> <span class="o">=</span> <span class="n">join_catalog_image_assets_with_profiles</span><span class="p">(</span>
-    <span class="s2">&quot;default&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;bioimage.cytotable&quot;</span><span class="p">,</span>
-    <span class="n">profiles</span><span class="p">,</span>
-    <span class="n">chunk_index_table</span><span class="o">=</span><span class="s2">&quot;chunk_index&quot;</span><span class="p">,</span>
-<span class="p">)</span>
 </pre></div>
 </div>
+<blockquote>
+<div><p><strong>Conversion note:</strong> <code class="docutils literal notranslate"><span class="pre">create_ome_arrow_from_zarr</span></code>/<code class="docutils literal notranslate"><span class="pre">create_ome_arrow_from_tiff</span></code>
+materialize source pixels to build Arrow values. For large images, expect the
+conversion to take roughly as long as reading the full pixel array once, plus
+Arrow encoding overhead. Peak memory and output size scale with the pixel
+payload, so a 10 GB uncompressed image should be treated as a multi-GB
+conversion. Prefer <code class="docutils literal notranslate"><span class="pre">open_ome_arrow_dataset</span></code> to read an already-converted
+OME-Arrow dataset without re-paying that cost.</p>
+</div></blockquote>
+<p>Install with <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'iceberg-bioimage[ome-arrow]'</span></code>.</p>
 </section>
+<hr class="docutils" />
+<section id="duckdb-helpers">
+<h2>DuckDB helpers<a class="headerlink" href="#duckdb-helpers" title="Link to this heading">#</a></h2>
+<p>Optional SQL-style filtering and joins over registered metadata tables,
+useful when you want ad-hoc queries (e.g. “all images with <code class="docutils literal notranslate"><span class="pre">cell_count</span> <span class="pre">&gt;</span> <span class="pre">10</span></code>”)
+without writing pandas/pyarrow code by hand:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">join_image_assets_with_profiles</span><span class="p">,</span> <span class="n">query_metadata_table</span>
+
+<span class="c1"># Arrow tables loaded from your catalog, warehouse export, or local Parquet files.</span>
+<span class="n">image_assets_table</span> <span class="o">=</span> <span class="o">...</span>
+<span class="n">profiles_table</span> <span class="o">=</span> <span class="o">...</span>
+
+<span class="c1"># joined is an Arrow table containing profile rows plus matching image metadata.</span>
+<span class="n">joined</span> <span class="o">=</span> <span class="n">join_image_assets_with_profiles</span><span class="p">(</span><span class="n">image_assets_table</span><span class="p">,</span> <span class="n">profiles_table</span><span class="p">)</span>
+<span class="n">filtered</span> <span class="o">=</span> <span class="n">query_metadata_table</span><span class="p">(</span><span class="n">joined</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;cell_count&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)])</span>
+</pre></div>
+</div>
+<p>Install with <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'iceberg-bioimage[duckdb]'</span></code>.</p>
+</section>
+<hr class="docutils" />
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Problem</p></th>
+<th class="head"><p>Fix</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">DuckDB</span> <span class="pre">helpers</span> <span class="pre">require</span> <span class="pre">the</span> <span class="pre">optional</span> <span class="pre">duckdb</span> <span class="pre">dependency</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'iceberg-bioimage[duckdb]'</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">fsspec</span> <span class="pre">is</span> <span class="pre">required</span> <span class="pre">to</span> <span class="pre">open</span> <span class="pre">remote</span> <span class="pre">TIFF</span> <span class="pre">URIs</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'iceberg-bioimage[s3]'</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Profile fails join contract (<code class="docutils literal notranslate"><span class="pre">missing</span> <span class="pre">dataset_id</span></code>)</p></td>
+<td><p>Pass <code class="docutils literal notranslate"><span class="pre">profile_dataset_id=</span></code> to join helpers, or check <code class="docutils literal notranslate"><span class="pre">validate_microscopy_profile_table()</span></code> for alias suggestions</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Missing</span> <span class="pre">table:</span> <span class="pre">...</span></code> for catalog-backed paths</p></td>
+<td><p>Check catalog config, namespace spelling, and table names</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<hr class="docutils" />
 <section id="documentation">
 <h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">#</a></h2>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">docs/src/getting-started.md</span></code> for first-time setup</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">docs/src/catalog-setup.md</span></code> for catalog configuration</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">docs/src/cytomining.md</span></code> for warehouse export workflows</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">docs/src/warehouse-spec.md</span></code> for the warehouse interoperability specification</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">docs/src/workflow.md</span></code> for CLI-driven end-to-end examples</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs/src/getting-started.md</span></code> — first-time setup</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs/src/catalog-setup.md</span></code> — catalog configuration</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs/src/cytomining.md</span></code> — warehouse export workflows</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs/src/warehouse-spec.md</span></code> — warehouse interoperability specification</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">examples/quickstart.py</span></code> — minimal scan, publish, validation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">examples/catalog_duckdb.py</span></code> — catalog-backed query workflow</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">examples/synthetic_workflow.py</span></code> — catalog-free local workflow</p></li>
 </ul>
-</section>
-<section id="troubleshooting">
-<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">#</a></h2>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">DuckDB</span> <span class="pre">helpers</span> <span class="pre">require</span> <span class="pre">the</span> <span class="pre">optional</span> <span class="pre">duckdb</span> <span class="pre">dependency</span> <span class="pre">group</span></code>:
-install with <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'iceberg-bioimage[duckdb]'</span></code> or <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span> <span class="pre">--group</span> <span class="pre">duckdb</span></code>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">Profiles</span> <span class="pre">do</span> <span class="pre">not</span> <span class="pre">satisfy</span> <span class="pre">the</span> <span class="pre">microscopy</span> <span class="pre">join</span> <span class="pre">contract</span></code>:
-run <code class="docutils literal notranslate"><span class="pre">iceberg-bioimage</span> <span class="pre">validate-contract</span> <span class="pre">...</span></code> and pass
-<code class="docutils literal notranslate"><span class="pre">--profile-dataset-id</span></code> when <code class="docutils literal notranslate"><span class="pre">dataset_id</span></code> is missing but implied.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">Missing</span> <span class="pre">table:</span> <span class="pre">...</span></code> for catalog-backed paths:
-verify catalog configuration, namespace, and table names.</p></li>
-</ul>
-</section>
-<section id="architecture-note">
-<h2>Architecture note<a class="headerlink" href="#architecture-note" title="Link to this heading">#</a></h2>
-<p>The package focuses on metadata scanning, publishing, Cytomining warehouse
-export, validation, and joins. OME-Arrow remains the place for Arrow-native
-image payload handling and lazy image access.</p>
 <div class="toctree-wrapper compound">
 <p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
@@ -764,6 +830,9 @@ image payload handling and lazy image access.</p>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.catalog_table_to_arrow"><code class="docutils literal notranslate"><span class="pre">catalog_table_to_arrow()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.create_duckdb_connection"><code class="docutils literal notranslate"><span class="pre">create_duckdb_connection()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.create_ome_arrow"><code class="docutils literal notranslate"><span class="pre">create_ome_arrow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.create_ome_arrow_from_tiff"><code class="docutils literal notranslate"><span class="pre">create_ome_arrow_from_tiff()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.create_ome_arrow_from_zarr"><code class="docutils literal notranslate"><span class="pre">create_ome_arrow_from_zarr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.deregister_store"><code class="docutils literal notranslate"><span class="pre">deregister_store()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.export_catalog_to_cytomining_warehouse"><code class="docutils literal notranslate"><span class="pre">export_catalog_to_cytomining_warehouse()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.export_profiles_to_cytomining_warehouse"><code class="docutils literal notranslate"><span class="pre">export_profiles_to_cytomining_warehouse()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.export_scan_result_to_cytomining_warehouse"><code class="docutils literal notranslate"><span class="pre">export_scan_result_to_cytomining_warehouse()</span></code></a></li>
@@ -779,25 +848,36 @@ image payload handling and lazy image access.</p>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.load_catalog_table"><code class="docutils literal notranslate"><span class="pre">load_catalog_table()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.load_profile_column_aliases"><code class="docutils literal notranslate"><span class="pre">load_profile_column_aliases()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.load_warehouse_manifest"><code class="docutils literal notranslate"><span class="pre">load_warehouse_manifest()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.open_ome_arrow_dataset"><code class="docutils literal notranslate"><span class="pre">open_ome_arrow_dataset()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publish_chunk_index"><code class="docutils literal notranslate"><span class="pre">publish_chunk_index()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publish_image_assets"><code class="docutils literal notranslate"><span class="pre">publish_image_assets()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.query_metadata_table"><code class="docutils literal notranslate"><span class="pre">query_metadata_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.register_directory"><code class="docutils literal notranslate"><span class="pre">register_directory()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.register_profile_table"><code class="docutils literal notranslate"><span class="pre">register_profile_table()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.register_store"><code class="docutils literal notranslate"><span class="pre">register_store()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.scan_as_arrow_table"><code class="docutils literal notranslate"><span class="pre">scan_as_arrow_table()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.scan_ome_arrow"><code class="docutils literal notranslate"><span class="pre">scan_ome_arrow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.scan_result_as_arrow_table"><code class="docutils literal notranslate"><span class="pre">scan_result_as_arrow_table()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.scan_store"><code class="docutils literal notranslate"><span class="pre">scan_store()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.summarize_scan_result"><code class="docutils literal notranslate"><span class="pre">summarize_scan_result()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.summarize_store"><code class="docutils literal notranslate"><span class="pre">summarize_store()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.validate_microscopy_profile_columns"><code class="docutils literal notranslate"><span class="pre">validate_microscopy_profile_columns()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.validate_microscopy_profile_table"><code class="docutils literal notranslate"><span class="pre">validate_microscopy_profile_table()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.validate_warehouse_manifest"><code class="docutils literal notranslate"><span class="pre">validate_warehouse_manifest()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.write_ome_arrow_dataset"><code class="docutils literal notranslate"><span class="pre">write_ome_arrow_dataset()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="python-api.html#module-iceberg_bioimage.api">Scan API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.api.deregister_store"><code class="docutils literal notranslate"><span class="pre">deregister_store()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.api.ingest_scan_results_to_warehouse"><code class="docutils literal notranslate"><span class="pre">ingest_scan_results_to_warehouse()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.api.ingest_stores_to_warehouse"><code class="docutils literal notranslate"><span class="pre">ingest_stores_to_warehouse()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.api.join_profiles_with_scan_result"><code class="docutils literal notranslate"><span class="pre">join_profiles_with_scan_result()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.api.join_profiles_with_store"><code class="docutils literal notranslate"><span class="pre">join_profiles_with_store()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.api.register_directory"><code class="docutils literal notranslate"><span class="pre">register_directory()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.api.register_profile_table"><code class="docutils literal notranslate"><span class="pre">register_profile_table()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.api.register_store"><code class="docutils literal notranslate"><span class="pre">register_store()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.api.scan_as_arrow_table"><code class="docutils literal notranslate"><span class="pre">scan_as_arrow_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.api.scan_result_as_arrow_table"><code class="docutils literal notranslate"><span class="pre">scan_result_as_arrow_table()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.api.scan_store"><code class="docutils literal notranslate"><span class="pre">scan_store()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.api.summarize_scan_result"><code class="docutils literal notranslate"><span class="pre">summarize_scan_result()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.api.summarize_store"><code class="docutils literal notranslate"><span class="pre">summarize_store()</span></code></a></li>
@@ -819,9 +899,13 @@ image payload handling and lazy image access.</p>
 <li class="toctree-l2"><a class="reference internal" href="python-api.html#module-iceberg_bioimage.publishing.image_assets">Publishing</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publishing.image_assets.SupportsAppend"><code class="docutils literal notranslate"><span class="pre">SupportsAppend</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publishing.image_assets.SupportsCatalog"><code class="docutils literal notranslate"><span class="pre">SupportsCatalog</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publishing.image_assets.SupportsDelete"><code class="docutils literal notranslate"><span class="pre">SupportsDelete</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publishing.image_assets.SupportsLoadTable"><code class="docutils literal notranslate"><span class="pre">SupportsLoadTable</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publishing.image_assets.delete_dataset_image_assets"><code class="docutils literal notranslate"><span class="pre">delete_dataset_image_assets()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publishing.image_assets.publish_image_assets"><code class="docutils literal notranslate"><span class="pre">publish_image_assets()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publishing.image_assets.publish_profile_table"><code class="docutils literal notranslate"><span class="pre">publish_profile_table()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publishing.image_assets.scan_result_to_rows"><code class="docutils literal notranslate"><span class="pre">scan_result_to_rows()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publishing.chunk_index.delete_dataset_chunk_index"><code class="docutils literal notranslate"><span class="pre">delete_dataset_chunk_index()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publishing.chunk_index.publish_chunk_index"><code class="docutils literal notranslate"><span class="pre">publish_chunk_index()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.publishing.chunk_index.scan_result_to_chunk_rows"><code class="docutils literal notranslate"><span class="pre">scan_result_to_chunk_rows()</span></code></a></li>
 </ul>
@@ -859,7 +943,11 @@ image payload handling and lazy image access.</p>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="python-api.html#module-iceberg_bioimage.integrations.ome_arrow">Optional OME-Arrow Integration</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.integrations.ome_arrow.create_ome_arrow"><code class="docutils literal notranslate"><span class="pre">create_ome_arrow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.integrations.ome_arrow.create_ome_arrow_from_tiff"><code class="docutils literal notranslate"><span class="pre">create_ome_arrow_from_tiff()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.integrations.ome_arrow.create_ome_arrow_from_zarr"><code class="docutils literal notranslate"><span class="pre">create_ome_arrow_from_zarr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.integrations.ome_arrow.open_ome_arrow_dataset"><code class="docutils literal notranslate"><span class="pre">open_ome_arrow_dataset()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.integrations.ome_arrow.scan_ome_arrow"><code class="docutils literal notranslate"><span class="pre">scan_ome_arrow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="python-api.html#iceberg_bioimage.integrations.ome_arrow.write_ome_arrow_dataset"><code class="docutils literal notranslate"><span class="pre">write_ome_arrow_dataset()</span></code></a></li>
 </ul>
 </li>
 </ul>

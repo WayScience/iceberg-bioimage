@@ -473,6 +473,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pa</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow.dataset</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ds</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.adapters.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseAdapter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.adapters.ome_tiff</span><span class="w"> </span><span class="kn">import</span> <span class="n">OMETiffAdapter</span>
@@ -489,12 +490,16 @@
     <span class="n">WarehouseIngestResult</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.publishing.chunk_index</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">delete_dataset_chunk_index</span><span class="p">,</span>
     <span class="n">publish_chunk_index</span><span class="p">,</span>
     <span class="n">scan_result_to_chunk_rows</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.publishing.image_assets</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">SupportsCatalog</span><span class="p">,</span>
+    <span class="n">_dataset_id</span><span class="p">,</span>
+    <span class="n">delete_dataset_image_assets</span><span class="p">,</span>
     <span class="n">publish_image_assets</span><span class="p">,</span>
+    <span class="n">publish_profile_table</span><span class="p">,</span>
     <span class="n">scan_result_to_rows</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.validation.contracts</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -532,10 +537,28 @@
     <span class="o">*</span><span class="p">,</span>
     <span class="n">image_assets_table</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;image_assets&quot;</span><span class="p">,</span>
     <span class="n">chunk_index_table</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;chunk_index&quot;</span><span class="p">,</span>
+    <span class="n">replace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegistrationResult</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scan a store and publish canonical metadata tables.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scan a store and publish canonical metadata tables.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    replace:</span>
+<span class="sd">        When ``True``, existing rows for this dataset are deleted before</span>
+<span class="sd">        inserting the freshly-scanned metadata (upsert by ``dataset_id``).</span>
+<span class="sd">        Requires the Iceberg table to support row-level deletes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">scan_result</span> <span class="o">=</span> <span class="n">scan_store</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+    <span class="n">dataset_id</span> <span class="o">=</span> <span class="n">_dataset_id</span><span class="p">(</span><span class="n">scan_result</span><span class="o">.</span><span class="n">source_uri</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">replace</span><span class="p">:</span>
+        <span class="n">_deregister_by_dataset_id</span><span class="p">(</span>
+            <span class="n">dataset_id</span><span class="p">,</span>
+            <span class="n">catalog</span><span class="p">,</span>
+            <span class="n">namespace</span><span class="p">,</span>
+            <span class="n">image_assets_table</span><span class="p">,</span>
+            <span class="n">chunk_index_table</span><span class="p">,</span>
+        <span class="p">)</span>
     <span class="n">image_assets_rows</span> <span class="o">=</span> <span class="n">publish_image_assets</span><span class="p">(</span>
         <span class="n">catalog</span><span class="p">,</span>
         <span class="n">namespace</span><span class="p">,</span>
@@ -557,6 +580,127 @@
         <span class="n">chunk_rows_published</span><span class="o">=</span><span class="n">chunk_rows</span><span class="p">,</span>
     <span class="p">)</span></div>
 
+
+
+<div class="viewcode-block" id="deregister_store">
+<a class="viewcode-back" href="../../python-api.html#iceberg_bioimage.deregister_store">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">deregister_store</span><span class="p">(</span>
+    <span class="n">uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">catalog</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">SupportsCatalog</span><span class="p">,</span>
+    <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">image_assets_table</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;image_assets&quot;</span><span class="p">,</span>
+    <span class="n">chunk_index_table</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;chunk_index&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove all catalog rows associated with a bioimage store.</span>
+
+<span class="sd">    Derives the ``dataset_id`` from *uri* (same rule as :func:`register_store`)</span>
+<span class="sd">    and deletes matching rows from ``image_assets`` and, optionally,</span>
+<span class="sd">    ``chunk_index``.  If a table does not exist the call is silently skipped.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">dataset_id</span> <span class="o">=</span> <span class="n">_dataset_id</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+    <span class="n">_deregister_by_dataset_id</span><span class="p">(</span>
+        <span class="n">dataset_id</span><span class="p">,</span>
+        <span class="n">catalog</span><span class="p">,</span>
+        <span class="n">namespace</span><span class="p">,</span>
+        <span class="n">image_assets_table</span><span class="p">,</span>
+        <span class="n">chunk_index_table</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="register_directory">
+<a class="viewcode-back" href="../../python-api.html#iceberg_bioimage.register_directory">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">register_directory</span><span class="p">(</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">catalog</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">SupportsCatalog</span><span class="p">,</span>
+    <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">glob</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;**/*.ome.zarr&quot;</span><span class="p">,</span>
+    <span class="n">image_assets_table</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;image_assets&quot;</span><span class="p">,</span>
+    <span class="n">chunk_index_table</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;chunk_index&quot;</span><span class="p">,</span>
+    <span class="n">replace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">WarehouseIngestResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Discover and register every matching dataset under *path*.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path:</span>
+<span class="sd">        Root directory to search.</span>
+<span class="sd">    glob:</span>
+<span class="sd">        ``pathlib``-compatible glob pattern relative to *path*.</span>
+<span class="sd">        Common values:</span>
+
+<span class="sd">        * ``&quot;**/*.ome.zarr&quot;`` — OME-Zarr stores (default)</span>
+<span class="sd">        * ``&quot;**/*.zarr&quot;``     — all Zarr stores (includes OME-Zarr)</span>
+<span class="sd">        * ``&quot;**/*.ome.tiff&quot;`` — OME-TIFF files</span>
+<span class="sd">        * ``&quot;**/*.tif&quot;``      — all TIFF files</span>
+<span class="sd">    replace:</span>
+<span class="sd">        Passed through to :func:`register_store` for each discovered dataset.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">uris</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">match</span><span class="p">)</span> <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">glob</span><span class="p">))</span>
+
+    <span class="n">datasets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">RegistrationResult</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">all_warnings</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">normalized_namespace</span> <span class="o">=</span> <span class="n">_normalize_namespace_parts</span><span class="p">(</span><span class="n">namespace</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">uri</span> <span class="ow">in</span> <span class="n">uris</span><span class="p">:</span>
+        <span class="n">scan_result</span> <span class="o">=</span> <span class="n">scan_store</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">replace</span><span class="p">:</span>
+            <span class="n">_deregister_by_dataset_id</span><span class="p">(</span>
+                <span class="n">_dataset_id</span><span class="p">(</span><span class="n">scan_result</span><span class="o">.</span><span class="n">source_uri</span><span class="p">),</span>
+                <span class="n">catalog</span><span class="p">,</span>
+                <span class="n">normalized_namespace</span><span class="p">,</span>
+                <span class="n">image_assets_table</span><span class="p">,</span>
+                <span class="n">chunk_index_table</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">image_assets_rows</span> <span class="o">=</span> <span class="n">publish_image_assets</span><span class="p">(</span>
+            <span class="n">catalog</span><span class="p">,</span>
+            <span class="n">normalized_namespace</span><span class="p">,</span>
+            <span class="n">image_assets_table</span><span class="p">,</span>
+            <span class="n">scan_result</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">chunk_rows</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">chunk_index_table</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">chunk_rows</span> <span class="o">=</span> <span class="n">publish_chunk_index</span><span class="p">(</span>
+                <span class="n">catalog</span><span class="p">,</span>
+                <span class="n">normalized_namespace</span><span class="p">,</span>
+                <span class="n">chunk_index_table</span><span class="p">,</span>
+                <span class="n">scan_result</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">RegistrationResult</span><span class="p">(</span>
+                <span class="n">source_uri</span><span class="o">=</span><span class="n">scan_result</span><span class="o">.</span><span class="n">source_uri</span><span class="p">,</span>
+                <span class="n">image_assets_rows_published</span><span class="o">=</span><span class="n">image_assets_rows</span><span class="p">,</span>
+                <span class="n">chunk_rows_published</span><span class="o">=</span><span class="n">chunk_rows</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">all_warnings</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">scan_result</span><span class="o">.</span><span class="n">warnings</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">WarehouseIngestResult</span><span class="p">(</span>
+        <span class="n">catalog</span><span class="o">=</span><span class="n">catalog</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">catalog</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">type</span><span class="p">(</span><span class="n">catalog</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+        <span class="n">namespace</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">normalized_namespace</span><span class="p">),</span>
+        <span class="n">image_assets_table</span><span class="o">=</span><span class="n">image_assets_table</span><span class="p">,</span>
+        <span class="n">chunk_index_table</span><span class="o">=</span><span class="n">chunk_index_table</span><span class="p">,</span>
+        <span class="n">datasets</span><span class="o">=</span><span class="n">datasets</span><span class="p">,</span>
+        <span class="n">warnings</span><span class="o">=</span><span class="n">all_warnings</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_deregister_by_dataset_id</span><span class="p">(</span>
+    <span class="n">dataset_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">catalog</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">SupportsCatalog</span><span class="p">,</span>
+    <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">image_assets_table</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">chunk_index_table</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">delete_dataset_image_assets</span><span class="p">(</span><span class="n">catalog</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">image_assets_table</span><span class="p">,</span> <span class="n">dataset_id</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">chunk_index_table</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">delete_dataset_chunk_index</span><span class="p">(</span><span class="n">catalog</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">chunk_index_table</span><span class="p">,</span> <span class="n">dataset_id</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="ingest_scan_results_to_warehouse">
@@ -737,6 +881,39 @@
 
 
 
+<div class="viewcode-block" id="scan_result_as_arrow_table">
+<a class="viewcode-back" href="../../python-api.html#iceberg_bioimage.scan_result_as_arrow_table">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">scan_result_as_arrow_table</span><span class="p">(</span><span class="n">scan_result</span><span class="p">:</span> <span class="n">ScanResult</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return image-asset metadata from a scan result as an Arrow table.</span>
+
+<span class="sd">    No catalog or Iceberg tables are required — the table lives in memory and</span>
+<span class="sd">    can be queried directly with DuckDB, PyArrow compute, or similar tools.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_pylist</span><span class="p">(</span><span class="n">scan_result_to_rows</span><span class="p">(</span><span class="n">scan_result</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="scan_as_arrow_table">
+<a class="viewcode-back" href="../../python-api.html#iceberg_bioimage.scan_as_arrow_table">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">scan_as_arrow_table</span><span class="p">(</span><span class="n">uri</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scan a supported image store and return metadata as an Arrow table.</span>
+
+<span class="sd">    No catalog or Iceberg tables are required. Drop an ome-zarr or ome-tiff</span>
+<span class="sd">    path (local or remote) in, get a queryable Arrow table out.</span>
+
+<span class="sd">    Supported URI schemes</span>
+<span class="sd">    ---------------------</span>
+<span class="sd">    * Local paths: ``/data/sample.ome.zarr``, ``./scan.tif``</span>
+<span class="sd">    * file:// URLs: ``file:///data/sample.ome.zarr``</span>
+<span class="sd">    * S3 (requires the ``s3`` optional dependency): ``s3://bucket/data.ome.zarr``</span>
+<span class="sd">    * Any fsspec-compatible URL supported by the underlying adapter libraries.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">scan_result_as_arrow_table</span><span class="p">(</span><span class="n">scan_store</span><span class="p">(</span><span class="n">uri</span><span class="p">))</span></div>
+
+
+
 <div class="viewcode-block" id="join_profiles_with_store">
 <a class="viewcode-back" href="../../python-api.html#iceberg_bioimage.join_profiles_with_store">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">join_profiles_with_store</span><span class="p">(</span>
@@ -758,6 +935,29 @@
         <span class="n">include_chunks</span><span class="o">=</span><span class="n">include_chunks</span><span class="p">,</span>
         <span class="n">profile_dataset_id</span><span class="o">=</span><span class="n">profile_dataset_id</span><span class="p">,</span>
     <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="register_profile_table">
+<a class="viewcode-back" href="../../python-api.html#iceberg_bioimage.register_profile_table">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">register_profile_table</span><span class="p">(</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">catalog</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">SupportsCatalog</span><span class="p">,</span>
+    <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;profiles&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Publish a profile Parquet file into the Iceberg catalog.</span>
+
+<span class="sd">    Profiles are conventionally stored under a ``profiles`` sub-namespace,</span>
+<span class="sd">    e.g. pass ``namespace=&quot;nf1.profiles&quot;`` for an NF1 experiment.</span>
+
+<span class="sd">    Returns the number of rows published.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">arrow_table</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">dataset</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">))</span><span class="o">.</span><span class="n">to_table</span><span class="p">()</span>
+    <span class="n">normalized_namespace</span> <span class="o">=</span> <span class="n">_normalize_namespace_parts</span><span class="p">(</span><span class="n">namespace</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">publish_profile_table</span><span class="p">(</span><span class="n">arrow_table</span><span class="p">,</span> <span class="n">catalog</span><span class="p">,</span> <span class="n">normalized_namespace</span><span class="p">,</span> <span class="n">table_name</span><span class="p">)</span></div>
 
 
 

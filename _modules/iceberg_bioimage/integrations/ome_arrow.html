@@ -465,7 +465,7 @@
                 <article class="bd-article">
                   
   <h1>Source code for iceberg_bioimage.integrations.ome_arrow</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Optional OME-Arrow integration helpers.&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;Optional OME-Arrow integration helpers (requires ome-arrow &gt;= 0.0.10).&quot;&quot;&quot;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -490,6 +490,79 @@
 
     <span class="n">ome_arrow</span> <span class="o">=</span> <span class="n">_require_ome_arrow</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">ome_arrow</span><span class="o">.</span><span class="n">OMEArrow</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="create_ome_arrow_from_zarr">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.create_ome_arrow_from_zarr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_ome_arrow_from_zarr</span><span class="p">(</span><span class="n">zarr_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>  <span class="c1"># noqa: ANN401</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read an OME-Zarr store and return a typed OME-Arrow ``pa.StructScalar``.</span>
+
+<span class="sd">    Requires ``bioio`` and an OME-Zarr reader backend in the environment.</span>
+<span class="sd">    Any keyword arguments are forwarded to ``ome_arrow.from_ome_zarr``.</span>
+
+<span class="sd">    Conversion note: this helper materializes source pixels to build the Arrow</span>
+<span class="sd">    value. Expect cost roughly proportional to reading the full pixel array</span>
+<span class="sd">    once, plus Arrow encoding overhead. For repeated reads of the same data,</span>
+<span class="sd">    convert once and reuse :func:`open_ome_arrow_dataset` instead of calling</span>
+<span class="sd">    this function each time.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ome_arrow</span> <span class="o">=</span> <span class="n">_require_ome_arrow</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ome_arrow</span><span class="o">.</span><span class="n">from_ome_zarr</span><span class="p">(</span><span class="n">zarr_path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="create_ome_arrow_from_tiff">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.create_ome_arrow_from_tiff">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_ome_arrow_from_tiff</span><span class="p">(</span><span class="n">tiff_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>  <span class="c1"># noqa: ANN401</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read a TIFF file and return a typed OME-Arrow ``pa.StructScalar``.</span>
+
+<span class="sd">    Requires ``bioio`` in the environment.</span>
+<span class="sd">    Any keyword arguments are forwarded to ``ome_arrow.from_tiff``.</span>
+
+<span class="sd">    Conversion note: same as :func:`create_ome_arrow_from_zarr`; this</span>
+<span class="sd">    materializes source pixels to build the Arrow value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ome_arrow</span> <span class="o">=</span> <span class="n">_require_ome_arrow</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ome_arrow</span><span class="o">.</span><span class="n">from_tiff</span><span class="p">(</span><span class="n">tiff_path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="open_ome_arrow_dataset">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.open_ome_arrow_dataset">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">open_ome_arrow_dataset</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Open an OME-Arrow dataset directory for reading.</span>
+
+<span class="sd">    Returns an ``ome_arrow.OMEArrowDataset`` instance that exposes</span>
+<span class="sd">    ``read_image``, ``read_channel``, ``read_plane``, ``read_region``,</span>
+<span class="sd">    and ``image_metadata`` methods.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ome_arrow</span> <span class="o">=</span> <span class="n">_require_ome_arrow</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ome_arrow</span><span class="o">.</span><span class="n">OMEArrowDataset</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="write_ome_arrow_dataset">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.write_ome_arrow_dataset">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">write_ome_arrow_dataset</span><span class="p">(</span>
+    <span class="n">images</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>  <span class="c1"># noqa: ANN401</span>
+    <span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>  <span class="c1"># noqa: ANN401</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Write a sequence of images as an OME-Arrow dataset on disk.</span>
+
+<span class="sd">    *images* may be NumPy arrays, OME-Arrow records, or any input accepted</span>
+<span class="sd">    by ``ome_arrow.write_ome_arrow_dataset``.  Any keyword arguments are</span>
+<span class="sd">    forwarded verbatim.</span>
+
+<span class="sd">    Returns the ``ChunkChoice`` used for the first image.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ome_arrow</span> <span class="o">=</span> <span class="n">_require_ome_arrow</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ome_arrow</span><span class="o">.</span><span class="n">write_ome_arrow_dataset</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 

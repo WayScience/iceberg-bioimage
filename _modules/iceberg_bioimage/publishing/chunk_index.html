@@ -481,8 +481,11 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.publishing.image_assets</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">SupportsCatalog</span><span class="p">,</span>
     <span class="n">_dataset_id</span><span class="p">,</span>
+    <span class="n">_dataset_id_filter</span><span class="p">,</span>
     <span class="n">_fallback_image_id</span><span class="p">,</span>
     <span class="n">_load_or_create_table</span><span class="p">,</span>
+    <span class="n">_load_table_with_namespace_fallback</span><span class="p">,</span>
+    <span class="n">_resolve_catalog</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">iceberg_bioimage.validation.contracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">raise_for_invalid_scan_result</span>
 
@@ -510,6 +513,44 @@
 
     <span class="n">table</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pa</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">from_pylist</span><span class="p">(</span><span class="n">rows</span><span class="p">))</span>
     <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="delete_dataset_chunk_index">
+<a class="viewcode-back" href="../../../python-api.html#iceberg_bioimage.delete_dataset_chunk_index">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">delete_dataset_chunk_index</span><span class="p">(</span>
+    <span class="n">catalog</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">SupportsCatalog</span><span class="p">,</span>
+    <span class="n">namespace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">dataset_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Delete all chunk_index rows for a given dataset_id.</span>
+
+<span class="sd">    If the table does not yet exist, nothing happens and no error is raised.</span>
+<span class="sd">    If the table exists but does not support row-level deletes, a</span>
+<span class="sd">    :exc:`RuntimeError` is raised.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pyiceberg.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">NoSuchTableError</span>
+
+    <span class="n">resolved</span> <span class="o">=</span> <span class="n">_resolve_catalog</span><span class="p">(</span><span class="n">catalog</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">table</span> <span class="o">=</span> <span class="n">_load_table_with_namespace_fallback</span><span class="p">(</span>
+            <span class="n">resolved</span><span class="p">,</span>
+            <span class="n">namespace</span><span class="p">,</span>
+            <span class="n">table_name</span><span class="p">,</span>
+            <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;deleting&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="n">NoSuchTableError</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="s2">&quot;delete&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Table </span><span class="si">{</span><span class="n">table_name</span><span class="si">!r}</span><span class="s2"> does not support row-level deletion. &quot;</span>
+            <span class="s2">&quot;Ensure your Iceberg catalog and table format support delete operations &quot;</span>
+            <span class="s2">&quot;(copy-on-write or merge-on-read).&quot;</span>
+        <span class="p">)</span>
+    <span class="n">table</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">_dataset_id_filter</span><span class="p">(</span><span class="n">dataset_id</span><span class="p">))</span></div>
 
 
 
@@ -587,13 +628,8 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_build_chunk_index_schema</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">pyiceberg.schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">Schema</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">pyiceberg.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">LongType</span><span class="p">,</span> <span class="n">NestedField</span><span class="p">,</span> <span class="n">StringType</span>
-    <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>  <span class="c1"># pragma: no cover - guarded by dependency declaration</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-            <span class="s2">&quot;PyIceberg is required for publishing. Install `pyiceberg` first.&quot;</span>
-        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pyiceberg.schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">Schema</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pyiceberg.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">LongType</span><span class="p">,</span> <span class="n">NestedField</span><span class="p">,</span> <span class="n">StringType</span>
 
     <span class="k">return</span> <span class="n">Schema</span><span class="p">(</span>
         <span class="n">NestedField</span><span class="p">(</span>
