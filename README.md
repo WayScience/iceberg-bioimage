@@ -65,8 +65,13 @@ print(table.schema)
 # metadata_json: string
 ```
 
-The result is a standard `pyarrow.Table` — query it with DuckDB, Pandas, or
-pass it directly to downstream tools.
+The result is a standard `pyarrow.Table` — inspect it with Pandas, query it
+with DuckDB, or pass it directly to downstream tools.
+
+```python
+df = table.to_pandas()
+print(df[["dataset_id", "shape_json", "dtype"]])
+```
 
 ```python
 import duckdb
