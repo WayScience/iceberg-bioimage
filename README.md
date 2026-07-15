@@ -10,6 +10,12 @@
 
 `iceberg-bioimage` reads the metadata of OME-TIFF and OME-Zarr image files (shape, dtype, axes, chunking — not pixel data) into Arrow tables that can be queried directly or cataloged in Apache Iceberg.
 
+This README is organized around the common workflow first: scan image metadata,
+catalog it, join it to profile tables, and export Cytomining-compatible
+metadata warehouses. Pixel-data workflows are covered later in the OME-Arrow
+section because they require an optional integration and pay a separate
+conversion cost.
+
 ## Two terms used throughout this README
 
 - **scan** — read an image's metadata (shape, dtype, axes, chunk layout) without
@@ -91,7 +97,10 @@ from iceberg_bioimage import register_store
 register_store("data/experiment.zarr", "default", "myproject.images")
 ```
 
-Register a whole directory of stores at once:
+Register a whole directory when an experiment writes one image store per well,
+field, plate, or time point. This creates one cataloged metadata row per store,
+so you can query the full experiment later without manually registering or
+rescanning each image file.
 
 ```python
 from iceberg_bioimage import register_directory
@@ -104,9 +113,9 @@ register_directory(
 )
 ```
 
-Use `replace=True` to re-register a store that already exists in the catalog —
-for example, after re-running a pipeline that regenerated the source image and
-you want the catalog row updated instead of duplicated:
+Use `replace=True` when an image has changed and you want to refresh its
+catalog metadata. The old rows are removed first, so later queries use the
+latest shape, dtype, chunking, and file location without duplicate entries.
 
 ```python
 register_store("data/experiment.zarr", "default", "myproject.images", replace=True)
@@ -121,9 +130,10 @@ deregister_store("data/experiment.zarr", "default", "myproject.images")
 ```
 
 Pass `chunk_index_table=None` to skip writing the optional chunk-index table.
-Recommended for TIFF-only datasets, since TIFF isn't stored as Zarr-style
-chunks — the table would always end up empty for TIFF data, so skipping it
-avoids an unused table and unnecessary writes:
+The chunk-index table records Zarr array chunk coordinates that can be queried
+later for region-level access. TIFF scans do not expose a Zarr-style chunk
+grid, so TIFF-only registrations have no chunk rows to write; skipping the
+table avoids an unused table and unnecessary writes:
 
 ```python
 register_store("data/experiment.ome.tiff", "default", "myproject.images", chunk_index_table=None)
@@ -147,11 +157,11 @@ register_profile_table(
 )
 ```
 
-Pycytominer tools name their metadata columns inconsistently across pipelines
-(`Image_Metadata_Well`, `Metadata_Plate`, `Metadata_Site`, ...).
-"Alias resolution" means this package recognizes those common naming variants
-and maps each one to a canonical column name (`well_id`, `plate_id`, etc.) so
-joins work without you renaming columns by hand.
+Tools in the Cytomining ecosystem do not all use the same metadata column names
+(`Image_Metadata_Well`, `Metadata_Plate`, `Metadata_Site`, ...). The join
+helpers need stable keys such as `well_id` and `plate_id` to match profile rows
+to image metadata. "Alias resolution" maps common variants onto those canonical
+names so joins work without you renaming columns by hand.
 
 Before registering, you can check whether a profile table has everything
 needed to join against image metadata. This package's **microscopy join
@@ -185,6 +195,10 @@ joined = join_profiles_with_store("data/experiment.zarr", "data/profiles.parquet
 print(joined.num_rows)
 ```
 
+Alias resolution means matching known profile-table column variants, such as
+`Metadata_ImageID`, to the canonical join keys used by this package, such as
+`image_id`.
+
 When `dataset_id` is absent from the profile table but all rows belong to one
 dataset, supply it directly instead of relying on alias resolution:
 
@@ -198,8 +212,11 @@ joined = join_profiles_with_store(
 
 ### 5 — Cytomining warehouse export
 
-Export images and profiles into a Parquet warehouse layout that `pycytominer`
+Export images and profiles into a Parquet warehouse layout that `Pycytominer`
 and CytoTable can consume directly, without going through Iceberg at all.
+Choose this path when downstream tools or collaborators expect plain Parquet
+files on disk, or when you want a portable analysis bundle without requiring an
+Iceberg catalog service.
 See `docs/src/cytomining.md` for full warehouse export workflows.
 
 ```python
@@ -293,8 +310,10 @@ from iceberg_bioimage import (
 > **Conversion note:** `create_ome_arrow_from_zarr`/`create_ome_arrow_from_tiff`
 > materialize source pixels to build Arrow values. For large images, expect the
 > conversion to take roughly as long as reading the full pixel array once, plus
-> Arrow encoding overhead. Prefer `open_ome_arrow_dataset` to read an
-> already-converted OME-Arrow dataset without re-paying that cost.
+> Arrow encoding overhead. Peak memory and output size scale with the pixel
+> payload, so a 10 GB uncompressed image should be treated as a multi-GB
+> conversion. Prefer `open_ome_arrow_dataset` to read an already-converted
+> OME-Arrow dataset without re-paying that cost.
 
 Install with `pip install 'iceberg-bioimage[ome-arrow]'`.
 
@@ -309,6 +328,11 @@ without writing pandas/pyarrow code by hand:
 ```python
 from iceberg_bioimage import join_image_assets_with_profiles, query_metadata_table
 
+# Arrow tables loaded from your catalog, warehouse export, or local Parquet files.
+image_assets_table = ...
+profiles_table = ...
+
+# joined is an Arrow table containing profile rows plus matching image metadata.
 joined = join_image_assets_with_profiles(image_assets_table, profiles_table)
 filtered = query_metadata_table(joined, filters=[("cell_count", ">", 10)])
 ```
