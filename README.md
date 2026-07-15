@@ -137,7 +137,7 @@ register_profile_table(
 ```
 
 Pycytominer tools name their metadata columns inconsistently across pipelines
-(`Image_Metadata_Well`, `Metadata_Plate`, `Image_Metadata_Well_x`, ...).
+(`Image_Metadata_Well`, `Metadata_Plate`, `Metadata_Site`, ...).
 "Alias resolution" means this package recognizes those common naming variants
 and maps each one to a canonical column name (`well_id`, `plate_id`, etc.) so
 joins work without you renaming columns by hand.
@@ -279,9 +279,8 @@ from iceberg_bioimage import (
 )
 ```
 
-> **Conversion cost:** `create_ome_arrow_from_zarr`/`create_ome_arrow_from_tiff`
-> eagerly read every plane of the source image into memory and re-encode it as
-> Arrow — there is no lazy/streaming path. For large images, expect the
+> **Conversion note:** `create_ome_arrow_from_zarr`/`create_ome_arrow_from_tiff`
+> materialize source pixels to build Arrow values. For large images, expect the
 > conversion to take roughly as long as reading the full pixel array once, plus
 > Arrow encoding overhead. Prefer `open_ome_arrow_dataset` to read an
 > already-converted OME-Arrow dataset without re-paying that cost.

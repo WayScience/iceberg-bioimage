@@ -15,34 +15,44 @@ from iceberg_bioimage.validation.contracts import (
 from tests.fakes import FakeCatalog
 
 # ---------------------------------------------------------------------------
-# Column alias resolution: NF1 / pycytominer-style _x suffix columns
+# Column alias resolution: NF1 / pycytominer-style columns
 # ---------------------------------------------------------------------------
 
 NF1_COLUMNS = [
     "Image_FileName_DAPI",
     "Image_FileName_GFP",
     "Image_FileName_RFP",
+    "Image_Metadata_Well",
+    "Image_Metadata_Plate",
+    "Image_Metadata_Site",
+    "Nuclei_AreaShape_Area",
+    "Cells_AreaShape_Area",
+]
+
+MERGED_PROFILE_COLUMNS = [
+    "Image_FileName_DAPI",
     "Image_Metadata_Well_x",
     "Image_Metadata_Plate_x",
     "Image_Metadata_Site_x",
-    "Nuclei_AreaShape_Area",
-    "Cells_AreaShape_Area",
+    "Image_Metadata_Well_y",
+    "Image_Metadata_Plate_y",
+    "Image_Metadata_Site_y",
 ]
 
 
 def test_nf1_plate_alias_resolved() -> None:
     resolved = resolve_microscopy_profile_columns(NF1_COLUMNS)
-    assert resolved["plate_id"] == "Image_Metadata_Plate_x"
+    assert resolved["plate_id"] == "Image_Metadata_Plate"
 
 
 def test_nf1_well_alias_resolved() -> None:
     resolved = resolve_microscopy_profile_columns(NF1_COLUMNS)
-    assert resolved["well_id"] == "Image_Metadata_Well_x"
+    assert resolved["well_id"] == "Image_Metadata_Well"
 
 
 def test_nf1_site_alias_resolved() -> None:
     resolved = resolve_microscopy_profile_columns(NF1_COLUMNS)
-    assert resolved["site_id"] == "Image_Metadata_Site_x"
+    assert resolved["site_id"] == "Image_Metadata_Site"
 
 
 def test_nf1_missing_required_columns() -> None:
@@ -58,16 +68,25 @@ def test_nf1_recommended_columns_resolved_via_aliases() -> None:
     assert "site_id" not in result.missing_recommended_columns
 
 
-def test_y_suffix_aliases_also_resolve() -> None:
-    columns = [
-        "Image_Metadata_Well_y",
-        "Image_Metadata_Plate_y",
-        "Image_Metadata_Site_y",
-    ]
-    resolved = resolve_microscopy_profile_columns(columns)
-    assert resolved["plate_id"] == "Image_Metadata_Plate_y"
-    assert resolved["well_id"] == "Image_Metadata_Well_y"
-    assert resolved["site_id"] == "Image_Metadata_Site_y"
+def test_pandas_merge_suffixes_do_not_resolve_by_default() -> None:
+    resolved = resolve_microscopy_profile_columns(MERGED_PROFILE_COLUMNS)
+    assert resolved["plate_id"] is None
+    assert resolved["well_id"] is None
+    assert resolved["site_id"] is None
+
+
+def test_pandas_merge_suffixes_can_be_opted_in_as_custom_aliases() -> None:
+    resolved = resolve_microscopy_profile_columns(
+        MERGED_PROFILE_COLUMNS,
+        alias_map={
+            "plate_id": ("Image_Metadata_Plate_x",),
+            "well_id": ("Image_Metadata_Well_x",),
+            "site_id": ("Image_Metadata_Site_x",),
+        },
+    )
+    assert resolved["plate_id"] == "Image_Metadata_Plate_x"
+    assert resolved["well_id"] == "Image_Metadata_Well_x"
+    assert resolved["site_id"] == "Image_Metadata_Site_x"
 
 
 def test_alias_warning_included_for_resolved_columns() -> None:
