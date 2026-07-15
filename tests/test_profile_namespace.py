@@ -165,6 +165,29 @@ def test_register_profile_table_appended_table_has_correct_columns(
     assert "CellCount" in appended.schema.names
 
 
+def test_register_profile_table_casts_all_null_columns_to_string(
+    tmp_path: Path,
+) -> None:
+    parquet_path = tmp_path / "profiles.parquet"
+    import pyarrow.parquet as pq
+
+    table = pa.table(
+        {
+            "Image_Metadata_Well": ["B7", "D6"],
+            "Image_Metadata_Channel": pa.nulls(2),
+        }
+    )
+    pq.write_table(table, parquet_path)
+
+    catalog = FakeCatalog()
+    count = register_profile_table(str(parquet_path), catalog, "nf1.profiles")
+
+    appended = next(iter(catalog.tables.values())).appends[0]
+    assert count == table.num_rows
+    assert appended.schema.field("Image_Metadata_Channel").type == pa.string()
+    assert appended["Image_Metadata_Channel"].to_pylist() == [None, None]
+
+
 def test_register_profile_table_dot_namespace_split(tmp_path: Path) -> None:
     parquet_path = tmp_path / "profiles.parquet"
     import pyarrow.parquet as pq
@@ -228,13 +251,70 @@ def test_iris_nf1_profiles_have_expected_columns_after_register(iris_nf1: Path) 
 
 
 @pytest.mark.network
-def test_iris_nf1_profiles_alias_resolves_well_and_site(iris_nf1: Path) -> None:
+def test_iris_nf1_registered_profiles_match_downloaded_images(
+    iris_nf1: Path,
+) -> None:
+    import pyarrow.parquet as pq
+
+    parquet_path = iris_nf1 / "profiles.parquet"
+    source_table = pq.read_table(parquet_path)
+
+    catalog = FakeCatalog()
+    register_profile_table(str(parquet_path), catalog, "nf1.profiles")
+
+    fake_table = next(iter(catalog.tables.values()))
+    appended = fake_table.appends[0]
+    assert appended.num_rows == source_table.num_rows
+    assert appended.schema.names == source_table.schema.names
+    assert (
+        appended.select(
+            [
+                "Metadata_ImageNumber",
+                "Image_Metadata_Plate_x",
+                "Image_Metadata_Site_x",
+                "Image_Metadata_Well_x",
+                "Metadata_number_of_singlecells",
+                "Image_URL_DAPI",
+                "Image_URL_GFP",
+                "Image_URL_RFP",
+            ]
+        ).to_pylist()
+        == source_table.select(
+            [
+                "Metadata_ImageNumber",
+                "Image_Metadata_Plate_x",
+                "Image_Metadata_Site_x",
+                "Image_Metadata_Well_x",
+                "Metadata_number_of_singlecells",
+                "Image_URL_DAPI",
+                "Image_URL_GFP",
+                "Image_URL_RFP",
+            ]
+        ).to_pylist()
+    )
+
+    profile_image_names = {
+        Path(url).name
+        for column in ("Image_URL_DAPI", "Image_URL_GFP", "Image_URL_RFP")
+        for url in source_table[column].to_pylist()
+    }
+    downloaded_image_names = {path.name for path in (iris_nf1 / "images").glob("*.tif")}
+
+    assert downloaded_image_names
+    assert downloaded_image_names <= profile_image_names
+
+
+@pytest.mark.network
+def test_iris_nf1_merge_suffixes_do_not_resolve_by_default(iris_nf1: Path) -> None:
     import pyarrow.dataset as ds
 
     parquet_path = iris_nf1 / "profiles.parquet"
     columns = ds.dataset(str(parquet_path)).schema.names
 
     resolved = resolve_microscopy_profile_columns(columns)
-    assert resolved["well_id"] is not None, "well_id alias should resolve"
-    assert resolved["plate_id"] is not None, "plate_id alias should resolve"
-    assert resolved["site_id"] is not None, "site_id alias should resolve"
+    assert "Image_Metadata_Well_x" in columns
+    assert "Image_Metadata_Plate_x" in columns
+    assert "Image_Metadata_Site_x" in columns
+    assert resolved["well_id"] is None
+    assert resolved["plate_id"] is None
+    assert resolved["site_id"] is None

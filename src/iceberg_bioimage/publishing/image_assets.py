@@ -89,6 +89,8 @@ def publish_profile_table(
         The number of rows published.
     """
 
+    publish_table = _concretize_null_columns(arrow_table)
+
     def _build_profile_schema() -> object:
         from pyiceberg.io.pyarrow import pyarrow_to_schema
         from pyiceberg.table.name_mapping import MappedField, NameMapping
@@ -96,10 +98,10 @@ def publish_profile_table(
         name_mapping = NameMapping(
             [
                 MappedField(field_id=i + 1, names=[field.name])
-                for i, field in enumerate(arrow_table.schema)
+                for i, field in enumerate(publish_table.schema)
             ]
         )
-        return pyarrow_to_schema(arrow_table.schema, name_mapping=name_mapping)
+        return pyarrow_to_schema(publish_table.schema, name_mapping=name_mapping)
 
     table = _load_or_create_table(
         catalog,
@@ -107,8 +109,23 @@ def publish_profile_table(
         table_name,
         schema_builder=_build_profile_schema,
     )
-    table.append(arrow_table)
-    return arrow_table.num_rows
+    table.append(publish_table)
+    return publish_table.num_rows
+
+
+def _concretize_null_columns(arrow_table: pa.Table) -> pa.Table:
+    """Cast all-null columns to strings for Iceberg schema compatibility."""
+
+    normalized = arrow_table
+    for index, field in enumerate(arrow_table.schema):
+        if not pa.types.is_null(field.type):
+            continue
+        normalized = normalized.set_column(
+            index,
+            pa.field(field.name, pa.string(), nullable=True, metadata=field.metadata),
+            arrow_table.column(index).cast(pa.string()),
+        )
+    return normalized
 
 
 def publish_image_assets(
