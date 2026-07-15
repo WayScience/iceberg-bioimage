@@ -100,8 +100,8 @@ def test_alias_warning_included_for_resolved_columns() -> None:
 # ---------------------------------------------------------------------------
 
 PROFILE_ROWS = [
-    {"Image_Metadata_Well_x": "B7", "Image_Metadata_Plate_x": "P01", "CellCount": 42},
-    {"Image_Metadata_Well_x": "D6", "Image_Metadata_Plate_x": "P01", "CellCount": 17},
+    {"Image_Metadata_Well": "B7", "Image_Metadata_Plate": "P01", "CellCount": 42},
+    {"Image_Metadata_Well": "D6", "Image_Metadata_Plate": "P01", "CellCount": 17},
 ]
 PROFILE_TABLE = pa.Table.from_pylist(PROFILE_ROWS)
 EXPECTED_PROFILE_ROW_COUNT = 2
@@ -160,8 +160,8 @@ def test_register_profile_table_appended_table_has_correct_columns(
 
     fake_table = next(iter(catalog.tables.values()))
     appended = fake_table.appends[0]
-    assert "Image_Metadata_Well_x" in appended.schema.names
-    assert "Image_Metadata_Plate_x" in appended.schema.names
+    assert "Image_Metadata_Well" in appended.schema.names
+    assert "Image_Metadata_Plate" in appended.schema.names
     assert "CellCount" in appended.schema.names
 
 

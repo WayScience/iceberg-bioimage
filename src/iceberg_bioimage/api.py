@@ -400,7 +400,7 @@ def scan_result_as_arrow_table(scan_result: ScanResult) -> pa.Table:
 def scan_as_arrow_table(uri: str) -> pa.Table:
     """Scan a supported image store and return metadata as an Arrow table.
 
-    No catalog or Iceberg tables are required.  Drop an ome-zarr or ome-tiff
+    No catalog or Iceberg tables are required. Drop an ome-zarr or ome-tiff
     path (local or remote) in, get a queryable Arrow table out.
 
     Supported URI schemes
