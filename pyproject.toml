@@ -48,10 +48,10 @@ optional-dependencies.ome-arrow = [
 optional-dependencies.s3 = [
   "s3fs>=2024.2",
 ]
-urls.Documentation = "https://d33bs.github.io/iceberg-bioimage/"
-urls.Homepage = "https://github.com/d33bs/iceberg-bioimage"
-urls.Issues = "https://github.com/d33bs/iceberg-bioimage/issues"
-urls.Repository = "https://github.com/d33bs/iceberg-bioimage"
+urls.Documentation = "https://wayscience.github.io/iceberg-bioimage/"
+urls.Homepage = "https://github.com/wayscience/iceberg-bioimage"
+urls.Issues = "https://github.com/wayscience/iceberg-bioimage/issues"
+urls.Repository = "https://github.com/wayscience/iceberg-bioimage"
 scripts.iceberg-bioimage = "iceberg_bioimage.cli:main"
 
 [dependency-groups]
