@@ -59,7 +59,7 @@ html_theme_options = {
     "icon_links": [
         {
             "name": "GitHub",
-            "url": "https://github.com/d33bs/iceberg-bioimage",
+            "url": "https://github.com/wayscience/iceberg-bioimage",
             "icon": "fa-brands fa-github",
         },
     ],
