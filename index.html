@@ -557,7 +557,7 @@ rescanning each image file.</p>
     <span class="s2">&quot;data/plates/&quot;</span><span class="p">,</span>
     <span class="s2">&quot;default&quot;</span><span class="p">,</span>
     <span class="s2">&quot;myproject.images&quot;</span><span class="p">,</span>
-    <span class="n">glob</span><span class="o">=</span><span class="s2">&quot;**/*.ome.tiff&quot;</span><span class="p">,</span>   <span class="c1"># default is **/*.ome.zarr</span>
+    <span class="n">glob</span><span class="o">=</span><span class="s2">&quot;**/*.ome.tiff&quot;</span><span class="p">,</span>  <span class="c1"># default is **/*.ome.zarr</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -578,7 +578,9 @@ The chunk-index table records Zarr array chunk coordinates that can be queried
 later for region-level access. TIFF scans do not expose a Zarr-style chunk
 grid, so TIFF-only registrations have no chunk rows to write; skipping the
 table avoids an unused table and unnecessary writes:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">register_store</span><span class="p">(</span><span class="s2">&quot;data/experiment.ome.tiff&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="s2">&quot;myproject.images&quot;</span><span class="p">,</span> <span class="n">chunk_index_table</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">register_store</span><span class="p">(</span>
+    <span class="s2">&quot;data/experiment.ome.tiff&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="s2">&quot;myproject.images&quot;</span><span class="p">,</span> <span class="n">chunk_index_table</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 <p>→ details: <a class="reference internal" href="catalog-setup.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">docs/src/catalog-setup.md</span></code></span></a></p>
@@ -593,7 +595,7 @@ Publish one into the catalog under a <code class="docutils literal notranslate">
 <span class="n">register_profile_table</span><span class="p">(</span>
     <span class="s2">&quot;data/profiles.parquet&quot;</span><span class="p">,</span>
     <span class="s2">&quot;default&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;myproject.profiles&quot;</span><span class="p">,</span>   <span class="c1"># conventional: &lt;experiment&gt;.profiles</span>
+    <span class="s2">&quot;myproject.profiles&quot;</span><span class="p">,</span>  <span class="c1"># conventional: &lt;experiment&gt;.profiles</span>
 <span class="p">)</span>
 </pre></div>
 </div>
