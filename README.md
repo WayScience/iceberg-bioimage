@@ -127,7 +127,7 @@ register_directory(
     "data/plates/",
     "default",
     "myproject.images",
-    glob="**/*.ome.tiff",   # default is **/*.ome.zarr
+    glob="**/*.ome.tiff",  # default is **/*.ome.zarr
 )
 ```
 
@@ -154,7 +154,9 @@ grid, so TIFF-only registrations have no chunk rows to write; skipping the
 table avoids an unused table and unnecessary writes:
 
 ```python
-register_store("data/experiment.ome.tiff", "default", "myproject.images", chunk_index_table=None)
+register_store(
+    "data/experiment.ome.tiff", "default", "myproject.images", chunk_index_table=None
+)
 ```
 
 → details: [`docs/src/catalog-setup.md`](docs/src/catalog-setup.md)
@@ -171,7 +173,7 @@ from iceberg_bioimage import register_profile_table
 register_profile_table(
     "data/profiles.parquet",
     "default",
-    "myproject.profiles",   # conventional: <experiment>.profiles
+    "myproject.profiles",  # conventional: <experiment>.profiles
 )
 ```
 

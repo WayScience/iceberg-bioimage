@@ -8,7 +8,9 @@ requires = [
 
 [project]
 name = "iceberg-bioimage"
-description = "A format-agnostic framework for cataloging and querying bioimaging data (Zarr, OME-TIFF) with Apache Iceberg"
+description = """\
+  A format-agnostic framework for cataloging and querying bioimaging data (Zarr, OME-TIFF) with Apache Iceberg\
+  """
 readme = "README.md"
 keywords = [
   "bioimage",
@@ -30,6 +32,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
   "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 dynamic = [ "version" ]
