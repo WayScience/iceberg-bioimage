@@ -1,0 +1,9 @@
+# actionlint 1.7.12 does not yet recognize the ubuntu-26.04 or macos-26
+# GitHub-hosted runner labels (ubuntu-26.04 GA since 2026-09-17; macos-26
+# is the current macOS runner image). This is a validation-only exception
+# to silence the false-positive "unknown runner" warning; remove once
+# actionlint ships support for these labels.
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04
+    - macos-26
